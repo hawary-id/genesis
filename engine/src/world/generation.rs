@@ -5,6 +5,7 @@ use bevy_ecs::prelude::*;
 use crate::app::WorldGenerationCompleted;
 use crate::config::{WorldBounds, WorldConfig};
 use crate::rng::WorldSeed;
+use crate::time::SeasonState;
 use crate::world::climate::ClimateChunk;
 use crate::world::coord::ChunkCoord;
 use crate::world::energy::EnergyAvailabilityChunk;
@@ -88,9 +89,10 @@ pub fn generate_terrain_chunks(
 pub fn generate_climate_chunks(
     mut commands: Commands,
     config: Res<WorldConfig>,
+    season_state: Res<SeasonState>,
     query: Query<(Entity, &ChunkCoord, &TerrainChunk), Without<ClimateChunk>>,
 ) {
-    let seasonal_modifier = crate::world::climate::calculate_seasonal_modifier(0, &config);
+    let seasonal_modifier = season_state.seasonal_modifier;
     let chunk_size = config.chunk_size;
     let world_height = config.world_height;
 
@@ -508,10 +510,12 @@ mod tests {
         };
         let bounds = WorldBounds::from_config(&config);
         let seed = WorldSeed::new(12345);
+        let initial_season = SeasonState::derive(0, &config);
 
         world.insert_resource(config);
         world.insert_resource(bounds);
         world.insert_resource(seed);
+        world.insert_resource(initial_season);
         world.init_resource::<Events<WorldGenerationCompleted>>();
 
         register_schedules(&mut world);

@@ -1,7 +1,7 @@
 # Milestone 6 Architecture — Energy Availability System
 
 **Date:** 2026-06-13  
-**Status:** Approved  
+**Status:** Approved and Locked  
 **Dependencies:** Milestone 1 ✅, Milestone 2 ✅, Milestone 3 ✅, Milestone 4 ✅, Milestone 5 ✅  
 
 ---

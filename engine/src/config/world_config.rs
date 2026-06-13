@@ -5,10 +5,10 @@ use serde::{Deserialize, Serialize};
 
 /// Configuration parameters for the Genesis world simulation.
 ///
-/// This resource stores immutable settings determined at startup.
+/// Immutable after startup generation begins.
 ///
-/// Milestone 1 only defines configuration data.
-/// No simulation logic or derived calculations belong here yet.
+/// All world dimensions, time constants, and terrain validation ranges
+/// are stored here. Systems that need world-wide parameters read this resource.
 #[derive(Resource, Debug, Clone, Serialize, Deserialize)]
 pub struct WorldConfig {
     /// Width of the world in cells.
@@ -30,7 +30,40 @@ pub struct WorldConfig {
     pub seasons_per_year: u32,
 
     /// Version of the world generation pipeline.
+    /// Incremented when the generation algorithm changes in a breaking way.
     pub generation_version: u32,
+
+    // -------------------------------------------------------------------------
+    // Terrain validation ranges.
+    // These bounds define what values are considered valid after generation.
+    // All terrain fields are normalized to [0.0, 1.0] by default.
+    // -------------------------------------------------------------------------
+    /// Minimum valid elevation value.
+    pub elevation_min: f32,
+
+    /// Maximum valid elevation value.
+    pub elevation_max: f32,
+
+    /// Maximum valid slope value.
+    /// Slope is always non-negative, so the minimum is implicitly 0.0.
+    pub slope_max: f32,
+
+    /// Maximum valid water depth value.
+    /// Water depth is always non-negative, so the minimum is implicitly 0.0.
+    pub water_depth_max: f32,
+
+    /// Maximum valid soil depth value.
+    /// Soil depth is always non-negative, so the minimum is implicitly 0.0.
+    pub soil_depth_max: f32,
+
+    /// Maximum valid soil fertility value.
+    /// Soil fertility is always non-negative, so the minimum is implicitly 0.0.
+    pub soil_fertility_max: f32,
+
+    /// Elevation threshold below which water is present.
+    /// Cells at or below this elevation receive water depth proportional
+    /// to the distance below the threshold.
+    pub sea_level: f32,
 }
 
 impl Default for WorldConfig {
@@ -45,6 +78,14 @@ impl Default for WorldConfig {
             seasons_per_year: 4,
 
             generation_version: 1,
+
+            elevation_min: 0.0,
+            elevation_max: 1.0,
+            slope_max: 1.0,
+            water_depth_max: 1.0,
+            soil_depth_max: 1.0,
+            soil_fertility_max: 1.0,
+            sea_level: 0.35,
         }
     }
 }
@@ -66,5 +107,30 @@ mod tests {
         assert_eq!(config.seasons_per_year, 4);
 
         assert_eq!(config.generation_version, 1);
+    }
+
+    #[test]
+    fn default_terrain_ranges_are_normalized() {
+        let config = WorldConfig::default();
+
+        assert_eq!(config.elevation_min, 0.0);
+        assert_eq!(config.elevation_max, 1.0);
+        assert!(config.slope_max > 0.0);
+        assert!(config.water_depth_max > 0.0);
+        assert!(config.soil_depth_max > 0.0);
+        assert!(config.soil_fertility_max > 0.0);
+    }
+
+    #[test]
+    fn elevation_range_is_valid() {
+        let config = WorldConfig::default();
+        assert!(config.elevation_min < config.elevation_max);
+    }
+
+    #[test]
+    fn sea_level_is_within_elevation_range() {
+        let config = WorldConfig::default();
+        assert!(config.sea_level >= config.elevation_min);
+        assert!(config.sea_level <= config.elevation_max);
     }
 }

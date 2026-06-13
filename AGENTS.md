@@ -58,3 +58,25 @@ Genesis is not a physics simulator.
 Environmental systems should only be as detailed as necessary to generate meaningful pressures for future life and civilization.
 
 When choosing between realism and emergence, prefer emergence.
+
+## Architecture Governance
+
+* Accepted ADRs under `docs/adr/` are authoritative architectural decisions.
+
+* `docs/ARCHITECTURE_BASELINE.md` is the authoritative summary of the current architecture.
+
+* Agents must review relevant ADRs before proposing architectural changes.
+
+* Agents must not revisit, redesign, or replace accepted ADRs unless explicitly requested by the user.
+
+* If a proposed change conflicts with an accepted ADR, the agent must:
+
+  1. Identify the conflict.
+  2. Stop implementation.
+  3. Request architectural review.
+
+* If architecture is not covered by an existing ADR, agents may propose a new ADR candidate.
+
+* Agents must not silently change architectural behavior. Any ADR-impacting change must be explicitly identified.
+
+* Implementation code is not the source of architectural truth. Architecture is defined by ADRs and architecture documentation.

@@ -29,6 +29,41 @@ pub struct EnergyAvailabilityChunk {
 // ECS Update and Validation Systems
 // ---------------------------------------------------------------------------
 
+/// Pure helper function to compute solar exposure for a single cell.
+#[inline]
+pub fn calculate_solar_exposure(
+    elevation: f32,
+    slope: f32,
+    sunlight_factor: f32,
+    config: &WorldConfig,
+) -> f32 {
+    let base_solar = (sunlight_factor
+        * (1.0 + elevation * config.solar_elevation_coeff)
+        * (1.0 - slope * config.solar_slope_coeff))
+        .clamp(0.0, 1.0);
+    base_solar * config.solar_exposure_max
+}
+
+/// Pure helper function to compute aggregate energy availability for a single cell.
+#[inline]
+pub fn calculate_energy_availability(
+    solar_exposure: f32,
+    temperature: f32,
+    biomass_potential: f32,
+    nutrients: f32,
+    config: &WorldConfig,
+) -> f32 {
+    let norm_solar = solar_exposure / config.solar_exposure_max.max(f32::EPSILON);
+    let norm_biomass = biomass_potential / config.biomass_potential_max.max(f32::EPSILON);
+    let norm_nut = nutrients / config.nutrients_max.max(f32::EPSILON);
+    let aggregate = (norm_solar * config.energy_solar_weight
+        + temperature * config.energy_temp_weight
+        + norm_biomass * config.energy_biomass_weight
+        + norm_nut * config.energy_nutrient_weight)
+        .clamp(0.0, 1.0);
+    aggregate * config.energy_availability_max
+}
+
 /// Generates initial energy availability fields for all chunk entities populated with terrain, climate, and resource data.
 pub fn generate_energy_availability_chunks(
     mut commands: Commands,
@@ -52,31 +87,22 @@ pub fn generate_energy_availability_chunks(
         let mut energy_availability = vec![0.0f32; n];
 
         for idx in 0..n {
-            // Solar exposure depends on terrain-derived state and climate-derived state
             let elevation = terrain.elevation[idx];
             let slope = terrain.slope[idx];
             let sunlight_factor = climate.sunlight_factor[idx];
-
-            let base_solar = (sunlight_factor
-                * (1.0 + elevation * config.solar_elevation_coeff)
-                * (1.0 - slope * config.solar_slope_coeff))
-                .clamp(0.0, 1.0);
-            solar_exposure[idx] = base_solar * config.solar_exposure_max;
-
-            // Energy availability depends on terrain-derived state, climate-derived state, and resource-derived state
             let temp = climate.temperature[idx];
             let biomass_pot = resource.biomass_potential[idx];
             let nutrients = resource.nutrients[idx];
 
-            let norm_solar = solar_exposure[idx] / config.solar_exposure_max.max(f32::EPSILON);
-            let norm_biomass = biomass_pot / config.biomass_potential_max.max(f32::EPSILON);
-            let norm_nut = nutrients / config.nutrients_max.max(f32::EPSILON);
-            let aggregate = (norm_solar * config.energy_solar_weight
-                + temp * config.energy_temp_weight
-                + norm_biomass * config.energy_biomass_weight
-                + norm_nut * config.energy_nutrient_weight)
-                .clamp(0.0, 1.0);
-            energy_availability[idx] = aggregate * config.energy_availability_max;
+            solar_exposure[idx] =
+                calculate_solar_exposure(elevation, slope, sunlight_factor, &config);
+            energy_availability[idx] = calculate_energy_availability(
+                solar_exposure[idx],
+                temp,
+                biomass_pot,
+                nutrients,
+                &config,
+            );
         }
 
         commands.entity(entity).insert(EnergyAvailabilityChunk {
@@ -118,24 +144,15 @@ pub fn update_energy_availability_fields(
             let biomass_pot = resource.biomass_potential[idx];
             let nutrients = resource.nutrients[idx];
 
-            // Solar exposure depends on terrain-derived state and climate-derived state
-            let base_solar = (sunlight_factor
-                * (1.0 + elevation * config.solar_elevation_coeff)
-                * (1.0 - slope * config.solar_slope_coeff))
-                .clamp(0.0, 1.0);
-            energy.solar_exposure[idx] = base_solar * config.solar_exposure_max;
-
-            // Energy availability depends on terrain-derived state, climate-derived state, and resource-derived state
-            let norm_solar =
-                energy.solar_exposure[idx] / config.solar_exposure_max.max(f32::EPSILON);
-            let norm_biomass = biomass_pot / config.biomass_potential_max.max(f32::EPSILON);
-            let norm_nut = nutrients / config.nutrients_max.max(f32::EPSILON);
-            let aggregate = (norm_solar * config.energy_solar_weight
-                + temp * config.energy_temp_weight
-                + norm_biomass * config.energy_biomass_weight
-                + norm_nut * config.energy_nutrient_weight)
-                .clamp(0.0, 1.0);
-            energy.energy_availability[idx] = aggregate * config.energy_availability_max;
+            energy.solar_exposure[idx] =
+                calculate_solar_exposure(elevation, slope, sunlight_factor, &config);
+            energy.energy_availability[idx] = calculate_energy_availability(
+                energy.solar_exposure[idx],
+                temp,
+                biomass_pot,
+                nutrients,
+                &config,
+            );
         }
     }
 }

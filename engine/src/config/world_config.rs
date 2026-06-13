@@ -108,6 +108,30 @@ pub struct WorldConfig {
     /// Maximum valid biomass carrying potential.
     pub biomass_potential_max: f32,
 
+    /// Maximum valid solar exposure.
+    pub solar_exposure_max: f32,
+
+    /// Maximum valid energy availability.
+    pub energy_availability_max: f32,
+
+    /// Coefficient for terrain elevation impact on solar exposure.
+    pub solar_elevation_coeff: f32,
+
+    /// Coefficient for terrain slope impact on solar exposure.
+    pub solar_slope_coeff: f32,
+
+    /// Weight of solar exposure in aggregate energy availability.
+    pub energy_solar_weight: f32,
+
+    /// Weight of climate temperature in aggregate energy availability.
+    pub energy_temp_weight: f32,
+
+    /// Weight of biomass potential in aggregate energy availability.
+    pub energy_biomass_weight: f32,
+
+    /// Weight of soil nutrients in aggregate energy availability.
+    pub energy_nutrient_weight: f32,
+
     // -------------------------------------------------------------------------
     // Climate generation settings.
     // -------------------------------------------------------------------------
@@ -155,6 +179,14 @@ impl Default for WorldConfig {
             nutrients_max: 1.0,
             minerals_max: 1.0,
             biomass_potential_max: 1.0,
+            solar_exposure_max: 1.0,
+            energy_availability_max: 1.0,
+            solar_elevation_coeff: 0.2,
+            solar_slope_coeff: 0.3,
+            energy_solar_weight: 0.4,
+            energy_temp_weight: 0.3,
+            energy_biomass_weight: 0.2,
+            energy_nutrient_weight: 0.1,
 
             sea_level_temperature_base: 0.6,
             temperature_lapse_rate: 0.4,

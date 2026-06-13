@@ -1,7 +1,7 @@
 # Milestone 6 Architecture — Energy Availability System
 
 **Date:** 2026-06-13  
-**Status:** Approved and Locked  
+**Status:** Approved  
 **Dependencies:** Milestone 1 ✅, Milestone 2 ✅, Milestone 3 ✅, Milestone 4 ✅, Milestone 5 ✅  
 
 ---
@@ -14,10 +14,11 @@
 
 ### Relevant ADR Constraints
 - **[ADR-001: ECS Boundaries](file:///c:/Genesis/docs/adr/ADR-001-ecs-architectural-boundaries.md):** `EnergyAvailabilityChunk` must remain a passive, data-only component. System logic handles all generation and periodic calculations. No manager classes.
-- **[ADR-002: Deterministic Execution Contract](file:///c:/Genesis/docs/adr/ADR-002-deterministic-execution-contract.md):** Seeding uses coordinate-salted deterministic generators. Clock ticks are fixed. Updates run on daily boundaries.
+- **[ADR-002: Deterministic Execution Contract]:**
+Energy availability must remain a pure deterministic function of previously generated world state and configuration parameters. Clock ticks are fixed and updates run on daily boundaries.
 - **[ADR-003: Spatial Model](file:///c:/Genesis/docs/adr/ADR-003-spatial-coordinate-model.md):** Arrays are stored contiguously in row-major order within chunk entities.
 - **[ADR-004: Physical Time Model](file:///c:/Genesis/docs/adr/ADR-004-physical-time-model.md):** Tick count drives the cycle cadence of updates.
-- **[ADR-005: World Generation Strategy](file:///c:/Genesis/docs/adr/ADR-005-world-generation-strategy.md):** Unique seed derivation strategy for energy availability RNG initialization.
+- **[ADR-005: World Generation Strategy](file:///c:/Genesis/docs/adr/ADR-005-world-generation-strategy.md):** Energy availability is derived directly and deterministically from other generated substrate components.
 
 ### Dependency Analysis from Milestone 1–5
 - **Milestone 3 (Terrain):** Provides elevation, slope, and water depth.
@@ -55,7 +56,17 @@ Generate and update first-class environmental energy availability as an aggregat
   - `energy_availability: Vec<f32>` (normalized range `[0.0, energy_availability_max]`)
 
 ### Resources
-- None added. Existing `WorldConfig`, `WorldBounds`, `WorldSeed`, `SimulationClock`, and `SeasonState` are reused.
+No new resources are introduced.
+
+The system reuses:
+- WorldConfig
+- SimulationClock
+
+and consumes existing world-state components:
+- ChunkCoord
+- TerrainChunk
+- ClimateChunk
+- ResourceChunk
 
 ### Events
 - None added.
@@ -63,12 +74,12 @@ Generate and update first-class environmental energy availability as an aggregat
 ### Systems
 
 #### `generate_energy_availability_chunks` (Startup)
-- **Reads:** `ChunkCoord`, `TerrainChunk`, `ClimateChunk`, `ResourceChunk`, `WorldConfig`, `WorldSeed`
+- **Reads:** `ChunkCoord`, `TerrainChunk`, `ClimateChunk`, `ResourceChunk`, `WorldConfig`
 - **Writes:** Inserts `EnergyAvailabilityChunk` on chunk entities.
 - **Location:** `world::energy`
 
 #### `update_energy_availability_fields` (Simulation Tick)
-- **Reads:** `ChunkCoord`, `TerrainChunk`, `ClimateChunk`, `ResourceChunk`, `SimulationClock`, `WorldConfig`, `SeasonState`
+- **Reads:** `ChunkCoord`, `TerrainChunk`, `ClimateChunk`, `ResourceChunk`, `SimulationClock`, `WorldConfig`
 - **Writes:** `EnergyAvailabilityChunk` (mutable borrow)
 - **Location:** `world::energy`
 
@@ -99,13 +110,13 @@ Generate and update first-class environmental energy availability as an aggregat
 ## Energy Availability Architecture
 
 ### Input Dependencies
-- Energy availability depends on terrain-derived state.
-- Energy availability depends on climate-derived state.
-- Energy availability depends on resource-derived state.
-- Exact environmental relationships, equations, and combination functions are deferred to implementation.
+- Energy availability depends on terrain-derived state (elevation and slope).
+- Energy availability depends on climate-derived state (temperature and sunlight factor).
+- Energy availability depends on resource-derived state (nutrients and biomass potential).
+- Relationships, equations, and combination functions are parameterized via `WorldConfig` coefficients.
 
 ### Generation Ordering
-- Runs during startup within `StartupGeneration` after terrain, climate, and resource vectors are generated. Seeds are coordinate-salted chunk by chunk, generating `solar_exposure` and initial `energy_availability` arrays.
+- Runs during startup within `StartupGeneration` after terrain, climate, and resource vectors are generated, producing `solar_exposure` and initial `energy_availability` arrays deterministically from inputs.
 
 ### Relationship to Terrain
 - Terrain elevation and slope fields serve as input dependencies for the calculation of cell solar exposure and aggregate energy availability.
@@ -118,20 +129,35 @@ Generate and update first-class environmental energy availability as an aggregat
 
 ### Runtime Update Model
 - Update cadence is driven by the simulation clock.
-- Energy availability is recalculated from current terrain, climate, resource, and seasonal state.
-- Exact update equations, coefficients, and balancing parameters are deferred to implementation.
+- Energy availability is recalculated from current terrain, climate, and resource state.
+- Update equations use the parameterized coefficients and weights configured in `WorldConfig`.
+
+### Mathematical Model & Helper Functions
+To avoid calculation duplication and ensure model consistency, the system uses two pure helper functions in [energy.rs](file:///c:/Genesis/engine/src/world/energy.rs):
+
+1. **Solar Exposure (`calculate_solar_exposure`):**
+   $$solar\_exposure = base\_solar \times solar\_exposure\_max$$
+   where:
+   $$base\_solar = \Big(sunlight\_factor \times (1.0 + elevation \times solar\_elevation\_coeff) \times (1.0 - slope \times solar\_slope\_coeff)\Big)_{[0.0, 1.0]}$$
+
+2. **Energy Availability (`calculate_energy_availability`):**
+   $$energy\_availability = aggregate \times energy\_availability\_max$$
+   where:
+   $$norm\_solar = \frac{solar\_exposure}{\max(solar\_exposure\_max, \epsilon)}$$
+   $$norm\_biomass = \frac{biomass\_potential}{\max(biomass\_potential\_max, \epsilon)}$$
+   $$norm\_nut = \frac{nutrients}{\max(nutrients\_max, \epsilon)}$$
+   $$aggregate = \Big(norm\_solar \times energy\_solar\_weight + temperature \times energy\_temp\_weight + norm\_biomass \times energy\_biomass\_weight + norm\_nut \times energy\_nutrient\_weight\Big)_{[0.0, 1.0]}$$
 
 ---
 
 ## Determinism Analysis
 
-### Seed Derivation Requirements
-- **Domain Seeding:** Energy generation must derive entropy from the deterministic root seed using the established domain-isolation strategy.
-- **Chunk RNG Seeding:** Each chunk derives its unique seed using coordinates to initialize the `rand_chacha` generator per chunk, preserving parallel order independence.
+### Input-Derived Determinism
+- **No Randomness:** Energy availability generation is a pure deterministic mapping from already-generated substrate chunk data (terrain, climate, resource) and configuration parameters. It does not use or maintain any internal RNG state.
+- **Independence:** Generation logic is coordinate-independent and does not mutate shared state, ensuring order-independent execution.
 
 ### Stable Iteration Requirements
 - Chunk logic reads only cell-local values from components.
-- No shared mutable RNG state across chunks.
 
 ### Save/Load Equivalence Requirements
 - The `EnergyAvailabilityChunk` vectors (`solar_exposure`, `energy_availability`) must be persisted in the snapshot.
@@ -201,6 +227,5 @@ Verification runs post-generation and post-tick (`validate_generated_world` and 
 ## Open Questions
 
 - Should solar exposure fluctuate on a diurnal (hourly) tick cadence, or should it remain daily-averaged and seasonally-scaled?
-- What mathematical equations or scaling coefficients should be used to combine solar, thermal, and biomass potential into aggregate energy availability?
 - How will energy availability interact with future life extraction, and does it require dynamic drawdown and replenishment rate mechanics in Phase 1?
 - Should energy availability be one combined field initially, or separate solar, thermal, biomass, and chemical fields?

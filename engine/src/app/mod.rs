@@ -44,19 +44,24 @@ impl App {
         // Bind the generation systems to the StartupGeneration schedule
         crate::world::generation::register_generation_systems(&mut world);
 
-        // Bind the climate and resource update systems to the FixedSimulationTick schedule
+        // Bind the climate, resource, and energy update systems to the FixedSimulationTick schedule
         let mut schedules = world.resource_mut::<bevy_ecs::schedule::Schedules>();
         if let Some(schedule) = schedules.get_mut(FixedSimulationTick) {
             schedule.add_systems((
                 crate::world::climate::update_climate_fields,
                 crate::world::resource::update_resource_fields
                     .after(crate::world::climate::update_climate_fields),
+                crate::world::energy::update_energy_availability_fields
+                    .after(crate::world::resource::update_resource_fields),
             ));
         }
 
-        // Bind the resource validation system to the PostTickValidation schedule
+        // Bind the resource and energy validation systems to the PostTickValidation schedule
         if let Some(schedule) = schedules.get_mut(PostTickValidation) {
-            schedule.add_systems(crate::world::resource::validate_resource_fields);
+            schedule.add_systems((
+                crate::world::resource::validate_resource_fields,
+                crate::world::energy::validate_energy_fields,
+            ));
         }
 
         Self { world }

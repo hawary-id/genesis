@@ -7,6 +7,7 @@ use crate::config::{WorldBounds, WorldConfig};
 use crate::rng::WorldSeed;
 use crate::world::climate::ClimateChunk;
 use crate::world::coord::ChunkCoord;
+use crate::world::energy::EnergyAvailabilityChunk;
 use crate::world::resource::ResourceChunk;
 use crate::world::terrain::TerrainChunk;
 
@@ -205,12 +206,17 @@ pub fn generate_resource_chunks(
 /// Panics if any cell values violate `WorldConfig` ranges.
 pub fn validate_generated_world(
     config: Res<WorldConfig>,
-    query: Query<(&TerrainChunk, &ClimateChunk, &ResourceChunk)>,
+    query: Query<(
+        &TerrainChunk,
+        &ClimateChunk,
+        &ResourceChunk,
+        &EnergyAvailabilityChunk,
+    )>,
 ) {
     let chunk_size = config.chunk_size as usize;
     let expected_len = chunk_size * chunk_size;
 
-    for (terrain, climate, resource) in &query {
+    for (terrain, climate, resource, energy) in &query {
         // Terrain validations
         assert_eq!(
             terrain.elevation.len(),
@@ -403,12 +409,42 @@ pub fn validate_generated_world(
                 config.biomass_potential_max
             );
         }
+
+        // Energy validations
+        assert_eq!(
+            energy.solar_exposure.len(),
+            expected_len,
+            "Energy validation: solar_exposure array length mismatch"
+        );
+        assert_eq!(
+            energy.energy_availability.len(),
+            expected_len,
+            "Energy validation: energy_availability array length mismatch"
+        );
+
+        for &val in &energy.solar_exposure {
+            assert!(
+                val >= 0.0 && val <= config.solar_exposure_max,
+                "Energy validation: solar_exposure value {} out of configured bounds [0.0, {}]",
+                val,
+                config.solar_exposure_max
+            );
+        }
+
+        for &val in &energy.energy_availability {
+            assert!(
+                val >= 0.0 && val <= config.energy_availability_max,
+                "Energy validation: energy_availability value {} out of configured bounds [0.0, {}]",
+                val,
+                config.energy_availability_max
+            );
+        }
     }
 }
 
 /// Marks chunk entities as generated.
 ///
-/// Attaches the [`Generated`] component to chunk entities containing terrain, climate, and resource data.
+/// Attaches the [`Generated`] component to chunk entities containing terrain, climate, resource, and energy data.
 pub fn mark_chunks_generated(
     mut commands: Commands,
     query: Query<
@@ -418,6 +454,7 @@ pub fn mark_chunks_generated(
             With<TerrainChunk>,
             With<ClimateChunk>,
             With<ResourceChunk>,
+            With<EnergyAvailabilityChunk>,
             Without<Generated>,
         ),
     >,
@@ -445,7 +482,10 @@ pub fn register_generation_systems(world: &mut World) {
             generate_terrain_chunks.after(spawn_chunk_entities),
             generate_climate_chunks.after(generate_terrain_chunks),
             generate_resource_chunks.after(generate_climate_chunks),
-            validate_generated_world.after(generate_resource_chunks),
+            crate::world::energy::generate_energy_availability_chunks
+                .after(generate_resource_chunks),
+            validate_generated_world
+                .after(crate::world::energy::generate_energy_availability_chunks),
             mark_chunks_generated.after(validate_generated_world),
             emit_world_generation_completed.after(mark_chunks_generated),
         ));
@@ -493,6 +533,7 @@ mod tests {
             &TerrainChunk,
             &ClimateChunk,
             &ResourceChunk,
+            &EnergyAvailabilityChunk,
             &Generated,
         )>();
         let chunks: Vec<_> = query.iter(&world).collect();

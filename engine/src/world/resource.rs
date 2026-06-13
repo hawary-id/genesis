@@ -142,6 +142,85 @@ pub fn update_resource_fields(
     }
 }
 
+use crate::validation::ValidationError;
+
+/// Validates all cell values inside the resource chunk against limits specified in [`WorldConfig`].
+pub fn validate_resource_chunk(
+    coord: &ChunkCoord,
+    resource: &ResourceChunk,
+    config: &WorldConfig,
+) -> Result<(), ValidationError> {
+    let chunk_size = config.chunk_size as usize;
+    let expected_len = chunk_size * chunk_size;
+
+    if resource.fresh_water.len() != expected_len {
+        return Err(ValidationError::ChunkInconsistency {
+            coord: *coord,
+            detail: "fresh_water array length mismatch",
+        });
+    }
+    if resource.nutrients.len() != expected_len {
+        return Err(ValidationError::ChunkInconsistency {
+            coord: *coord,
+            detail: "nutrients array length mismatch",
+        });
+    }
+    if resource.minerals.len() != expected_len {
+        return Err(ValidationError::ChunkInconsistency {
+            coord: *coord,
+            detail: "minerals array length mismatch",
+        });
+    }
+    if resource.biomass_potential.len() != expected_len {
+        return Err(ValidationError::ChunkInconsistency {
+            coord: *coord,
+            detail: "biomass_potential array length mismatch",
+        });
+    }
+
+    for &val in &resource.fresh_water {
+        if val < 0.0 || val > config.fresh_water_max {
+            return Err(ValidationError::ResourceOutOfBounds {
+                coord: *coord,
+                field: "fresh_water",
+                value: val,
+            });
+        }
+    }
+
+    for &val in &resource.nutrients {
+        if val < 0.0 || val > config.nutrients_max {
+            return Err(ValidationError::ResourceOutOfBounds {
+                coord: *coord,
+                field: "nutrients",
+                value: val,
+            });
+        }
+    }
+
+    for &val in &resource.minerals {
+        if val < 0.0 || val > config.minerals_max {
+            return Err(ValidationError::ResourceOutOfBounds {
+                coord: *coord,
+                field: "minerals",
+                value: val,
+            });
+        }
+    }
+
+    for &val in &resource.biomass_potential {
+        if val < 0.0 || val > config.biomass_potential_max {
+            return Err(ValidationError::ResourceOutOfBounds {
+                coord: *coord,
+                field: "biomass_potential",
+                value: val,
+            });
+        }
+    }
+
+    Ok(())
+}
+
 /// Validates that all resource fields reside within configured bounds and are non-negative.
 ///
 /// # Panics (debug/test)
@@ -151,73 +230,9 @@ pub fn validate_resource_fields(
     config: Res<WorldConfig>,
     query: Query<(&ChunkCoord, &ResourceChunk)>,
 ) {
-    let chunk_size = config.chunk_size as usize;
-    let expected_len = chunk_size * chunk_size;
-
     for (coord, resource) in &query {
-        assert_eq!(
-            resource.fresh_water.len(),
-            expected_len,
-            "Resource validation at {:?}: fresh_water array length mismatch",
-            coord
-        );
-        assert_eq!(
-            resource.nutrients.len(),
-            expected_len,
-            "Resource validation at {:?}: nutrients array length mismatch",
-            coord
-        );
-        assert_eq!(
-            resource.minerals.len(),
-            expected_len,
-            "Resource validation at {:?}: minerals array length mismatch",
-            coord
-        );
-        assert_eq!(
-            resource.biomass_potential.len(),
-            expected_len,
-            "Resource validation at {:?}: biomass_potential array length mismatch",
-            coord
-        );
-
-        for &val in &resource.fresh_water {
-            assert!(
-                val >= 0.0 && val <= config.fresh_water_max,
-                "Resource validation at {:?}: fresh_water value {} out of bounds [0.0, {}]",
-                coord,
-                val,
-                config.fresh_water_max
-            );
-        }
-
-        for &val in &resource.nutrients {
-            assert!(
-                val >= 0.0 && val <= config.nutrients_max,
-                "Resource validation at {:?}: nutrients value {} out of bounds [0.0, {}]",
-                coord,
-                val,
-                config.nutrients_max
-            );
-        }
-
-        for &val in &resource.minerals {
-            assert!(
-                val >= 0.0 && val <= config.minerals_max,
-                "Resource validation at {:?}: minerals value {} out of bounds [0.0, {}]",
-                coord,
-                val,
-                config.minerals_max
-            );
-        }
-
-        for &val in &resource.biomass_potential {
-            assert!(
-                val >= 0.0 && val <= config.biomass_potential_max,
-                "Resource validation at {:?}: biomass_potential value {} out of bounds [0.0, {}]",
-                coord,
-                val,
-                config.biomass_potential_max
-            );
+        if let Err(err) = validate_resource_chunk(coord, resource, &config) {
+            panic!("Resource validation failed: {:?}", err);
         }
     }
 }

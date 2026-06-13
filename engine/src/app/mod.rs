@@ -59,12 +59,9 @@ impl App {
             ));
         }
 
-        // Bind the resource and energy validation systems to the PostTickValidation schedule
+        // Bind the centralized tick validation system to the PostTickValidation schedule
         if let Some(schedule) = schedules.get_mut(PostTickValidation) {
-            schedule.add_systems((
-                crate::world::resource::validate_resource_fields,
-                crate::world::energy::validate_energy_fields,
-            ));
+            schedule.add_systems(crate::validation::systems::validate_world_on_tick);
         }
 
         Self { world }

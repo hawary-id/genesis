@@ -129,6 +129,85 @@ pub fn update_climate_fields(
     }
 }
 
+use crate::validation::ValidationError;
+
+/// Validates all cell values inside the climate chunk against limits specified in [`WorldConfig`].
+pub fn validate_climate_chunk(
+    coord: &ChunkCoord,
+    climate: &ClimateChunk,
+    config: &WorldConfig,
+) -> Result<(), ValidationError> {
+    let chunk_size = config.chunk_size as usize;
+    let expected_len = chunk_size * chunk_size;
+
+    if climate.temperature.len() != expected_len {
+        return Err(ValidationError::ChunkInconsistency {
+            coord: *coord,
+            detail: "temperature array length mismatch",
+        });
+    }
+    if climate.moisture.len() != expected_len {
+        return Err(ValidationError::ChunkInconsistency {
+            coord: *coord,
+            detail: "moisture array length mismatch",
+        });
+    }
+    if climate.rainfall.len() != expected_len {
+        return Err(ValidationError::ChunkInconsistency {
+            coord: *coord,
+            detail: "rainfall array length mismatch",
+        });
+    }
+    if climate.sunlight_factor.len() != expected_len {
+        return Err(ValidationError::ChunkInconsistency {
+            coord: *coord,
+            detail: "sunlight_factor array length mismatch",
+        });
+    }
+
+    for &val in &climate.temperature {
+        if val < config.temperature_min || val > config.temperature_max {
+            return Err(ValidationError::ClimateOutOfBounds {
+                coord: *coord,
+                field: "temperature",
+                value: val,
+            });
+        }
+    }
+
+    for &val in &climate.moisture {
+        if val < config.moisture_min || val > config.moisture_max {
+            return Err(ValidationError::ClimateOutOfBounds {
+                coord: *coord,
+                field: "moisture",
+                value: val,
+            });
+        }
+    }
+
+    for &val in &climate.rainfall {
+        if val < config.rainfall_min || val > config.rainfall_max {
+            return Err(ValidationError::ClimateOutOfBounds {
+                coord: *coord,
+                field: "rainfall",
+                value: val,
+            });
+        }
+    }
+
+    for &val in &climate.sunlight_factor {
+        if val < config.sunlight_factor_min || val > config.sunlight_factor_max {
+            return Err(ValidationError::ClimateOutOfBounds {
+                coord: *coord,
+                field: "sunlight_factor",
+                value: val,
+            });
+        }
+    }
+
+    Ok(())
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

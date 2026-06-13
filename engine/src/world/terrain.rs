@@ -303,6 +303,101 @@ fn compute_soil_fertility(soil_depth: f32, water_depth: f32, config: &WorldConfi
     fertility.clamp(0.0, config.soil_fertility_max)
 }
 
+use crate::validation::ValidationError;
+
+/// Validates all cell values inside the terrain chunk against limits specified in [`WorldConfig`].
+pub fn validate_terrain_chunk(
+    coord: &ChunkCoord,
+    terrain: &TerrainChunk,
+    config: &WorldConfig,
+) -> Result<(), ValidationError> {
+    let chunk_size = config.chunk_size as usize;
+    let expected_len = chunk_size * chunk_size;
+
+    if terrain.elevation.len() != expected_len {
+        return Err(ValidationError::ChunkInconsistency {
+            coord: *coord,
+            detail: "elevation array length mismatch",
+        });
+    }
+    if terrain.slope.len() != expected_len {
+        return Err(ValidationError::ChunkInconsistency {
+            coord: *coord,
+            detail: "slope array length mismatch",
+        });
+    }
+    if terrain.water_depth.len() != expected_len {
+        return Err(ValidationError::ChunkInconsistency {
+            coord: *coord,
+            detail: "water_depth array length mismatch",
+        });
+    }
+    if terrain.soil_depth.len() != expected_len {
+        return Err(ValidationError::ChunkInconsistency {
+            coord: *coord,
+            detail: "soil_depth array length mismatch",
+        });
+    }
+    if terrain.soil_fertility.len() != expected_len {
+        return Err(ValidationError::ChunkInconsistency {
+            coord: *coord,
+            detail: "soil_fertility array length mismatch",
+        });
+    }
+
+    for &val in &terrain.elevation {
+        if val < config.elevation_min || val > config.elevation_max {
+            return Err(ValidationError::TerrainOutOfBounds {
+                coord: *coord,
+                field: "elevation",
+                value: val,
+            });
+        }
+    }
+
+    for &val in &terrain.slope {
+        if val < 0.0 || val > config.slope_max {
+            return Err(ValidationError::TerrainOutOfBounds {
+                coord: *coord,
+                field: "slope",
+                value: val,
+            });
+        }
+    }
+
+    for &val in &terrain.water_depth {
+        if val < 0.0 || val > config.water_depth_max {
+            return Err(ValidationError::TerrainOutOfBounds {
+                coord: *coord,
+                field: "water_depth",
+                value: val,
+            });
+        }
+    }
+
+    for &val in &terrain.soil_depth {
+        if val < 0.0 || val > config.soil_depth_max {
+            return Err(ValidationError::TerrainOutOfBounds {
+                coord: *coord,
+                field: "soil_depth",
+                value: val,
+            });
+        }
+    }
+
+    for &val in &terrain.soil_fertility {
+        if val < 0.0 || val > config.soil_fertility_max {
+            return Err(ValidationError::TerrainOutOfBounds {
+                coord: *coord,
+                field: "soil_fertility",
+                value: val,
+            });
+        }
+    }
+
+    Ok(())
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

@@ -157,6 +157,53 @@ pub fn update_energy_availability_fields(
     }
 }
 
+use crate::validation::ValidationError;
+
+/// Validates all cell values inside the energy chunk against limits specified in [`WorldConfig`].
+pub fn validate_energy_chunk(
+    coord: &ChunkCoord,
+    energy: &EnergyAvailabilityChunk,
+    config: &WorldConfig,
+) -> Result<(), ValidationError> {
+    let chunk_size = config.chunk_size as usize;
+    let expected_len = chunk_size * chunk_size;
+
+    if energy.solar_exposure.len() != expected_len {
+        return Err(ValidationError::ChunkInconsistency {
+            coord: *coord,
+            detail: "solar_exposure array length mismatch",
+        });
+    }
+    if energy.energy_availability.len() != expected_len {
+        return Err(ValidationError::ChunkInconsistency {
+            coord: *coord,
+            detail: "energy_availability array length mismatch",
+        });
+    }
+
+    for &val in &energy.solar_exposure {
+        if val < 0.0 || val > config.solar_exposure_max {
+            return Err(ValidationError::EnergyOutOfBounds {
+                coord: *coord,
+                field: "solar_exposure",
+                value: val,
+            });
+        }
+    }
+
+    for &val in &energy.energy_availability {
+        if val < 0.0 || val > config.energy_availability_max {
+            return Err(ValidationError::EnergyOutOfBounds {
+                coord: *coord,
+                field: "energy_availability",
+                value: val,
+            });
+        }
+    }
+
+    Ok(())
+}
+
 /// Validates that all energy availability fields reside within configured bounds and are non-negative.
 ///
 /// # Panics (debug/test)
@@ -166,41 +213,9 @@ pub fn validate_energy_fields(
     config: Res<WorldConfig>,
     query: Query<(&ChunkCoord, &EnergyAvailabilityChunk)>,
 ) {
-    let chunk_size = config.chunk_size as usize;
-    let expected_len = chunk_size * chunk_size;
-
     for (coord, energy) in &query {
-        assert_eq!(
-            energy.solar_exposure.len(),
-            expected_len,
-            "Energy validation at {:?}: solar_exposure array length mismatch",
-            coord
-        );
-        assert_eq!(
-            energy.energy_availability.len(),
-            expected_len,
-            "Energy validation at {:?}: energy_availability array length mismatch",
-            coord
-        );
-
-        for &val in &energy.solar_exposure {
-            assert!(
-                val >= 0.0 && val <= config.solar_exposure_max,
-                "Energy validation at {:?}: solar_exposure value {} out of bounds [0.0, {}]",
-                coord,
-                val,
-                config.solar_exposure_max
-            );
-        }
-
-        for &val in &energy.energy_availability {
-            assert!(
-                val >= 0.0 && val <= config.energy_availability_max,
-                "Energy validation at {:?}: energy_availability value {} out of bounds [0.0, {}]",
-                coord,
-                val,
-                config.energy_availability_max
-            );
+        if let Err(err) = validate_energy_chunk(coord, energy, &config) {
+            panic!("Energy validation failed: {:?}", err);
         }
     }
 }

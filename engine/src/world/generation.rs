@@ -486,9 +486,9 @@ pub fn register_generation_systems(world: &mut World) {
             generate_resource_chunks.after(generate_climate_chunks),
             crate::world::energy::generate_energy_availability_chunks
                 .after(generate_resource_chunks),
-            validate_generated_world
+            crate::validation::systems::validate_world_on_startup
                 .after(crate::world::energy::generate_energy_availability_chunks),
-            mark_chunks_generated.after(validate_generated_world),
+            mark_chunks_generated.after(crate::validation::systems::validate_world_on_startup),
             emit_world_generation_completed.after(mark_chunks_generated),
         ));
     }

@@ -1,12 +1,7 @@
-//! Application bootstrap container for Genesis.
+//! Genesis application bootstrap and schedule orchestration.
 //!
-//! Milestone 2 extends the foundational ECS setup with:
-//! - [`WorldBounds`] resource
-//! - [`WorldGenerationCompleted`] event type definition
-//! - Phase 1 schedule label definitions
-//!
-//! No simulation schedules are executed, no world generation exists,
-//! no ticking, persistence, or observation systems exist yet.
+//! Owns the ECS world and registers the resources,
+//! events, and schedules required by the simulation.
 
 pub mod events;
 pub mod plugins;
@@ -34,18 +29,26 @@ pub struct App {
 impl App {
     /// Creates a new Genesis application instance.
     ///
-    /// Registers all Milestone 2 resources and schedule labels:
-    /// - [`crate::config::WorldConfig`]
-    /// - [`crate::rng::WorldSeed`]
-    /// - [`crate::time::SimulationClock`]
-    /// - [`crate::config::WorldBounds`]
-    /// - All five Phase 1 schedule labels
+    /// Initializes the ECS world and registers
+    /// the resources, events, and schedules
+    /// required by Genesis.
     pub fn new(config: WorldConfig, seed: WorldSeed) -> Self {
         let mut world = World::new();
 
         plugins::register_initial_resources(&mut world, config, seed);
 
+        // Register the generation completed event resource
+        world.init_resource::<bevy_ecs::event::Events<WorldGenerationCompleted>>();
+
+        // Bind the generation systems to the StartupGeneration schedule
+        crate::world::generation::register_generation_systems(&mut world);
+
         Self { world }
+    }
+
+    /// Runs the startup generation schedule.
+    pub fn run_startup(&mut self) {
+        self.world.run_schedule(StartupGeneration);
     }
 
     /// Returns an immutable reference to the ECS world.
@@ -118,5 +121,29 @@ mod tests {
         assert_eq!(bounds.chunk_size, config.chunk_size);
         assert_eq!(bounds.chunks_x, config.world_width / config.chunk_size);
         assert_eq!(bounds.chunks_y, config.world_height / config.chunk_size);
+    }
+
+    #[test]
+    fn app_run_startup_executes_terrain_generation() {
+        let mut app = test_app();
+
+        // Before startup, no entities or completed events
+        assert_eq!(app.world().entities().len(), 0);
+        let events = app
+            .world()
+            .resource::<bevy_ecs::event::Events<WorldGenerationCompleted>>();
+        assert_eq!(events.get_reader().read(events).count(), 0);
+
+        // Run startup generation
+        app.run_startup();
+
+        // Chunks generated (test configuration: 256x256 / 32 = 8x8 = 64 chunks)
+        assert_eq!(app.world().entities().len(), 64);
+
+        // Assert event was emitted
+        let events = app
+            .world()
+            .resource::<bevy_ecs::event::Events<WorldGenerationCompleted>>();
+        assert_eq!(events.get_reader().read(events).count(), 1);
     }
 }

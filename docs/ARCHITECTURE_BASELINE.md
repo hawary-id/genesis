@@ -5,7 +5,7 @@
 Genesis is currently in Phase 1 (Environmental Substrate).
 - **Milestone 1:** Core ECS setup, config resources, root seed structures, and simulation clock. (Locked ✅)
 - **Milestone 2:** World bounds, generation completed event registry, and canonical schedule definitions. (Locked ✅)
-- **Milestone 3:** World Generation, coordinate systems, and terrain chunk structures. (Architecture Approved ✅)
+- **Milestone 3:** World Generation, coordinate systems, and terrain chunk structures. (Locked ✅)
 
 ---
 

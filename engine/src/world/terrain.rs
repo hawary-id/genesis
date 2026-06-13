@@ -26,8 +26,8 @@
 //! No `thread_rng()`. No wall-clock entropy.
 
 use bevy_ecs::prelude::Component;
-use rand::SeedableRng;
 use rand::Rng;
+use rand::SeedableRng;
 use rand_chacha::ChaCha8Rng;
 use serde::{Deserialize, Serialize};
 
@@ -75,8 +75,18 @@ pub struct TerrainChunk {
 ///
 /// Panics in debug builds if `local_x >= chunk_size` or `local_y >= chunk_size`.
 pub fn cell_index(local_x: u32, local_y: u32, chunk_size: u32) -> usize {
-    debug_assert!(local_x < chunk_size, "local_x {} >= chunk_size {}", local_x, chunk_size);
-    debug_assert!(local_y < chunk_size, "local_y {} >= chunk_size {}", local_y, chunk_size);
+    debug_assert!(
+        local_x < chunk_size,
+        "local_x {} >= chunk_size {}",
+        local_x,
+        chunk_size
+    );
+    debug_assert!(
+        local_y < chunk_size,
+        "local_y {} >= chunk_size {}",
+        local_y,
+        chunk_size
+    );
     (local_y * chunk_size + local_x) as usize
 }
 
@@ -169,11 +179,25 @@ pub fn generate_terrain_chunk(
 /// Pure function of `(gx, gy, terrain_seed, config)`.
 fn sample_elevation(gx: u32, gy: u32, terrain_seed: u64, config: &WorldConfig) -> f32 {
     // Octave 1 — coarse features at NOISE_SCALE.
-    let coarse = value_noise_sample(gx, gy, terrain_seed, NOISE_SCALE, config.elevation_min, config.elevation_max);
+    let coarse = value_noise_sample(
+        gx,
+        gy,
+        terrain_seed,
+        NOISE_SCALE,
+        config.elevation_min,
+        config.elevation_max,
+    );
 
     // Octave 2 — fine detail at half the scale, blended at 25%.
     let fine_scale = (NOISE_SCALE / 2).max(1);
-    let fine = value_noise_sample(gx, gy, terrain_seed.wrapping_add(1), fine_scale, config.elevation_min, config.elevation_max);
+    let fine = value_noise_sample(
+        gx,
+        gy,
+        terrain_seed.wrapping_add(1),
+        fine_scale,
+        config.elevation_min,
+        config.elevation_max,
+    );
 
     // Blend: 75% coarse + 25% fine, then remap to full range.
     let blended = coarse * 0.75 + fine * 0.25;
@@ -416,7 +440,10 @@ mod tests {
 
         // Terrain should differ between chunks (not guaranteed by construction, but
         // statistically overwhelmingly likely for any non-trivial seed).
-        assert_ne!(a.elevation, b.elevation, "adjacent chunks produced identical terrain — check seed derivation");
+        assert_ne!(
+            a.elevation, b.elevation,
+            "adjacent chunks produced identical terrain — check seed derivation"
+        );
     }
 
     #[test]

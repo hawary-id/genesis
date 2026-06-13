@@ -32,5 +32,6 @@ Genesis requires a design system that enforces data-oriented structure, scales t
 
 # Constraints
 
-- All components and resources must derive `serde::Serialize` and `serde::Deserialize` to support snapshotting.
+- State participating in persistence must be serializable.
+- Transient runtime-only state is not required to implement serialization.
 - Public APIs and data structures must be fully documented.

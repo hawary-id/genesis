@@ -17,6 +17,14 @@ pub fn create_test_config() -> WorldConfig {
         seasons_per_year: 4,
 
         generation_version: 1,
+
+        elevation_min: 0.0,
+        elevation_max: 1.0,
+        slope_max: 1.0,
+        water_depth_max: 1.0,
+        soil_depth_max: 1.0,
+        soil_fertility_max: 1.0,
+        sea_level: 0.35,
     }
 }
 

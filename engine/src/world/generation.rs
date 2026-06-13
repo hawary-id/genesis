@@ -23,7 +23,7 @@ pub struct Generated;
 /// or non-positive day length).
 pub fn validate_world_config(config: Res<WorldConfig>) {
     assert!(
-        config.chunk_size > 0,gima
+        config.chunk_size > 0,
         "WorldConfig: chunk_size must be greater than zero"
     );
     assert!(

@@ -7,6 +7,7 @@ use crate::config::{WorldBounds, WorldConfig};
 use crate::rng::WorldSeed;
 use crate::world::climate::ClimateChunk;
 use crate::world::coord::ChunkCoord;
+use crate::world::resource::ResourceChunk;
 use crate::world::terrain::TerrainChunk;
 
 /// Marker component indicating that a chunk has completed its initial generation
@@ -22,7 +23,7 @@ pub struct Generated;
 /// or non-positive day length).
 pub fn validate_world_config(config: Res<WorldConfig>) {
     assert!(
-        config.chunk_size > 0,
+        config.chunk_size > 0,gima
         "WorldConfig: chunk_size must be greater than zero"
     );
     assert!(
@@ -128,19 +129,88 @@ pub fn generate_climate_chunks(
     }
 }
 
-/// Validates that all generated terrain and climate field values reside within configured bounds.
+/// Generates resource fields for all chunk entities populated with terrain and climate data.
+///
+/// Iterates over entities carrying terrain and climate information and attaches the derived
+/// [`ResourceChunk`] component containing the base environmental materials.
+pub fn generate_resource_chunks(
+    mut commands: Commands,
+    config: Res<WorldConfig>,
+    seed: Res<WorldSeed>,
+    query: Query<(Entity, &ChunkCoord, &TerrainChunk, &ClimateChunk), Without<ResourceChunk>>,
+) {
+    let resource_seed = crate::rng::derive_resource_seed(seed.root_seed);
+    let chunk_size = config.chunk_size;
+
+    for (entity, coord, terrain, climate) in &query {
+        let n = (chunk_size * chunk_size) as usize;
+        let mut fresh_water = vec![0.0f32; n];
+        let mut nutrients = vec![0.0f32; n];
+        let mut minerals = vec![0.0f32; n];
+        let mut biomass_potential = vec![0.0f32; n];
+
+        for idx in 0..n {
+            let lx = (idx as u32) % chunk_size;
+            let ly = (idx as u32) / chunk_size;
+
+            let gx = coord.x * chunk_size + lx;
+            let gy = coord.y * chunk_size + ly;
+
+            // Minerals noise
+            let min_val = crate::world::resource::value_noise_sample(
+                gx,
+                gy,
+                resource_seed,
+                16,
+                0.0,
+                config.minerals_max,
+            );
+            minerals[idx] = min_val;
+
+            // Fresh Water: terrain water_depth, climate moisture/rainfall
+            let wd = terrain.water_depth[idx];
+            let moist = climate.moisture[idx];
+            let norm_wd = wd / config.water_depth_max.max(f32::EPSILON);
+            let fw = (norm_wd * 0.8 + moist * 0.2).clamp(0.0, 1.0) * config.fresh_water_max;
+            fresh_water[idx] = fw;
+
+            // Nutrients: soil fertility and soil depth
+            let sd = terrain.soil_depth[idx];
+            let sf = terrain.soil_fertility[idx];
+            let norm_sd = sd / config.soil_depth_max.max(f32::EPSILON);
+            let norm_sf = sf / config.soil_fertility_max.max(f32::EPSILON);
+            let nut = (norm_sd * norm_sf).clamp(0.0, 1.0) * config.nutrients_max;
+            nutrients[idx] = nut;
+
+            // Biomass carrying potential: derived from temp, moist, and soil nutrients
+            let temp = climate.temperature[idx];
+            let norm_nut = nut / config.nutrients_max.max(f32::EPSILON);
+            let bp = (temp * moist * norm_nut).clamp(0.0, 1.0) * config.biomass_potential_max;
+            biomass_potential[idx] = bp;
+        }
+
+        commands.entity(entity).insert(ResourceChunk {
+            fresh_water,
+            nutrients,
+            minerals,
+            biomass_potential,
+        });
+    }
+}
+
+/// Validates that all generated terrain, climate, and resource field values reside within configured bounds.
 ///
 /// # Panics
 ///
 /// Panics if any cell values violate `WorldConfig` ranges.
 pub fn validate_generated_world(
     config: Res<WorldConfig>,
-    query: Query<(&TerrainChunk, &ClimateChunk)>,
+    query: Query<(&TerrainChunk, &ClimateChunk, &ResourceChunk)>,
 ) {
     let chunk_size = config.chunk_size as usize;
     let expected_len = chunk_size * chunk_size;
 
-    for (terrain, climate) in &query {
+    for (terrain, climate, resource) in &query {
         // Terrain validations
         assert_eq!(
             terrain.elevation.len(),
@@ -275,12 +345,70 @@ pub fn validate_generated_world(
                 config.sunlight_factor_max
             );
         }
+
+        // Resource validations
+        assert_eq!(
+            resource.fresh_water.len(),
+            expected_len,
+            "Resource validation: fresh_water array length mismatch"
+        );
+        assert_eq!(
+            resource.nutrients.len(),
+            expected_len,
+            "Resource validation: nutrients array length mismatch"
+        );
+        assert_eq!(
+            resource.minerals.len(),
+            expected_len,
+            "Resource validation: minerals array length mismatch"
+        );
+        assert_eq!(
+            resource.biomass_potential.len(),
+            expected_len,
+            "Resource validation: biomass_potential array length mismatch"
+        );
+
+        for &val in &resource.fresh_water {
+            assert!(
+                val >= 0.0 && val <= config.fresh_water_max,
+                "Resource validation: fresh_water value {} out of configured bounds [0.0, {}]",
+                val,
+                config.fresh_water_max
+            );
+        }
+
+        for &val in &resource.nutrients {
+            assert!(
+                val >= 0.0 && val <= config.nutrients_max,
+                "Resource validation: nutrients value {} out of configured bounds [0.0, {}]",
+                val,
+                config.nutrients_max
+            );
+        }
+
+        for &val in &resource.minerals {
+            assert!(
+                val >= 0.0 && val <= config.minerals_max,
+                "Resource validation: minerals value {} out of configured bounds [0.0, {}]",
+                val,
+                config.minerals_max
+            );
+        }
+
+        for &val in &resource.biomass_potential {
+            assert!(
+                val >= 0.0 && val <= config.biomass_potential_max,
+                "Resource validation: biomass_potential value {} out of configured bounds [0.0, {}]",
+                val,
+                config.biomass_potential_max
+            );
+        }
     }
 }
 
 /// Marks chunk entities as generated.
 ///
-/// Attaches the [`Generated`] component to chunk entities containing both terrain and climate data.
+/// Attaches the [`Generated`] component to chunk entities containing terrain, climate, and resource data.
 pub fn mark_chunks_generated(
     mut commands: Commands,
     query: Query<
@@ -289,6 +417,7 @@ pub fn mark_chunks_generated(
             With<ChunkCoord>,
             With<TerrainChunk>,
             With<ClimateChunk>,
+            With<ResourceChunk>,
             Without<Generated>,
         ),
     >,
@@ -315,7 +444,8 @@ pub fn register_generation_systems(world: &mut World) {
             spawn_chunk_entities.after(validate_world_config),
             generate_terrain_chunks.after(spawn_chunk_entities),
             generate_climate_chunks.after(generate_terrain_chunks),
-            validate_generated_world.after(generate_climate_chunks),
+            generate_resource_chunks.after(generate_climate_chunks),
+            validate_generated_world.after(generate_resource_chunks),
             mark_chunks_generated.after(validate_generated_world),
             emit_world_generation_completed.after(mark_chunks_generated),
         ));
@@ -358,7 +488,13 @@ mod tests {
         world.run_schedule(crate::app::StartupGeneration);
 
         // Check chunk count: bounds.chunks_x = 4, chunks_y = 4 => 16 chunks
-        let mut query = world.query::<(&ChunkCoord, &TerrainChunk, &ClimateChunk, &Generated)>();
+        let mut query = world.query::<(
+            &ChunkCoord,
+            &TerrainChunk,
+            &ClimateChunk,
+            &ResourceChunk,
+            &Generated,
+        )>();
         let chunks: Vec<_> = query.iter(&world).collect();
         assert_eq!(chunks.len(), 16);
 

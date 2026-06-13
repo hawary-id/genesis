@@ -1,0 +1,1 @@
+for<'a, 'b, 'c, 'd, 'e, 'f, 'g, 'h> fn(bevy_ecs::change_detection::Res<'a, SimulationClock>, bevy_ecs::change_detection::Res<'b, WorldConfig>, bevy_ecs::system::Query<'c, 'd, (&'e ChunkCoord, &'f TerrainChunk, &'g ClimateChunk, &'h mut ResourceChunk)>) {update_resource_fields}

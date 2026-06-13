@@ -8,6 +8,7 @@ pub mod plugins;
 pub mod schedules;
 
 use bevy_ecs::prelude::World;
+use bevy_ecs::schedule::IntoSystemConfigs;
 
 use crate::config::WorldConfig;
 use crate::rng::WorldSeed;
@@ -43,10 +44,19 @@ impl App {
         // Bind the generation systems to the StartupGeneration schedule
         crate::world::generation::register_generation_systems(&mut world);
 
-        // Bind the climate update systems to the FixedSimulationTick schedule
+        // Bind the climate and resource update systems to the FixedSimulationTick schedule
         let mut schedules = world.resource_mut::<bevy_ecs::schedule::Schedules>();
         if let Some(schedule) = schedules.get_mut(FixedSimulationTick) {
-            schedule.add_systems(crate::world::climate::update_climate_fields);
+            schedule.add_systems((
+                crate::world::climate::update_climate_fields,
+                crate::world::resource::update_resource_fields
+                    .after(crate::world::climate::update_climate_fields),
+            ));
+        }
+
+        // Bind the resource validation system to the PostTickValidation schedule
+        if let Some(schedule) = schedules.get_mut(PostTickValidation) {
+            schedule.add_systems(crate::world::resource::validate_resource_fields);
         }
 
         Self { world }

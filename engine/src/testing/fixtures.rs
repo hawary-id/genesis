@@ -35,6 +35,11 @@ pub fn create_test_config() -> WorldConfig {
         sunlight_factor_min: 0.0,
         sunlight_factor_max: 1.0,
 
+        fresh_water_max: 1.0,
+        nutrients_max: 1.0,
+        minerals_max: 1.0,
+        biomass_potential_max: 1.0,
+
         sea_level_temperature_base: 0.6,
         temperature_lapse_rate: 0.4,
         seasonal_temperature_amplitude: 0.15,

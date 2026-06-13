@@ -94,6 +94,21 @@ pub struct WorldConfig {
     pub sunlight_factor_max: f32,
 
     // -------------------------------------------------------------------------
+    // Resource validation ranges.
+    // -------------------------------------------------------------------------
+    /// Maximum valid fresh water availability.
+    pub fresh_water_max: f32,
+
+    /// Maximum valid nutrients availability.
+    pub nutrients_max: f32,
+
+    /// Maximum valid minerals concentration.
+    pub minerals_max: f32,
+
+    /// Maximum valid biomass carrying potential.
+    pub biomass_potential_max: f32,
+
+    // -------------------------------------------------------------------------
     // Climate generation settings.
     // -------------------------------------------------------------------------
     /// Baseline temperature at sea level.
@@ -135,6 +150,11 @@ impl Default for WorldConfig {
             rainfall_max: 1.0,
             sunlight_factor_min: 0.0,
             sunlight_factor_max: 1.0,
+
+            fresh_water_max: 1.0,
+            nutrients_max: 1.0,
+            minerals_max: 1.0,
+            biomass_potential_max: 1.0,
 
             sea_level_temperature_base: 0.6,
             temperature_lapse_rate: 0.4,

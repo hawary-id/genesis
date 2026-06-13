@@ -3,4 +3,5 @@
 pub mod climate;
 pub mod coord;
 pub mod generation;
+pub mod resource;
 pub mod terrain;

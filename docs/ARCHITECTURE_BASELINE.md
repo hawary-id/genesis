@@ -3,10 +3,12 @@
 ## 1. Project Status
 
 Genesis is currently in Phase 1 (Environmental Substrate).
+
 - **Milestone 1:** Core ECS setup, configuration resources, root seed structures, and simulation clock. (Locked ✅)
 - **Milestone 2:** World bounds, generation events, and canonical schedule definitions. (Locked ✅)
 - **Milestone 3:** Deterministic world generation, coordinate systems, and terrain chunk structures. (Implemented and Locked ✅)
 - **Milestone 4:** Deterministic climate generation, climate chunk structures, and daily climate updates. (Implemented and Locked ✅)
+- **Milestone 5:** Resource generation, resource chunk structures, runtime resource updates, validation systems, and deterministic resource testing. (Implemented and Locked ✅)
 
 ---
 

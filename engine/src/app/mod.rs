@@ -48,7 +48,10 @@ impl App {
         let mut schedules = world.resource_mut::<bevy_ecs::schedule::Schedules>();
         if let Some(schedule) = schedules.get_mut(FixedSimulationTick) {
             schedule.add_systems((
-                crate::world::climate::update_climate_fields,
+                crate::time::advance_simulation_clock,
+                crate::time::update_season_state.after(crate::time::advance_simulation_clock),
+                crate::world::climate::update_climate_fields
+                    .after(crate::time::update_season_state),
                 crate::world::resource::update_resource_fields
                     .after(crate::world::climate::update_climate_fields),
                 crate::world::energy::update_energy_availability_fields

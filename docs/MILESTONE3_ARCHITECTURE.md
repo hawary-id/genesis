@@ -1,7 +1,7 @@
 # Milestone 3 Architecture — World Generation
 
 **Date:** 2026-06-13
-**Status:** Approved
+**Status:** Approved and Locked  
 **Dependencies:** Milestone 1 ✅, Milestone 2 ✅
 
 ---

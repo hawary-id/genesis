@@ -4,7 +4,7 @@ use bevy_ecs::prelude::*;
 use serde::{Deserialize, Serialize};
 
 use crate::config::WorldConfig;
-use crate::time::SimulationClock;
+use crate::time::{SeasonState, SimulationClock};
 use crate::world::coord::ChunkCoord;
 use crate::world::terrain::TerrainChunk;
 
@@ -32,28 +32,6 @@ pub struct ClimateChunk {
 // ---------------------------------------------------------------------------
 // Pure climate calculation functions
 // ---------------------------------------------------------------------------
-
-/// Computes the seasonal modifier dynamically using a deterministic triangle wave.
-///
-/// Oscillates between `-1.0` and `1.0` over the course of a simulation year.
-/// Pure function.
-pub fn calculate_seasonal_modifier(total_ticks: u32, config: &WorldConfig) -> f32 {
-    let year_length_ticks =
-        config.day_length_ticks * config.season_length_days * config.seasons_per_year;
-    if year_length_ticks == 0 {
-        return 0.0;
-    }
-    let progress = (total_ticks % year_length_ticks) as f32 / year_length_ticks as f32;
-
-    // Triangle wave
-    if progress < 0.25 {
-        4.0 * progress
-    } else if progress < 0.75 {
-        2.0 - 4.0 * progress
-    } else {
-        4.0 * progress - 4.0
-    }
-}
 
 /// Computes the static sunlight (latitude) factor for global y coordinate.
 ///
@@ -111,6 +89,7 @@ pub fn calculate_rainfall(moisture: f32, temperature: f32, config: &WorldConfig)
 /// Checks clock ticks to enforce daily updates, returning early otherwise.
 pub fn update_climate_fields(
     clock: Res<SimulationClock>,
+    season_state: Res<SeasonState>,
     config: Res<WorldConfig>,
     mut query: Query<(&ChunkCoord, &TerrainChunk, &mut ClimateChunk)>,
 ) {
@@ -119,7 +98,7 @@ pub fn update_climate_fields(
         return;
     }
 
-    let seasonal_modifier = calculate_seasonal_modifier(clock.total_ticks, &config);
+    let seasonal_modifier = season_state.seasonal_modifier;
     let chunk_size = config.chunk_size;
     let world_height = config.world_height;
 
@@ -158,13 +137,13 @@ mod tests {
     fn seasonal_modifier_bounds() {
         let config = WorldConfig::default();
 
-        let m0 = calculate_seasonal_modifier(0, &config);
+        let m0 = SeasonState::derive(0, &config).seasonal_modifier;
         assert_eq!(m0, 0.0);
 
-        let m_peak = calculate_seasonal_modifier(2160, &config); // 1 season = 90 days = 2160 ticks
+        let m_peak = SeasonState::derive(2160, &config).seasonal_modifier; // 1 season = 90 days = 2160 ticks
         assert!(m_peak > 0.9 && m_peak <= 1.0);
 
-        let m_trough = calculate_seasonal_modifier(6480, &config); // 3 seasons = 6480 ticks
+        let m_trough = SeasonState::derive(6480, &config).seasonal_modifier; // 3 seasons = 6480 ticks
         assert!(m_trough < -0.9 && m_trough >= -1.0);
     }
 
@@ -188,9 +167,11 @@ mod tests {
         let chunk_size = config.chunk_size;
         let mut clock = SimulationClock::default();
         clock.total_ticks = 1; // Not a daily boundary
+        let initial_season = SeasonState::derive(clock.total_ticks, &config);
 
         world.insert_resource(config.clone());
         world.insert_resource(clock);
+        world.insert_resource(initial_season);
 
         let entity = world
             .spawn((
@@ -225,6 +206,8 @@ mod tests {
         // Advance clock to tick 24 (daily boundary)
         let mut clock = world.resource_mut::<SimulationClock>();
         clock.total_ticks = 24;
+        let mut season = world.resource_mut::<SeasonState>();
+        *season = SeasonState::derive(24, &config);
 
         // Run again
         world.run_schedule(crate::app::FixedSimulationTick);

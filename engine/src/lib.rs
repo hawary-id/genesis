@@ -5,6 +5,7 @@
 
 pub mod app;
 pub mod config;
+pub mod persistence;
 pub mod rng;
 pub mod testing;
 pub mod time;

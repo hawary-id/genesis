@@ -19,3 +19,24 @@ use bevy_ecs::prelude::Event;
 /// Consumed by: the system that enables `FixedSimulationTick` (Milestone 3).
 #[derive(Event, Debug, Clone)]
 pub struct WorldGenerationCompleted;
+
+/// Requests a snapshot at the next `PersistenceBoundary`.
+///
+/// Emitted by: `detect_snapshot_due` (automatic interval) or external callers
+/// (test harness, manual trigger).
+/// Consumed by: `handle_snapshot_requests`.
+#[derive(Event, Debug, Clone)]
+pub struct SnapshotRequested;
+
+/// Reports that a snapshot was written successfully.
+///
+/// Required because observation and test harnesses need a boundary signal
+/// for save/load workflows.
+///
+/// Emitted by: `handle_snapshot_requests` on successful write.
+/// Consumed by: test harnesses and future observation layers.
+#[derive(Event, Debug, Clone)]
+pub struct SnapshotCompleted {
+    /// Total simulation ticks at the time of snapshot.
+    pub total_ticks: u32,
+}

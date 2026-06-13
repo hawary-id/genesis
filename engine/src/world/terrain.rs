@@ -270,7 +270,7 @@ pub fn compute_slope(elevation: &[f32], local_x: u32, local_y: u32, chunk_size: 
     let dx = get(lx + 1, ly) - get(lx - 1, ly);
     let dy = get(lx, ly + 1) - get(lx, ly - 1);
 
-    ((dx * dx + dy * dy) as f32).sqrt() / 2.0
+    (dx * dx + dy * dy).sqrt() / 2.0
 }
 
 /// Computes water depth for a cell based on its elevation.

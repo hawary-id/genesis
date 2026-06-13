@@ -13,7 +13,8 @@ use bevy_ecs::schedule::IntoSystemConfigs;
 use crate::config::WorldConfig;
 use crate::rng::WorldSeed;
 
-pub use events::WorldGenerationCompleted;
+pub use events::{SnapshotCompleted, SnapshotRequested, WorldGenerationCompleted};
+pub use plugins::SnapshotConfig;
 pub use schedules::{
     FixedSimulationTick, ObservationBoundary, PersistenceBoundary, PostTickValidation,
     StartupGeneration,
@@ -38,9 +39,6 @@ impl App {
 
         plugins::register_initial_resources(&mut world, config, seed);
 
-        // Register the generation completed event resource
-        world.init_resource::<bevy_ecs::event::Events<WorldGenerationCompleted>>();
-
         // Bind the generation systems to the StartupGeneration schedule
         crate::world::generation::register_generation_systems(&mut world);
 
@@ -62,6 +60,17 @@ impl App {
         // Bind the centralized tick validation system to the PostTickValidation schedule
         if let Some(schedule) = schedules.get_mut(PostTickValidation) {
             schedule.add_systems(crate::validation::systems::validate_world_on_tick);
+        }
+
+        // Bind persistence systems to the PersistenceBoundary schedule
+        if let Some(schedule) = schedules.get_mut(PersistenceBoundary) {
+            schedule.add_systems((
+                crate::persistence::systems::detect_snapshot_due,
+                crate::persistence::systems::handle_snapshot_requests
+                    .after(crate::persistence::systems::detect_snapshot_due),
+                crate::persistence::systems::clear_persisted_dirty_markers
+                    .after(crate::persistence::systems::handle_snapshot_requests),
+            ));
         }
 
         Self { world }

@@ -9,7 +9,7 @@ use serde::{Deserialize, Serialize};
 ///
 /// Milestone 1 only defines the seed structure.
 /// RNG stream derivation will be introduced in later milestones.
-#[derive(Resource, Debug, Clone, Copy, Serialize, Deserialize)]
+#[derive(Resource, Debug, Clone, Copy, Default, Serialize, Deserialize)]
 pub struct WorldSeed {
     /// Root world seed.
     pub root_seed: u64,
@@ -19,12 +19,6 @@ impl WorldSeed {
     /// Creates a new world seed.
     pub fn new(root_seed: u64) -> Self {
         Self { root_seed }
-    }
-}
-
-impl Default for WorldSeed {
-    fn default() -> Self {
-        Self { root_seed: 0 }
     }
 }
 

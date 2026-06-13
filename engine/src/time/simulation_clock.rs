@@ -45,11 +45,9 @@ impl SimulationClock {
 
     /// Derives the current simulation day count (0-indexed) based on `total_ticks`.
     pub fn current_day(&self, config: &WorldConfig) -> u32 {
-        if config.day_length_ticks == 0 {
-            0
-        } else {
-            self.total_ticks / config.day_length_ticks
-        }
+        self.total_ticks
+            .checked_div(config.day_length_ticks)
+            .unwrap_or(0)
     }
 
     /// Derives the current simulation season index (0-indexed) based on `total_ticks`.
@@ -66,11 +64,7 @@ impl SimulationClock {
     pub fn current_year(&self, config: &WorldConfig) -> u32 {
         let ticks_per_season = config.day_length_ticks * config.season_length_days;
         let ticks_per_year = ticks_per_season * config.seasons_per_year;
-        if ticks_per_year == 0 {
-            0
-        } else {
-            self.total_ticks / ticks_per_year
-        }
+        self.total_ticks.checked_div(ticks_per_year).unwrap_or(0)
     }
 
     /// Derives the progress [0.0, 1.0) within the current season.

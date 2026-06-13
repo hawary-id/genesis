@@ -94,7 +94,7 @@ pub fn update_climate_fields(
     mut query: Query<(&ChunkCoord, &TerrainChunk, &mut ClimateChunk)>,
 ) {
     // Perform updates only on daily ticks
-    if clock.total_ticks % config.day_length_ticks != 0 {
+    if !clock.total_ticks.is_multiple_of(config.day_length_ticks) {
         return;
     }
 

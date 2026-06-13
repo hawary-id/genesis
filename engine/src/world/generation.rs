@@ -37,13 +37,13 @@ pub fn validate_world_config(config: Res<WorldConfig>) {
         "WorldConfig: world_height must be greater than zero"
     );
     assert!(
-        config.world_width % config.chunk_size == 0,
+        config.world_width.is_multiple_of(config.chunk_size),
         "WorldConfig: world_width ({}) must be perfectly divisible by chunk_size ({})",
         config.world_width,
         config.chunk_size
     );
     assert!(
-        config.world_height % config.chunk_size == 0,
+        config.world_height.is_multiple_of(config.chunk_size),
         "WorldConfig: world_height ({}) must be perfectly divisible by chunk_size ({})",
         config.world_height,
         config.chunk_size
@@ -447,6 +447,7 @@ pub fn validate_generated_world(
 /// Marks chunk entities as generated.
 ///
 /// Attaches the [`Generated`] component to chunk entities containing terrain, climate, resource, and energy data.
+#[allow(clippy::type_complexity)]
 pub fn mark_chunks_generated(
     mut commands: Commands,
     query: Query<

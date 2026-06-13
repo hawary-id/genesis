@@ -46,3 +46,15 @@ Before implementing:
 4. Identify future scalability concerns.
 
 When uncertain, choose simplicity.
+
+## Environmental Scope Rule
+
+Genesis is not a weather simulator.
+
+Genesis is not a geology simulator.
+
+Genesis is not a physics simulator.
+
+Environmental systems should only be as detailed as necessary to generate meaningful pressures for future life and civilization.
+
+When choosing between realism and emergence, prefer emergence.

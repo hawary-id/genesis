@@ -9,6 +9,7 @@ Genesis is currently in Phase 1 (Environmental Substrate).
 - **Milestone 3:** Deterministic world generation, coordinate systems, and terrain chunk structures. (Implemented and Locked ✅)
 - **Milestone 4:** Deterministic climate generation, climate chunk structures, and daily climate updates. (Implemented and Locked ✅)
 - **Milestone 5:** Resource generation, resource chunk structures, runtime resource updates, validation systems, and deterministic resource testing. (Implemented and Locked ✅)
+- **Milestone 6:** Energy Availability System Architecture (Approved and Locked ✅)
 
 ---
 

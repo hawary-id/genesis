@@ -1,11 +1,13 @@
 //! ECS systems for deterministic world generation and validation.
 
+use bevy_ecs::prelude::*;
+
 use crate::app::WorldGenerationCompleted;
 use crate::config::{WorldBounds, WorldConfig};
 use crate::rng::WorldSeed;
+use crate::world::climate::ClimateChunk;
 use crate::world::coord::ChunkCoord;
 use crate::world::terrain::TerrainChunk;
-use bevy_ecs::prelude::*;
 
 /// Marker component indicating that a chunk has completed its initial generation
 /// and passed post-generation validation.
@@ -77,43 +79,96 @@ pub fn generate_terrain_chunks(
     }
 }
 
-/// Validates that all generated terrain field values reside within configured bounds.
+/// Generates climate fields for all chunk entities populated with terrain data.
+///
+/// Iterates over entities carrying terrain information and attaches the derived
+/// [`ClimateChunk`] component containing the base climate conditions.
+pub fn generate_climate_chunks(
+    mut commands: Commands,
+    config: Res<WorldConfig>,
+    query: Query<(Entity, &ChunkCoord, &TerrainChunk), Without<ClimateChunk>>,
+) {
+    let seasonal_modifier = crate::world::climate::calculate_seasonal_modifier(0, &config);
+    let chunk_size = config.chunk_size;
+    let world_height = config.world_height;
+
+    for (entity, coord, terrain) in &query {
+        let n = (chunk_size * chunk_size) as usize;
+        let mut temperature = vec![0.0f32; n];
+        let mut moisture = vec![0.0f32; n];
+        let mut rainfall = vec![0.0f32; n];
+        let mut sunlight_factor = vec![0.0f32; n];
+
+        for idx in 0..n {
+            let ly = (idx as u32) / chunk_size;
+            let gy = coord.y * chunk_size + ly;
+
+            let sf = crate::world::climate::calculate_sunlight_factor(gy, world_height);
+            sunlight_factor[idx] = sf;
+
+            let elev = terrain.elevation[idx];
+            let temp =
+                crate::world::climate::calculate_temperature(elev, sf, seasonal_modifier, &config);
+            temperature[idx] = temp;
+
+            let wd = terrain.water_depth[idx];
+            let moist = crate::world::climate::calculate_moisture(wd, elev, &config);
+            moisture[idx] = moist;
+
+            let rain = crate::world::climate::calculate_rainfall(moist, temp, &config);
+            rainfall[idx] = rain;
+        }
+
+        commands.entity(entity).insert(ClimateChunk {
+            temperature,
+            moisture,
+            rainfall,
+            sunlight_factor,
+        });
+    }
+}
+
+/// Validates that all generated terrain and climate field values reside within configured bounds.
 ///
 /// # Panics
 ///
 /// Panics if any cell values violate `WorldConfig` ranges.
-pub fn validate_generated_terrain(config: Res<WorldConfig>, query: Query<&TerrainChunk>) {
+pub fn validate_generated_world(
+    config: Res<WorldConfig>,
+    query: Query<(&TerrainChunk, &ClimateChunk)>,
+) {
     let chunk_size = config.chunk_size as usize;
     let expected_len = chunk_size * chunk_size;
 
-    for chunk in &query {
+    for (terrain, climate) in &query {
+        // Terrain validations
         assert_eq!(
-            chunk.elevation.len(),
+            terrain.elevation.len(),
             expected_len,
             "Terrain validation: elevation array length mismatch"
         );
         assert_eq!(
-            chunk.slope.len(),
+            terrain.slope.len(),
             expected_len,
             "Terrain validation: slope array length mismatch"
         );
         assert_eq!(
-            chunk.water_depth.len(),
+            terrain.water_depth.len(),
             expected_len,
             "Terrain validation: water_depth array length mismatch"
         );
         assert_eq!(
-            chunk.soil_depth.len(),
+            terrain.soil_depth.len(),
             expected_len,
             "Terrain validation: soil_depth array length mismatch"
         );
         assert_eq!(
-            chunk.soil_fertility.len(),
+            terrain.soil_fertility.len(),
             expected_len,
             "Terrain validation: soil_fertility array length mismatch"
         );
 
-        for &val in &chunk.elevation {
+        for &val in &terrain.elevation {
             assert!(
                 val >= config.elevation_min && val <= config.elevation_max,
                 "Terrain validation: elevation value {} out of configured bounds [{}, {}]",
@@ -123,7 +178,7 @@ pub fn validate_generated_terrain(config: Res<WorldConfig>, query: Query<&Terrai
             );
         }
 
-        for &val in &chunk.slope {
+        for &val in &terrain.slope {
             assert!(
                 val >= 0.0 && val <= config.slope_max,
                 "Terrain validation: slope value {} out of configured bounds [0.0, {}]",
@@ -132,7 +187,7 @@ pub fn validate_generated_terrain(config: Res<WorldConfig>, query: Query<&Terrai
             );
         }
 
-        for &val in &chunk.water_depth {
+        for &val in &terrain.water_depth {
             assert!(
                 val >= 0.0 && val <= config.water_depth_max,
                 "Terrain validation: water_depth value {} out of configured bounds [0.0, {}]",
@@ -141,7 +196,7 @@ pub fn validate_generated_terrain(config: Res<WorldConfig>, query: Query<&Terrai
             );
         }
 
-        for &val in &chunk.soil_depth {
+        for &val in &terrain.soil_depth {
             assert!(
                 val >= 0.0 && val <= config.soil_depth_max,
                 "Terrain validation: soil_depth value {} out of configured bounds [0.0, {}]",
@@ -150,7 +205,7 @@ pub fn validate_generated_terrain(config: Res<WorldConfig>, query: Query<&Terrai
             );
         }
 
-        for &val in &chunk.soil_fertility {
+        for &val in &terrain.soil_fertility {
             assert!(
                 val >= 0.0 && val <= config.soil_fertility_max,
                 "Terrain validation: soil_fertility value {} out of configured bounds [0.0, {}]",
@@ -158,15 +213,85 @@ pub fn validate_generated_terrain(config: Res<WorldConfig>, query: Query<&Terrai
                 config.soil_fertility_max
             );
         }
+
+        // Climate validations
+        assert_eq!(
+            climate.temperature.len(),
+            expected_len,
+            "Climate validation: temperature array length mismatch"
+        );
+        assert_eq!(
+            climate.moisture.len(),
+            expected_len,
+            "Climate validation: moisture array length mismatch"
+        );
+        assert_eq!(
+            climate.rainfall.len(),
+            expected_len,
+            "Climate validation: rainfall array length mismatch"
+        );
+        assert_eq!(
+            climate.sunlight_factor.len(),
+            expected_len,
+            "Climate validation: sunlight_factor array length mismatch"
+        );
+
+        for &val in &climate.temperature {
+            assert!(
+                val >= config.temperature_min && val <= config.temperature_max,
+                "Climate validation: temperature value {} out of configured bounds [{}, {}]",
+                val,
+                config.temperature_min,
+                config.temperature_max
+            );
+        }
+
+        for &val in &climate.moisture {
+            assert!(
+                val >= config.moisture_min && val <= config.moisture_max,
+                "Climate validation: moisture value {} out of configured bounds [{}, {}]",
+                val,
+                config.moisture_min,
+                config.moisture_max
+            );
+        }
+
+        for &val in &climate.rainfall {
+            assert!(
+                val >= config.rainfall_min && val <= config.rainfall_max,
+                "Climate validation: rainfall value {} out of configured bounds [{}, {}]",
+                val,
+                config.rainfall_min,
+                config.rainfall_max
+            );
+        }
+
+        for &val in &climate.sunlight_factor {
+            assert!(
+                val >= config.sunlight_factor_min && val <= config.sunlight_factor_max,
+                "Climate validation: sunlight_factor value {} out of configured bounds [{}, {}]",
+                val,
+                config.sunlight_factor_min,
+                config.sunlight_factor_max
+            );
+        }
     }
 }
 
 /// Marks chunk entities as generated.
 ///
-/// Attaches the [`Generated`] component to chunk entities that contain a [`TerrainChunk`].
+/// Attaches the [`Generated`] component to chunk entities containing both terrain and climate data.
 pub fn mark_chunks_generated(
     mut commands: Commands,
-    query: Query<Entity, (With<ChunkCoord>, With<TerrainChunk>, Without<Generated>)>,
+    query: Query<
+        Entity,
+        (
+            With<ChunkCoord>,
+            With<TerrainChunk>,
+            With<ClimateChunk>,
+            Without<Generated>,
+        ),
+    >,
 ) {
     for entity in &query {
         commands.entity(entity).insert(Generated);
@@ -189,8 +314,9 @@ pub fn register_generation_systems(world: &mut World) {
             validate_world_config,
             spawn_chunk_entities.after(validate_world_config),
             generate_terrain_chunks.after(spawn_chunk_entities),
-            validate_generated_terrain.after(generate_terrain_chunks),
-            mark_chunks_generated.after(validate_generated_terrain),
+            generate_climate_chunks.after(generate_terrain_chunks),
+            validate_generated_world.after(generate_climate_chunks),
+            mark_chunks_generated.after(validate_generated_world),
             emit_world_generation_completed.after(mark_chunks_generated),
         ));
     }
@@ -232,7 +358,7 @@ mod tests {
         world.run_schedule(crate::app::StartupGeneration);
 
         // Check chunk count: bounds.chunks_x = 4, chunks_y = 4 => 16 chunks
-        let mut query = world.query::<(&ChunkCoord, &TerrainChunk, &Generated)>();
+        let mut query = world.query::<(&ChunkCoord, &TerrainChunk, &ClimateChunk, &Generated)>();
         let chunks: Vec<_> = query.iter(&world).collect();
         assert_eq!(chunks.len(), 16);
 

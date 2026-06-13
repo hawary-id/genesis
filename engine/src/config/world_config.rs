@@ -64,6 +64,46 @@ pub struct WorldConfig {
     /// Cells at or below this elevation receive water depth proportional
     /// to the distance below the threshold.
     pub sea_level: f32,
+
+    // -------------------------------------------------------------------------
+    // Climate validation ranges.
+    // All climate fields are normalized to [0.0, 1.0] by default.
+    // -------------------------------------------------------------------------
+    /// Minimum valid temperature.
+    pub temperature_min: f32,
+
+    /// Maximum valid temperature.
+    pub temperature_max: f32,
+
+    /// Minimum valid moisture.
+    pub moisture_min: f32,
+
+    /// Maximum valid moisture.
+    pub moisture_max: f32,
+
+    /// Minimum valid rainfall.
+    pub rainfall_min: f32,
+
+    /// Maximum valid rainfall.
+    pub rainfall_max: f32,
+
+    /// Minimum valid sunlight factor.
+    pub sunlight_factor_min: f32,
+
+    /// Maximum valid sunlight factor.
+    pub sunlight_factor_max: f32,
+
+    // -------------------------------------------------------------------------
+    // Climate generation settings.
+    // -------------------------------------------------------------------------
+    /// Baseline temperature at sea level.
+    pub sea_level_temperature_base: f32,
+
+    /// Rate of temperature decrease per unit of elevation.
+    pub temperature_lapse_rate: f32,
+
+    /// Amplitude of seasonal temperature variance.
+    pub seasonal_temperature_amplitude: f32,
 }
 
 impl Default for WorldConfig {
@@ -86,6 +126,19 @@ impl Default for WorldConfig {
             soil_depth_max: 1.0,
             soil_fertility_max: 1.0,
             sea_level: 0.35,
+
+            temperature_min: 0.0,
+            temperature_max: 1.0,
+            moisture_min: 0.0,
+            moisture_max: 1.0,
+            rainfall_min: 0.0,
+            rainfall_max: 1.0,
+            sunlight_factor_min: 0.0,
+            sunlight_factor_max: 1.0,
+
+            sea_level_temperature_base: 0.6,
+            temperature_lapse_rate: 0.4,
+            seasonal_temperature_amplitude: 0.15,
         }
     }
 }
@@ -119,6 +172,19 @@ mod tests {
         assert!(config.water_depth_max > 0.0);
         assert!(config.soil_depth_max > 0.0);
         assert!(config.soil_fertility_max > 0.0);
+
+        assert_eq!(config.temperature_min, 0.0);
+        assert_eq!(config.temperature_max, 1.0);
+        assert_eq!(config.moisture_min, 0.0);
+        assert_eq!(config.moisture_max, 1.0);
+        assert_eq!(config.rainfall_min, 0.0);
+        assert_eq!(config.rainfall_max, 1.0);
+        assert_eq!(config.sunlight_factor_min, 0.0);
+        assert_eq!(config.sunlight_factor_max, 1.0);
+
+        assert!(config.sea_level_temperature_base > 0.0);
+        assert!(config.temperature_lapse_rate > 0.0);
+        assert!(config.seasonal_temperature_amplitude > 0.0);
     }
 
     #[test]

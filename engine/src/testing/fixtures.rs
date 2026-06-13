@@ -25,6 +25,19 @@ pub fn create_test_config() -> WorldConfig {
         soil_depth_max: 1.0,
         soil_fertility_max: 1.0,
         sea_level: 0.35,
+
+        temperature_min: 0.0,
+        temperature_max: 1.0,
+        moisture_min: 0.0,
+        moisture_max: 1.0,
+        rainfall_min: 0.0,
+        rainfall_max: 1.0,
+        sunlight_factor_min: 0.0,
+        sunlight_factor_max: 1.0,
+
+        sea_level_temperature_base: 0.6,
+        temperature_lapse_rate: 0.4,
+        seasonal_temperature_amplitude: 0.15,
     }
 }
 

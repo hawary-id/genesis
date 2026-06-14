@@ -222,10 +222,21 @@ mod tests {
 
     #[test]
     fn persistence_does_not_mutate_simulation_state() {
+        use crate::world::coord::ChunkCoord;
+
         let mut app = test_app();
         app.run_startup();
 
         let ticks_before = app.world().resource::<SimulationClock>().total_ticks;
+
+        // Record chunk entity count before persistence runs.
+        // Agent entities (Milestone 11) are also present but persistence
+        // must not create or destroy chunk entities.
+        let chunk_count_before = app
+            .world_mut()
+            .query::<&ChunkCoord>()
+            .iter(app.world())
+            .count();
 
         // Manually trigger a snapshot
         app.world_mut()
@@ -240,10 +251,14 @@ mod tests {
             "PersistenceBoundary must not mutate SimulationClock"
         );
 
-        // Entity count unchanged
-        let entity_count = app.world().entities().len() as usize;
+        // Chunk entity count must be unchanged after persistence
+        let chunk_count_after = app
+            .world_mut()
+            .query::<&ChunkCoord>()
+            .iter(app.world())
+            .count();
         assert_eq!(
-            entity_count, 64,
+            chunk_count_before, chunk_count_after,
             "chunk entity count must not change after persistence"
         );
     }

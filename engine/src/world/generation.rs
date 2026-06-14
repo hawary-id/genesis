@@ -487,8 +487,10 @@ pub fn register_generation_systems(world: &mut World) {
             generate_resource_chunks.after(generate_climate_chunks),
             crate::world::energy::generate_energy_availability_chunks
                 .after(generate_resource_chunks),
-            crate::validation::systems::validate_world_on_startup
+            crate::agent::spawn_initial_agents
                 .after(crate::world::energy::generate_energy_availability_chunks),
+            crate::validation::systems::validate_world_on_startup
+                .after(crate::agent::spawn_initial_agents),
             mark_chunks_generated.after(crate::validation::systems::validate_world_on_startup),
             emit_world_generation_completed.after(mark_chunks_generated),
         ));
@@ -517,6 +519,7 @@ mod tests {
         world.insert_resource(bounds);
         world.insert_resource(seed);
         world.insert_resource(initial_season);
+        world.insert_resource(crate::agent::StableIdGenerator::new());
         world.init_resource::<Events<WorldGenerationCompleted>>();
 
         register_schedules(&mut world);

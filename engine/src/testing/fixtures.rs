@@ -52,6 +52,12 @@ pub fn create_test_config() -> WorldConfig {
         sea_level_temperature_base: 0.6,
         temperature_lapse_rate: 0.4,
         seasonal_temperature_amplitude: 0.15,
+
+        initial_agent_count: 10,
+        initial_agent_energy: 100.0,
+        agent_energy_max: 1000.0,
+        agent_age_limit: 1000,
+        agent_density_cap: 1000,
     }
 }
 

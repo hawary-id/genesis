@@ -65,4 +65,42 @@ pub enum ValidationError {
         /// The violating cell value.
         value: f32,
     },
+
+    /// Spawned agent count does not match configured target or metadata entities.
+    AgentCountMismatch {
+        /// Expected number of agents.
+        expected: usize,
+        /// Actual number of agents found.
+        actual: usize,
+    },
+
+    /// Agent spatial coordinates reside outside valid world boundary limits.
+    AgentPositionOutOfBounds {
+        /// Stable identifier of the violating agent.
+        agent_id: u64,
+        /// Violating coordinate.
+        coord: crate::world::coord::WorldCoord,
+    },
+
+    /// Multiple agents carry the same stable identifier.
+    AgentDuplicateId {
+        /// The duplicated stable identifier.
+        agent_id: u64,
+    },
+
+    /// Agent energy stock value is negative or exceeds maximum limits.
+    AgentEnergyOutOfBounds {
+        /// Stable identifier of the violating agent.
+        agent_id: u64,
+        /// Violating energy value.
+        energy: f32,
+    },
+
+    /// Agent chronological age exceeds configured limit.
+    AgentAgeOutOfBounds {
+        /// Stable identifier of the violating agent.
+        agent_id: u64,
+        /// Violating age value.
+        age: u32,
+    },
 }

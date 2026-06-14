@@ -7,6 +7,7 @@ use crate::world::coord::ChunkCoord;
 use crate::world::energy::{validate_energy_chunk, EnergyAvailabilityChunk};
 use crate::world::resource::{validate_resource_chunk, ResourceChunk};
 use crate::world::terrain::{validate_terrain_chunk, TerrainChunk};
+use crate::agent::{AgentMetadata, AgentPosition, MetabolicStock};
 use bevy_ecs::prelude::*;
 
 /// Startup validation system. Runs at the end of the `StartupGeneration` schedule.
@@ -20,6 +21,7 @@ pub fn validate_world_on_startup(
         &ResourceChunk,
         &EnergyAvailabilityChunk,
     )>,
+    agents_query: Query<(&AgentMetadata, &AgentPosition, &MetabolicStock)>,
 ) {
     let expected_chunks = (bounds.chunks_x * bounds.chunks_y) as usize;
     let actual_chunks = query.iter().count();
@@ -55,11 +57,65 @@ pub fn validate_world_on_startup(
             return;
         }
     }
+
+    // Validate agents at startup
+    let expected_agent_count = (config.initial_agent_count.min(config.agent_density_cap)) as usize;
+    let actual_agent_count = agents_query.iter().count();
+    if actual_agent_count != expected_agent_count {
+        handle_validation_error(ValidationError::AgentCountMismatch {
+            expected: expected_agent_count,
+            actual: actual_agent_count,
+        });
+        return;
+    }
+
+    // Sort agents by stable ID to guarantee order-independent verification
+    let mut agents: Vec<_> = agents_query.iter().collect();
+    agents.sort_by_key(|(meta, _, _)| meta.id);
+
+    let mut seen_ids = std::collections::HashSet::new();
+
+    for (meta, pos, stock) in agents {
+        // Unique non-zero IDs
+        if meta.id == 0 || !seen_ids.insert(meta.id) {
+            handle_validation_error(ValidationError::AgentDuplicateId {
+                agent_id: meta.id,
+            });
+            return;
+        }
+
+        // Position bounds
+        if pos.coord.x >= bounds.world_width || pos.coord.y >= bounds.world_height {
+            handle_validation_error(ValidationError::AgentPositionOutOfBounds {
+                agent_id: meta.id,
+                coord: pos.coord,
+            });
+            return;
+        }
+
+        // Initial stocks: energy must be exactly initial_agent_energy
+        if stock.energy != config.initial_agent_energy || stock.energy < 0.0 || stock.energy > config.agent_energy_max {
+            handle_validation_error(ValidationError::AgentEnergyOutOfBounds {
+                agent_id: meta.id,
+                energy: stock.energy,
+            });
+            return;
+        }
+
+        if stock.age != 0 {
+            handle_validation_error(ValidationError::AgentAgeOutOfBounds {
+                agent_id: meta.id,
+                age: stock.age,
+            });
+            return;
+        }
+    }
 }
 
 /// Tick validation system. Runs within the `PostTickValidation` schedule.
 pub fn validate_world_on_tick(
     config: Res<WorldConfig>,
+    bounds: Res<WorldBounds>,
     clock: Res<SimulationClock>,
     season_state: Res<SeasonState>,
     query: Query<(
@@ -68,6 +124,7 @@ pub fn validate_world_on_tick(
         &ResourceChunk,
         &EnergyAvailabilityChunk,
     )>,
+    agents_query: Query<(&AgentMetadata, &AgentPosition, &MetabolicStock)>,
     mut previous_tick: Local<Option<u32>>,
 ) {
     // 1. Clock monotonicity check
@@ -107,6 +164,58 @@ pub fn validate_world_on_tick(
             return;
         }
     }
+
+    // 4. Validate active agents on tick
+    let actual_agent_count = agents_query.iter().count();
+    if actual_agent_count > config.agent_density_cap as usize {
+        handle_validation_error(ValidationError::AgentCountMismatch {
+            expected: config.agent_density_cap as usize,
+            actual: actual_agent_count,
+        });
+        return;
+    }
+
+    // Sort agents by stable ID to guarantee order-independent checks
+    let mut agents: Vec<_> = agents_query.iter().collect();
+    agents.sort_by_key(|(meta, _, _)| meta.id);
+
+    let mut seen_ids = std::collections::HashSet::new();
+
+    for (meta, pos, stock) in agents {
+        // Unique non-zero IDs
+        if meta.id == 0 || !seen_ids.insert(meta.id) {
+            handle_validation_error(ValidationError::AgentDuplicateId {
+                agent_id: meta.id,
+            });
+            return;
+        }
+
+        // Position bounds
+        if pos.coord.x >= bounds.world_width || pos.coord.y >= bounds.world_height {
+            handle_validation_error(ValidationError::AgentPositionOutOfBounds {
+                agent_id: meta.id,
+                coord: pos.coord,
+            });
+            return;
+        }
+
+        // Metabolic stock limits
+        if stock.energy < 0.0 || stock.energy > config.agent_energy_max {
+            handle_validation_error(ValidationError::AgentEnergyOutOfBounds {
+                agent_id: meta.id,
+                energy: stock.energy,
+            });
+            return;
+        }
+
+        if stock.age > config.agent_age_limit {
+            handle_validation_error(ValidationError::AgentAgeOutOfBounds {
+                agent_id: meta.id,
+                age: stock.age,
+            });
+            return;
+        }
+    }
 }
 
 /// Dispatches validation errors according to compilation targets.
@@ -136,6 +245,7 @@ mod tests {
             world_width: 64,
             world_height: 64,
             chunk_size: 16,
+            initial_agent_count: 0,
             ..WorldConfig::default()
         };
         let bounds = WorldBounds::from_config(&config);
@@ -148,6 +258,7 @@ mod tests {
         world.insert_resource(seed);
         world.insert_resource(clock);
         world.insert_resource(season_state);
+        world.insert_resource(crate::agent::StableIdGenerator::new());
         world.init_resource::<Events<WorldGenerationCompleted>>();
 
         let mut schedules = bevy_ecs::schedule::Schedules::default();
@@ -349,6 +460,102 @@ mod tests {
             let mut energy = query.iter_mut(&mut world).next().unwrap();
             energy.solar_exposure[0] = 5000.0; // Limit is config.solar_exposure_max
         }
+
+        world.run_schedule(crate::app::PostTickValidation);
+    }
+
+    #[test]
+    #[should_panic(expected = "AgentDuplicateId")]
+    fn test_validation_catches_duplicate_agent_ids() {
+        let mut world = test_world();
+        world.run_schedule(crate::app::StartupGeneration);
+
+        // Spawn two agents with duplicate ID
+        world.spawn((
+            AgentMetadata::new(10),
+            AgentPosition::new(crate::world::coord::WorldCoord::new(0, 0)),
+            MetabolicStock::new(100.0, 0),
+        ));
+        world.spawn((
+            AgentMetadata::new(10),
+            AgentPosition::new(crate::world::coord::WorldCoord::new(1, 1)),
+            MetabolicStock::new(100.0, 0),
+        ));
+
+        world.run_schedule(crate::app::PostTickValidation);
+    }
+
+    #[test]
+    #[should_panic(expected = "AgentPositionOutOfBounds")]
+    fn test_validation_catches_agent_out_of_bounds() {
+        let mut world = test_world();
+        world.run_schedule(crate::app::StartupGeneration);
+
+        // Spawn agent out of bounds (world width is 64)
+        world.spawn((
+            AgentMetadata::new(1),
+            AgentPosition::new(crate::world::coord::WorldCoord::new(100, 0)),
+            MetabolicStock::new(100.0, 0),
+        ));
+
+        world.run_schedule(crate::app::PostTickValidation);
+    }
+
+    #[test]
+    #[should_panic(expected = "AgentCountMismatch")]
+    fn test_validation_catches_agent_count_mismatch() {
+        let mut world = test_world();
+        // Modify config to expect 5 agents
+        {
+            let mut config = world.resource_mut::<WorldConfig>();
+            config.initial_agent_count = 5;
+        }
+
+        // Spawn only 2 agents
+        world.spawn((
+            AgentMetadata::new(1),
+            AgentPosition::new(crate::world::coord::WorldCoord::new(0, 0)),
+            MetabolicStock::new(100.0, 0),
+        ));
+        world.spawn((
+            AgentMetadata::new(2),
+            AgentPosition::new(crate::world::coord::WorldCoord::new(1, 1)),
+            MetabolicStock::new(100.0, 0),
+        ));
+
+        // This schedule run calls validate_world_on_startup
+        world.run_schedule(crate::app::StartupGeneration);
+    }
+
+    #[test]
+    #[should_panic(expected = "AgentEnergyOutOfBounds")]
+    fn test_validation_catches_invalid_agent_stocks() {
+        let mut world = test_world();
+        world.run_schedule(crate::app::StartupGeneration);
+
+        // Spawn agent with negative energy
+        world.spawn((
+            AgentMetadata::new(1),
+            AgentPosition::new(crate::world::coord::WorldCoord::new(0, 0)),
+            MetabolicStock::new(-5.0, 0),
+        ));
+
+        world.run_schedule(crate::app::PostTickValidation);
+    }
+
+    #[test]
+    #[should_panic(expected = "AgentAgeOutOfBounds")]
+    fn test_validation_catches_invalid_agent_age() {
+        let mut world = test_world();
+        world.run_schedule(crate::app::StartupGeneration);
+
+        // Spawn agent with age exceeding config limit
+        let limit = world.resource::<WorldConfig>().agent_age_limit;
+        world.spawn((
+            AgentMetadata::new(1),
+            AgentPosition::new(crate::world::coord::WorldCoord::new(0, 0)),
+            MetabolicStock::new(100.0, limit + 1),
+        ));
 
         world.run_schedule(crate::app::PostTickValidation);
     }

@@ -3,6 +3,7 @@
 //! Genesis is an Artificial Civilization Engine built on data-oriented principles using Bevy ECS.
 //! This crate contains the core simulation engine.
 
+pub mod agent;
 pub mod app;
 pub mod config;
 pub mod persistence;

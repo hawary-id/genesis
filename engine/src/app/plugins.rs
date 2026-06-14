@@ -8,6 +8,7 @@ use serde::{Deserialize, Serialize};
 use crate::config::{WorldBounds, WorldConfig};
 use crate::rng::WorldSeed;
 use crate::time::{SeasonState, SimulationClock};
+use crate::agent::StableIdGenerator;
 
 use super::events::{SnapshotCompleted, SnapshotRequested, WorldGenerationCompleted};
 use super::schedules::register_schedules;
@@ -49,6 +50,7 @@ impl Default for SnapshotConfig {
 /// - [`WorldBounds`] — validated coordinate boundaries derived from [`WorldConfig`]
 /// - [`SeasonState`] — initial derived seasonal state
 /// - [`SnapshotConfig`] — persistence boundary configuration
+/// - [`StableIdGenerator`] — unique stable identifier generator
 ///
 /// Also registers the five Phase 1 schedule labels in canonical execution order.
 /// Also registers Phase 1 events: `WorldGenerationCompleted`, `SnapshotRequested`, `SnapshotCompleted`.
@@ -62,6 +64,7 @@ pub fn register_initial_resources(world: &mut World, config: WorldConfig, seed: 
     world.insert_resource(bounds);
     world.insert_resource(initial_season);
     world.insert_resource(SnapshotConfig::default());
+    world.insert_resource(StableIdGenerator::new());
 
     // Register events
     world.init_resource::<bevy_ecs::event::Events<WorldGenerationCompleted>>();

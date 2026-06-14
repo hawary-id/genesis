@@ -32,6 +32,11 @@ pub const TERRAIN_DOMAIN_SALT: u64 = 0x74657272_61696e00;
 /// Encodes "resource\0" as a little-endian `u64`.
 pub const RESOURCE_DOMAIN_SALT: u64 = 0x7265736f_75726365;
 
+/// Domain salt for agent seed derivation.
+///
+/// Encodes "agent\0\0\0" as a little-endian `u64`.
+pub const AGENT_DOMAIN_SALT: u64 = 0x6167656e_74000000;
+
 /// Derives the terrain domain seed from the root seed.
 pub fn derive_terrain_seed(root_seed: u64) -> u64 {
     root_seed.wrapping_add(TERRAIN_DOMAIN_SALT)
@@ -40,6 +45,11 @@ pub fn derive_terrain_seed(root_seed: u64) -> u64 {
 /// Derives the resource domain seed from the root seed.
 pub fn derive_resource_seed(root_seed: u64) -> u64 {
     root_seed.wrapping_add(RESOURCE_DOMAIN_SALT)
+}
+
+/// Derives the agent domain seed from the root seed.
+pub fn derive_agent_seed(root_seed: u64) -> u64 {
+    root_seed.wrapping_add(AGENT_DOMAIN_SALT)
 }
 
 /// Derives a deterministic seed for a single chunk.
@@ -85,6 +95,15 @@ mod tests {
         let derived_b = derive_resource_seed(root);
         assert_eq!(derived_a, derived_b);
         assert_eq!(derived_a, root.wrapping_add(RESOURCE_DOMAIN_SALT));
+    }
+
+    #[test]
+    fn agent_seed_derivation_is_deterministic() {
+        let root = 42;
+        let derived_a = derive_agent_seed(root);
+        let derived_b = derive_agent_seed(root);
+        assert_eq!(derived_a, derived_b);
+        assert_eq!(derived_a, root.wrapping_add(AGENT_DOMAIN_SALT));
     }
 
     #[test]

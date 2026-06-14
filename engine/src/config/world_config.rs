@@ -143,6 +143,24 @@ pub struct WorldConfig {
 
     /// Amplitude of seasonal temperature variance.
     pub seasonal_temperature_amplitude: f32,
+
+    // -------------------------------------------------------------------------
+    // Agent spawning and metadata settings.
+    // -------------------------------------------------------------------------
+    /// Initial number of agents spawned at startup.
+    pub initial_agent_count: u32,
+
+    /// Initial energy given to spawned agents.
+    pub initial_agent_energy: f32,
+
+    /// Maximum energy metabolic capacity for agents.
+    pub agent_energy_max: f32,
+
+    /// Chronological age limit for agents.
+    pub agent_age_limit: u32,
+
+    /// Maximum density cap for the agent population.
+    pub agent_density_cap: u32,
 }
 
 impl Default for WorldConfig {
@@ -191,6 +209,12 @@ impl Default for WorldConfig {
             sea_level_temperature_base: 0.6,
             temperature_lapse_rate: 0.4,
             seasonal_temperature_amplitude: 0.15,
+
+            initial_agent_count: 10,
+            initial_agent_energy: 100.0,
+            agent_energy_max: 1000.0,
+            agent_age_limit: 1000,
+            agent_density_cap: 1000,
         }
     }
 }

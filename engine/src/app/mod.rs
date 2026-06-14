@@ -155,6 +155,8 @@ mod tests {
 
     #[test]
     fn app_run_startup_executes_terrain_generation() {
+        use crate::world::coord::ChunkCoord;
+
         let mut app = test_app();
 
         // Before startup, no entities or completed events
@@ -167,8 +169,11 @@ mod tests {
         // Run startup generation
         app.run_startup();
 
-        // Chunks generated (test configuration: 256x256 / 32 = 8x8 = 64 chunks)
-        assert_eq!(app.world().entities().len(), 64);
+        // Chunk entities generated: test configuration is 256x256 / 32 = 8x8 = 64 chunks.
+        // Agent entities are also spawned at startup (Milestone 11) and are separate
+        // from chunk entities. Count only chunk entities to verify terrain generation.
+        let chunk_count = app.world_mut().query::<&ChunkCoord>().iter(app.world()).count();
+        assert_eq!(chunk_count, 64, "expected 64 chunk entities after startup");
 
         // Assert event was emitted
         let events = app

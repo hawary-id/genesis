@@ -58,6 +58,7 @@ pub fn create_test_config() -> WorldConfig {
         agent_energy_max: 1000.0,
         agent_age_limit: 1000,
         agent_density_cap: 1000,
+        sensing_radius: 1,
     }
 }
 

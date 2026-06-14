@@ -2,24 +2,25 @@
 
 This registry tracks the status and deliverables of all milestones in the Genesis roadmap.
 
-* **Overall Progress Estimate:** Phase 1 Complete; Phase 2 Implementation Started
+* **Overall Progress Estimate:** Phase 1 Complete; Phase 2 Implementation Ongoing
 * **Current Phase:** Phase 2 — Life
-* **Current Milestone:** Milestone 12 — Environmental Sensing Query API
+* **Current Milestone:** Milestone 13 — Metabolic Decay & Lifetimes
 
 ---
 
 ## Current Active Work
 
-* **Active Phase:** Phase 2 — Life (Milestone 11 complete and verified)
-* **Current Milestone:** Milestone 12 — Environmental Sensing Query API
+* **Active Phase:** Phase 2 — Life (Milestone 12 complete and verified)
+* **Current Milestone:** Milestone 13 — Metabolic Decay & Lifetimes
 
 ## Current Focus
 
-* Implementing environmental sensing coordinate translation and read-only chunk property queries (Milestone 12).
+* Implementing metabolic decay systems, agent aging, energy decay per tick, and starvation/age limits validation (Milestone 13).
 
 ## Next Milestone
 
-* **Milestone 12:** Environmental Sensing Query API (Phase 2, Milestone 2)
+* **Milestone 13:** Metabolic Decay & Lifetimes (Phase 2, Milestone 13)
+
 
 ---
 
@@ -124,7 +125,7 @@ This registry tracks the status and deliverables of all milestones in the Genesi
 
 ---
 
-## Phase 2 — Life (Planning Approved; Implementation Pending)
+## Phase 2 — Life (Implementation in Progress)
 
 * **Related Documents:**
   - [PHASE2_LIFE_TECH_SPEC.md](https://github.com/hawary-id/genesis/blob/main/docs/PHASE2_LIFE_TECH_SPEC.md) — Technical Specification.
@@ -144,15 +145,18 @@ This registry tracks the status and deliverables of all milestones in the Genesi
   - [agent/mod.rs](https://github.com/hawary-id/genesis/blob/main/engine/src/agent/mod.rs) — Submodule re-exports.
 
 ### Milestone 12: Environmental Sensing Query API
-* **Status:** Active
-* **Summary:** Implementing standard coordinate translation utilities and neighborhood sensing systems reading resource values from chunk components.
+* **Status:** Completed
+* **Summary:** Implemented the environmental sensing query API providing coordinates translation and read-only cell and neighborhood resource queries (nutrients and fresh water) from chunk entities. All tests are passing, ready for tag phase2-milestone-12.
 * **Dependencies:** Milestone 11.
 * **Related Documents:**
   - [PHASE2_LIFE_TECH_SPEC.md](https://github.com/hawary-id/genesis/blob/main/docs/PHASE2_LIFE_TECH_SPEC.md#coordinate-mapping) — Sensing specifications.
   - [PHASE2_IMPLEMENTATION_PLAN.md](https://github.com/hawary-id/genesis/blob/main/docs/PHASE2_IMPLEMENTATION_PLAN.md#milestone-12-environmental-sensing-query-api) — Milestone roadmap.
+* **Related Source Code:**
+  - [agent/sensing.rs](https://github.com/hawary-id/genesis/blob/main/engine/src/agent/sensing.rs) — Sensing APIs (`query_cell`, `query_neighborhood`, and `SensedResource`) and unit tests.
+  - [agent/mod.rs](https://github.com/hawary-id/genesis/blob/main/engine/src/agent/mod.rs) — Expose sensing components.
 
 ### Milestone 13: Metabolic Tick Systems
-* **Status:** Planned
+* **Status:** Active
 * **Summary:** Advancing metabolic decay and lifespan age counters on ticks, and processing removals when energy is exhausted or lifespan thresholds are crossed.
 * **Dependencies:** Milestone 12.
 * **Related Documents:**

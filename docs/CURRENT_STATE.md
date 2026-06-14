@@ -1,9 +1,10 @@
 # Current State
 
 * **Current Phase:** Phase 2 — Life
-* **Current Milestone:** Milestone 12 — Environmental Sensing Query API
+* **Current Milestone:** Milestone 13 — Metabolic Decay & Lifetimes
 * **Current Branch:** main
-* **Current Status:** Phase 2 implementation started (Milestone 11 completed and verified under tag `phase2-milestone-11`)
-* **Current Focus:** Implementing coordinate translation utilities and neighborhood sensing systems reading resource values from chunk components (Milestone 12)
-* **Next Task:** Implement neighborhood sensing queries on chunk coordinates
-* **Last Updated:** 2026-06-14T18:00:00+07:00
+* **Current Status:** Phase 2 implementation ongoing (Milestone 12 completed and verified. Repository ready for tag `phase2-milestone-12`.)
+* **Current Focus:** Implementing metabolic decay systems, agent aging, energy decay per tick, and starvation/age limits validation (Milestone 13)
+* **Next Task:** Implement age increment systems and base metabolic decay per tick
+* **Last Updated:** 2026-06-14T18:50:00+07:00
+

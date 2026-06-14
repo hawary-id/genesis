@@ -43,6 +43,11 @@ impl WorldBounds {
             chunk_size: config.chunk_size,
         }
     }
+
+    /// Checks if a global coordinate falls within the world boundaries.
+    pub fn contains_world_coord(&self, coord: crate::world::coord::WorldCoord) -> bool {
+        coord.x < self.world_width && coord.y < self.world_height
+    }
 }
 
 #[cfg(test)]

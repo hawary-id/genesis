@@ -161,6 +161,9 @@ pub struct WorldConfig {
 
     /// Maximum density cap for the agent population.
     pub agent_density_cap: u32,
+
+    /// Spatial cell distance defining neighborhood sensing bounds.
+    pub sensing_radius: u32,
 }
 
 impl Default for WorldConfig {
@@ -215,6 +218,7 @@ impl Default for WorldConfig {
             agent_energy_max: 1000.0,
             agent_age_limit: 1000,
             agent_density_cap: 1000,
+            sensing_radius: 1,
         }
     }
 }

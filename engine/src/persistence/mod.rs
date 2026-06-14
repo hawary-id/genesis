@@ -31,10 +31,10 @@ pub use io::{
     build_world_snapshot, load_world_snapshot, reconstruct_world_from_snapshot,
     write_world_snapshot,
 };
-pub use snapshot::{ChunkSnapshot, WorldSnapshot};
+pub use snapshot::{AgentSnapshot, ChunkSnapshot, WorldSnapshot};
 
 /// Current snapshot schema version.
 ///
 /// Increment this constant when the snapshot schema changes in a breaking way.
 /// All written snapshots embed this version. Load path rejects mismatches.
-pub const SNAPSHOT_SCHEMA_VERSION: u32 = 1;
+pub const SNAPSHOT_SCHEMA_VERSION: u32 = 2;

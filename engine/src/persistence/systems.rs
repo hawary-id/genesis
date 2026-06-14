@@ -8,9 +8,10 @@
 
 use bevy_ecs::prelude::*;
 
+use crate::agent::{AgentMetadata, AgentPosition, MetabolicStock, StableIdGenerator};
 use crate::app::events::{SnapshotCompleted, SnapshotRequested};
 use crate::app::plugins::SnapshotConfig;
-use crate::persistence::{build_world_snapshot, write_world_snapshot};
+use crate::persistence::{build_world_snapshot, write_world_snapshot, AgentSnapshot};
 use crate::time::SimulationClock;
 use crate::world::climate::ClimateChunk;
 use crate::world::coord::ChunkCoord;
@@ -58,12 +59,14 @@ pub fn detect_snapshot_due(
 /// 4. Emits [`SnapshotCompleted`] on success.
 ///
 /// On I/O failure, logs the error. Does not panic. Does not mutate simulation state.
+#[allow(clippy::too_many_arguments)] // Flat function parameters represent distinct Bevy resources and queries
 pub fn handle_snapshot_requests(
     mut events: EventReader<SnapshotRequested>,
     config: Res<WorldConfig>,
     seed: Res<WorldSeed>,
     clock: Res<SimulationClock>,
     snap_config: Res<SnapshotConfig>,
+    id_generator: Res<StableIdGenerator>,
     chunk_query: Query<(
         &ChunkCoord,
         &TerrainChunk,
@@ -71,6 +74,7 @@ pub fn handle_snapshot_requests(
         &ResourceChunk,
         &EnergyAvailabilityChunk,
     )>,
+    agent_query: Query<(&AgentMetadata, &AgentPosition, &MetabolicStock)>,
     mut completed: EventWriter<SnapshotCompleted>,
 ) {
     for _ in events.read() {
@@ -87,8 +91,24 @@ pub fn handle_snapshot_requests(
             })
             .collect();
 
-        let snapshot =
-            build_world_snapshot(&config, &seed, &clock, snap_config.schema_version, &chunks);
+        let agents: Vec<AgentSnapshot> = agent_query
+            .iter()
+            .map(|(metadata, position, stock)| AgentSnapshot {
+                metadata: *metadata,
+                position: *position,
+                stock: *stock,
+            })
+            .collect();
+
+        let snapshot = build_world_snapshot(
+            &config,
+            &seed,
+            &clock,
+            snap_config.schema_version,
+            &chunks,
+            &id_generator,
+            &agents,
+        );
 
         let total_ticks = snapshot.total_ticks;
 

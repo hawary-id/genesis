@@ -43,7 +43,7 @@ The configuration resource must be extended to support the following configurabl
 
 ## Implementation Roadmap
 
-### Milestone 11: Agent Data Foundation & Spawning
+### Milestone 11: Agent Data Foundation & Spawning [COMPLETED]
 *   **Objective:** Register the agent data components and implement stable spawning and initialization routines.
 *   **Deliverables:**
     - Register components satisfying the agent data responsibilities (metadata, coordinates, metabolic stocks, and action requests).
@@ -56,7 +56,7 @@ The configuration resource must be extended to support the following configurabl
     - Queries retrieve coordinates and metadata values correctly.
 *   **Risks:** ECS query iteration sorting could compromise initial test assertions if identifiers are not tracked deterministically.
 
-### Milestone 12: Environmental Sensing Query API
+### Milestone 12: Environmental Sensing Query API [COMPLETED]
 *   **Objective:** Implement coordinate-mapping queries translating agent locations to environmental chunk cells.
 *   **Deliverables:**
     - Standardize a coordinate mapping utility converting world coordinate values to chunk indices.
@@ -67,7 +67,7 @@ The configuration resource must be extended to support the following configurabl
     - Attempting queries outside of configured world bounds is validated as out-of-bounds.
 *   **Risks:** Complex neighborhood searches can introduce performance overhead if executed per-agent every tick.
 
-### Milestone 13: Metabolic Tick Systems
+### Milestone 13: Metabolic Tick Systems [COMPLETED]
 *   **Objective:** Implement metabolic energy decay and lifecycle age tracking.
 *   **Deliverables:**
     - Build a metabolism system scheduled in the simulation tick schedule that decrements energy based on base rates and environmental modifiers, and increments age.
@@ -79,7 +79,7 @@ The configuration resource must be extended to support the following configurabl
     - Agents whose energy is exhausted or whose age exceeds configured limits are successfully removed from the active population before tick validation occurs.
 *   **Risks:** Retaining dead agents past the tick boundary can cause validation invariant panics.
 
-### Milestone 14: Spatial Movement Execution
+### Milestone 14: Spatial Movement Execution [COMPLETED]
 *   **Objective:** Implement grid step transitions and constraint validation.
 *   **Deliverables:**
     - Build a movement system that reads direction choices, translates positions, and validates destinations against world boundaries, slope limits, and water barriers.
@@ -90,7 +90,7 @@ The configuration resource must be extended to support the following configurabl
     - Position values update correctly on valid steps, and energy is decremented by behavioral modifiers.
 *   **Risks:** Multi-threaded system sequencing could allow agents to move during validation; explicit sequencing constraints must block this.
 
-### Milestone 15: Persistence & Integration Testing
+### Milestone 15: Persistence & Integration Testing [COMPLETED]
 *   **Objective:** Extend snapshot saving/loading to handle agent entities and verify save/load equivalence.
 *   **Deliverables:**
     - Extend serialization systems to write sorted agent state data to snapshots.

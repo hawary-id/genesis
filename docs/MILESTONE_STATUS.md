@@ -2,25 +2,24 @@
 
 This registry tracks the status and deliverables of all milestones in the Genesis roadmap.
 
-* **Overall Progress Estimate:** Phase 1 Complete; Phase 2 Milestone 14 Completed
-* **Current Phase:** Phase 2 — Life
-* **Current Milestone:** Milestone 15 — Agent Persistence & Integration Testing
+* **Overall Progress Estimate:** Phase 1 Complete; Phase 2 Complete (Milestones 11-15 Completed)
+* **Current Phase:** Phase 3 — Evolution (Transitioning from Phase 2)
+* **Current Milestone:** Phase 2 Complete (v0.2.0-phase2 release candidate)
 
 ---
 
 ## Current Active Work
 
-* **Active Phase:** Phase 2 — Life (Milestone 14 complete and verified)
-* **Current Milestone:** Milestone 15 — Agent Persistence & Integration Testing
+* **Active Phase:** Phase 3 — Evolution
+* **Current Milestone:** Milestone 16 — Genetics, Mutation, and Inheritance (Not Started)
 
 ## Current Focus
 
-* Extending snapshot serialization to save sorted agent states, and verifying execution determinism under A+B=N save/load equivalence integration tests (Milestone 15).
+* Designing and planning genomic vectors, inheritance mapping, mutation rules, and environmental selection pressures (Phase 3).
 
 ## Next Milestone
 
-* **Milestone 15:** Persistence & Integration Testing (Phase 2, Milestone 15)
-
+* **Milestone 16:** Genetics & Heredity (Phase 3, Milestone 16)
 
 ---
 
@@ -125,7 +124,7 @@ This registry tracks the status and deliverables of all milestones in the Genesi
 
 ---
 
-## Phase 2 — Life (Implementation in Progress)
+## Phase 2 — Life (Completed)
 
 * **Related Documents:**
   - [PHASE2_LIFE_TECH_SPEC.md](https://github.com/hawary-id/genesis/blob/main/docs/PHASE2_LIFE_TECH_SPEC.md) — Technical Specification.
@@ -184,14 +183,23 @@ This registry tracks the status and deliverables of all milestones in the Genesi
   - [app/mod.rs](https://github.com/hawary-id/genesis/blob/main/engine/src/app/mod.rs) — Schedule ordering integration.
 
 ### Milestone 15: Persistence & Integration Testing
-* **Status:** Active
-* **Summary:** Extending snapshot serialization to save sorted agent states, and verifying execution determinism under A+B=N save/load equivalence integration tests.
+* **Status:** Completed
+* **Summary:** Extended snapshot serialization to save sorted agent states, and verified execution determinism under A+B=N save/load equivalence integration tests.
 * **Dependencies:** Milestone 14.
 * **Related Documents:**
   - [PHASE2_LIFE_TECH_SPEC.md](https://github.com/hawary-id/genesis/blob/main/docs/PHASE2_LIFE_TECH_SPEC.md#determinism-requirements) — Determinism rules.
   - [PHASE2_IMPLEMENTATION_PLAN.md](https://github.com/hawary-id/genesis/blob/main/docs/PHASE2_IMPLEMENTATION_PLAN.md#milestone-15-persistence--integration-testing) — Milestone roadmap.
+* **Related Source Code:**
+  - [persistence/snapshot.rs](https://github.com/hawary-id/genesis/blob/main/engine/src/persistence/snapshot.rs) — AgentSnapshot structure and schema version 2 upgrade.
+  - [persistence/io.rs](https://github.com/hawary-id/genesis/blob/main/engine/src/persistence/io.rs) — build_world_snapshot and reconstruct_world_from_snapshot.
+  - [persistence/systems.rs](https://github.com/hawary-id/genesis/blob/main/engine/src/persistence/systems.rs) — handle_snapshot_requests integration updates.
+  - [testing/fixtures.rs](https://github.com/hawary-id/genesis/blob/main/engine/src/testing/fixtures.rs) — assert_worlds_equivalent agent checks.
+  - [testing/determinism.rs](https://github.com/hawary-id/genesis/blob/main/engine/src/testing/determinism.rs) — test_long_run_stability_512 updates.
 
-### Phases 3 through 12 — Evolution, Memory, Agency, Society, Economy, Civilization
+---
+
+## Phases 3 through 12 — Evolution, Memory, Agency, Society, Economy, Civilization
+
 * **Status:** Planned
 * **Summary:** Implementation of genomes, location memories, priorities prioritization, rep trading, specialized technology trees, and institutional governance.
 * **Dependencies:** Phase 2.

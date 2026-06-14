@@ -1,34 +1,30 @@
 # Current State
 
-* **Current Phase:** Phase 2 — Life
-* **Current Milestone:** Milestone 15 — Agent Persistence & Integration Testing
+* **Current Phase:** Phase 3 — Evolution (Transitioning from Phase 2)
+* **Current Milestone:** Phase 2 Complete (v0.2.0-phase2 release candidate)
 * **Current Branch:** main
-* **Current Status:** Phase 2 implementation ongoing (Milestone 14 completed, verified, and locked under tag `phase2-milestone-14`.)
-* **Current Focus:** Extending snapshot serialization to save sorted agent states, and verifying execution determinism under A+B=N save/load equivalence integration tests (Milestone 15)
-* **Next Task:** Design and implement agent persistence and integration tests
+* **Current Status:** Phase 2 (Life) implementation is fully completed, clippy-compliant, and verified under integration/stability tests.
+* **Current Focus:** Transitioning to Phase 3 — Evolution (genetics, mutation, inheritance, and natural selection).
+* **Next Task:** Design and plan Phase 3 (Evolution) implementation roadmap.
 * **Last Verified Test Counts:**
   - `cargo test`: 124 passed, 0 failed, 1 ignored
-  - `cargo test -- --ignored`: 1 passed
+  - `cargo test -- --ignored`: 1 passed (test_long_run_stability_512 checks A+B=N save/load equivalence over 8,640 ticks / 1 simulation year)
   - `cargo clippy -- -D warnings`: PASS
-* **Last Updated:** 2026-06-14T22:45:00+07:00
+* **Last Updated:** 2026-06-15T00:45:00+07:00
+
+## Completed in Milestone 15: Persistence & Integration Testing
+
+* **Snapshot Schema Upgrade**: Upgraded snapshot version to schema version `2` in [`snapshot.rs`](file:///c:/Genesis/engine/src/persistence/snapshot.rs) to include the `StableIdGenerator` resource and a collection of `AgentSnapshot` structures.
+* **Agent & ID Generator Persistence**: Implemented saving/loading of agent metadata, positions, and metabolic stocks, along with the sequential `StableIdGenerator` counter state in [`io.rs`](file:///c:/Genesis/engine/src/persistence/io.rs).
+* **Deterministic Sorting**: Agent snapshots are automatically sorted by their stable sequence ID ascending before serialization, satisfying ADR-002 and ensuring snapshot formatting determinism.
+* **Agent Reconstruction**: The load path in `reconstruct_world_from_snapshot` spawns agent entities with a default `ActionRequest(None)` component so they integrate correctly into Bevy systems on subsequent ticks.
+* **A+B=N Equivalence Testing**: Verified using `assert_worlds_equivalent` that splitting simulation runs across a save/load boundary yields identical float/state configurations compared to a continuous run.
 
 ## Completed in Milestone 14: Agent Movement & Kinematics
 
 * **Agent Movement Execution**: Cardinal grid-cell steps are executed based on agent `ActionRequest` (`ActionIntent::MoveNorth/South/East/West`).
-* **Boundary & Terrain Validation**: Movement requests are validated against:
-  - World boundaries (`WorldBounds::contains_world_coord`)
-  - Elevation slope limit (`agent_movement_max_slope: 0.40`)
-  - Water depth limit (`agent_movement_max_water_depth: 0.30`)
-* **Movement Energy Costs**: Executes with a cost of `agent_movement_cost: 1.0` energy (clamped at `0.0`). Action request intents are cleared to `ActionIntent::None` on both success and blocked paths.
-* **Simulation Tick Sequence**: Movement executes sequentially inside the `FixedSimulationTick` schedule according to:
-  ```text
-  Climate
-  → Resource
-  → Energy
-  → Movement
-  → Metabolism
-  → Death
-  ```
+* **Boundary & Terrain Validation**: Movement requests are validated against world boundaries, elevation slope limits (0.40), and water depth limits (0.30).
+* **Movement Energy Costs**: Energy step costs are applied upon successful movement, and action request intents are cleared on all paths.
 
 ## Known Technical Debt
 

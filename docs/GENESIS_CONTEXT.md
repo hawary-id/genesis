@@ -16,13 +16,13 @@ The engine is engineered in Rust using data-oriented ECS (Entity Component Syste
 
 ## Current State
 
-* **Current Phase:** Phase 2 — Life
-* **Current Milestone:** Milestone 15 — Agent Persistence & Integration Testing
+* **Current Phase:** Phase 3 — Evolution (Transitioning from Phase 2)
+* **Current Milestone:** Phase 2 Complete (v0.2.0-phase2 release candidate)
 * **Repository Status:** Clean
 * **Build Status:** PASS (Compares cleanly with zero warnings under Clippy)
 * **Test Status:** PASS
   - Standard Test Suite: `124 passed; 0 failed; 1 ignored`
-  - Ignored Test Suite (`cargo test -- --ignored`): `1 passed` (stability check of 8,640 ticks / 1 simulation year completes successfully in 260.84s)
+  - Ignored Test Suite (`cargo test -- --ignored`): `1 passed` (stability check of 8,640 ticks / 1 simulation year completes successfully in 216.53s)
 
 ---
 
@@ -59,18 +59,18 @@ The following architectural rules are locked under ADR guidelines:
 
 ## Active Development Focus
 
-With Phase 2 planning completed and approved, focus transitions to implementing the biological simulation layer:
+With Phase 2 (Life) completed and verified, focus transitions to the evolution layer:
 * Spawning biological agent entities with stable sequence identifiers (Milestone 11 - Completed).
 * Implementing neighborhood sensory queries mapping to Phase 1 environmental chunks (Milestone 12 - Completed).
 * Driving agent lifecycle progression via metabolic decay tick updates (Milestone 13 - Completed).
 * Constraining spatial transitions under grid-cell movement rules (Milestone 14 - Completed).
-* Extending snapshot serialization and verifying execution determinism under save/load equivalence integration tests (Milestone 15).
+* Extending snapshot serialization and verifying execution determinism under save/load equivalence integration tests (Milestone 15 - Completed).
 
 ---
 
 ## Next Recommended Objectives
 
-1. **Persistence & Integration Testing (Milestone 15):** Extend snapshot serialization to save sorted agent states, and verify execution determinism under save/load equivalence integration tests.
+1. **Phase 3 Evolution Planning (Milestone 16):** Formulate technical specifications and implementation plans for the genomic representation, mutations, natural selection pressures, and inheritance models.
 
 ---
 
@@ -114,14 +114,14 @@ To load repository context quickly and efficiently while minimizing repository s
 
 ## Last Updated State
 
-* **Timestamp:** 2026-06-14T22:54:00+07:00
-* **Repository State:** Phase 2 Milestone 14 complete, verified, and locked under tag `phase2-milestone-14`.
+* **Timestamp:** 2026-06-15T00:50:00+07:00
+* **Repository State:** Phase 2 complete, verified, and locked under release candidate tag `v0.2.0-phase2`.
 
 ## Repository State
 
 * **Primary Branch:** main
 * **Active Development Branch:** main
-* **Last Verified Tag:** phase2-milestone-14
+* **Last Verified Tag:** v0.2.0-phase2
 
 ---
 
@@ -160,6 +160,8 @@ To prevent context drift and ensure long-term maintainability:
 * **ObservationBoundary**: Produces read-only summaries, logs, metrics, or telemetry diagnostics for dashboards and APIs at the very end of each tick, ensuring zero side-effects on simulation state.
 * **Deterministic Execution**: The contract (ADR-002) ensuring that a simulation progresses identically across independent runs with the same seed and config. Enforced by sequential system ordering via `.after()` and coordinate-salted RNG.
 * **World Substrate**: The complete physical and environmental foundation of the simulation world, comprised of Terrain, Climate, Resource, and Energy availability layers.
+* **StableIdGenerator**: State-tracking counter resource that assigns unique, stable sequential identifiers to spawned agent entities to prevent ID collisions upon snapshot restoration.
+* **AgentSnapshot**: Struct representing the complete serialized state (metadata, coordinates, metabolic stock) of an agent entity inside a version 2 `WorldSnapshot` payload.
 
 ---
 

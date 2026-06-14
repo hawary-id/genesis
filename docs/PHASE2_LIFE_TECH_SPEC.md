@@ -2,7 +2,7 @@
 
 ## Status
 
-This document freezes the Phase 2 Life architecture before Rust implementation begins.
+This document defines the Phase 2 Life architecture. As of June 15, 2026, all Phase 2 Milestones (11-15) have been fully implemented, verified, and locked under release candidate tag `v0.2.0-phase2`.
 
 It builds upon the completed Phase 1 Environmental Substrate and aligns with:
 - `VISION.md`

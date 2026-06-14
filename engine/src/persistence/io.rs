@@ -5,7 +5,9 @@ use std::path::Path;
 use bevy_ecs::prelude::World;
 
 use crate::config::{WorldBounds, WorldConfig};
-use crate::persistence::{ChunkSnapshot, SnapshotError, WorldSnapshot, SNAPSHOT_SCHEMA_VERSION};
+use crate::persistence::{
+    AgentSnapshot, ChunkSnapshot, SnapshotError, WorldSnapshot, SNAPSHOT_SCHEMA_VERSION,
+};
 use crate::rng::WorldSeed;
 use crate::time::{SeasonState, SimulationClock};
 use crate::world::climate::ClimateChunk;
@@ -37,6 +39,8 @@ pub fn build_world_snapshot(
         ResourceChunk,
         EnergyAvailabilityChunk,
     )],
+    id_generator: &crate::agent::StableIdGenerator,
+    agents: &[AgentSnapshot],
 ) -> WorldSnapshot {
     let mut sorted = chunks.to_vec();
     sorted.sort_by(|a, b| {
@@ -58,12 +62,17 @@ pub fn build_world_snapshot(
         )
         .collect();
 
+    let mut sorted_agents = agents.to_vec();
+    sorted_agents.sort_by_key(|a| a.metadata.id);
+
     WorldSnapshot {
         schema_version,
         total_ticks: clock.total_ticks,
         config: config.clone(),
         seed: *seed,
+        id_generator: *id_generator,
         chunks: chunk_records,
+        agents: sorted_agents,
     }
 }
 
@@ -141,6 +150,7 @@ pub fn reconstruct_world_from_snapshot(world: &mut World, snapshot: WorldSnapsho
     world.insert_resource(clock);
     world.insert_resource(bounds);
     world.insert_resource(season_state);
+    world.insert_resource(snapshot.id_generator);
 
     for chunk in snapshot.chunks {
         world.spawn((
@@ -150,6 +160,15 @@ pub fn reconstruct_world_from_snapshot(world: &mut World, snapshot: WorldSnapsho
             chunk.resources,
             chunk.energy,
             Generated,
+        ));
+    }
+
+    for agent in snapshot.agents {
+        world.spawn((
+            agent.metadata,
+            agent.position,
+            agent.stock,
+            crate::agent::ActionRequest::new(crate::agent::ActionIntent::None),
         ));
     }
 }
@@ -167,7 +186,15 @@ mod tests {
             total_ticks,
             tick_duration_hours: 1,
         };
-        build_world_snapshot(&config, &seed, &clock, SNAPSHOT_SCHEMA_VERSION, &[])
+        build_world_snapshot(
+            &config,
+            &seed,
+            &clock,
+            SNAPSHOT_SCHEMA_VERSION,
+            &[],
+            &crate::agent::StableIdGenerator::new(),
+            &[],
+        )
     }
 
     // -------------------------------------------------------------------------
@@ -182,7 +209,15 @@ mod tests {
             total_ticks: 42,
             tick_duration_hours: 1,
         };
-        let snapshot = build_world_snapshot(&config, &seed, &clock, SNAPSHOT_SCHEMA_VERSION, &[]);
+        let snapshot = build_world_snapshot(
+            &config,
+            &seed,
+            &clock,
+            SNAPSHOT_SCHEMA_VERSION,
+            &[],
+            &crate::agent::StableIdGenerator::new(),
+            &[],
+        );
         assert_eq!(snapshot.total_ticks, 42);
     }
 
@@ -220,8 +255,15 @@ mod tests {
             total_ticks: 0,
             tick_duration_hours: 1,
         };
-        let snapshot =
-            build_world_snapshot(&config, &seed, &clock, SNAPSHOT_SCHEMA_VERSION, &chunks);
+        let snapshot = build_world_snapshot(
+            &config,
+            &seed,
+            &clock,
+            SNAPSHOT_SCHEMA_VERSION,
+            &chunks,
+            &crate::agent::StableIdGenerator::new(),
+            &[],
+        );
 
         assert_eq!(snapshot.chunks.len(), chunk_count);
     }
@@ -254,8 +296,15 @@ mod tests {
             total_ticks: 0,
             tick_duration_hours: 1,
         };
-        let snapshot =
-            build_world_snapshot(&config, &seed, &clock, SNAPSHOT_SCHEMA_VERSION, &chunks);
+        let snapshot = build_world_snapshot(
+            &config,
+            &seed,
+            &clock,
+            SNAPSHOT_SCHEMA_VERSION,
+            &chunks,
+            &crate::agent::StableIdGenerator::new(),
+            &[],
+        );
 
         // Assert sorted by (y, x) ascending
         for window in snapshot.chunks.windows(2) {
@@ -290,8 +339,24 @@ mod tests {
             total_ticks: 10,
             tick_duration_hours: 1,
         };
-        let s1 = build_world_snapshot(&config, &seed, &clock, SNAPSHOT_SCHEMA_VERSION, &chunks);
-        let s2 = build_world_snapshot(&config, &seed, &clock, SNAPSHOT_SCHEMA_VERSION, &chunks);
+        let s1 = build_world_snapshot(
+            &config,
+            &seed,
+            &clock,
+            SNAPSHOT_SCHEMA_VERSION,
+            &chunks,
+            &crate::agent::StableIdGenerator::new(),
+            &[],
+        );
+        let s2 = build_world_snapshot(
+            &config,
+            &seed,
+            &clock,
+            SNAPSHOT_SCHEMA_VERSION,
+            &chunks,
+            &crate::agent::StableIdGenerator::new(),
+            &[],
+        );
 
         assert_eq!(s1.total_ticks, s2.total_ticks);
         assert_eq!(s1.chunks.len(), s2.chunks.len());
@@ -460,8 +525,15 @@ mod tests {
             total_ticks: 0,
             tick_duration_hours: 1,
         };
-        let snapshot =
-            build_world_snapshot(&config, &seed, &clock, SNAPSHOT_SCHEMA_VERSION, &chunks);
+        let snapshot = build_world_snapshot(
+            &config,
+            &seed,
+            &clock,
+            SNAPSHOT_SCHEMA_VERSION,
+            &chunks,
+            &crate::agent::StableIdGenerator::new(),
+            &[],
+        );
 
         let mut new_world = World::new();
         reconstruct_world_from_snapshot(&mut new_world, snapshot);
@@ -541,8 +613,15 @@ mod tests {
             total_ticks: 0,
             tick_duration_hours: 1,
         };
-        let snapshot =
-            build_world_snapshot(&config, &seed, &clock, SNAPSHOT_SCHEMA_VERSION, &chunks);
+        let snapshot = build_world_snapshot(
+            &config,
+            &seed,
+            &clock,
+            SNAPSHOT_SCHEMA_VERSION,
+            &chunks,
+            &crate::agent::StableIdGenerator::new(),
+            &[],
+        );
 
         let mut new_world = World::new();
         reconstruct_world_from_snapshot(&mut new_world, snapshot);
@@ -592,9 +671,30 @@ mod tests {
             .iter(world_split)
             .map(|(c, t, cl, r, e)| (*c, t.clone(), cl.clone(), r.clone(), e.clone()))
             .collect();
-        let clock = world_split.resource::<SimulationClock>();
-        let snapshot =
-            build_world_snapshot(&config, &seed, clock, SNAPSHOT_SCHEMA_VERSION, &chunks);
+        let clock = world_split.resource::<SimulationClock>().clone();
+        let id_generator = *world_split.resource::<crate::agent::StableIdGenerator>();
+        let mut agent_query = world_split.query::<(
+            &crate::agent::AgentMetadata,
+            &crate::agent::AgentPosition,
+            &crate::agent::MetabolicStock,
+        )>();
+        let agents: Vec<_> = agent_query
+            .iter(world_split)
+            .map(|(m, p, s)| crate::persistence::AgentSnapshot {
+                metadata: *m,
+                position: *p,
+                stock: *s,
+            })
+            .collect();
+        let snapshot = build_world_snapshot(
+            &config,
+            &seed,
+            &clock,
+            SNAPSHOT_SCHEMA_VERSION,
+            &chunks,
+            &id_generator,
+            &agents,
+        );
 
         // Serialize and Deserialize to simulate save/load boundary
         let json = serde_json::to_string(&snapshot).expect("serialize failed");

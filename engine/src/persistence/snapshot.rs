@@ -5,6 +5,7 @@
 
 use serde::{Deserialize, Serialize};
 
+use crate::agent::{AgentMetadata, AgentPosition, MetabolicStock, StableIdGenerator};
 use crate::config::WorldConfig;
 use crate::rng::WorldSeed;
 use crate::world::climate::ClimateChunk;
@@ -44,12 +45,33 @@ pub struct WorldSnapshot {
     /// from this root on demand.
     pub seed: WorldSeed,
 
+    /// Stable identifier generator state.
+    pub id_generator: StableIdGenerator,
+
     /// Chunk state records.
     ///
     /// Ordered by `(coord.y, coord.x)` ascending to satisfy ADR-002
     /// stable iteration requirements. The load path must not assume any
     /// other ordering.
     pub chunks: Vec<ChunkSnapshot>,
+
+    /// Agent state records.
+    ///
+    /// Ordered by stable ID ascending to guarantee deterministic persistence.
+    pub agents: Vec<AgentSnapshot>,
+}
+
+/// Complete state of one agent entity at snapshot time.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct AgentSnapshot {
+    /// Unique stable identifier metadata.
+    pub metadata: AgentMetadata,
+
+    /// Spatial grid coordinates.
+    pub position: AgentPosition,
+
+    /// Metabolic stocks (energy, age).
+    pub stock: MetabolicStock,
 }
 
 /// Complete state of one chunk entity at snapshot time.
@@ -88,9 +110,11 @@ mod tests {
             total_ticks: 0,
             config: create_test_config(),
             seed: create_test_seed(),
+            id_generator: StableIdGenerator::new(),
             chunks: vec![],
+            agents: vec![],
         };
-        assert_eq!(snapshot.schema_version, 1);
+        assert_eq!(snapshot.schema_version, 2);
     }
 
     #[test]
@@ -100,7 +124,9 @@ mod tests {
             total_ticks: 42,
             config: create_test_config(),
             seed: create_test_seed(),
+            id_generator: StableIdGenerator::new(),
             chunks: vec![],
+            agents: vec![],
         };
         assert_eq!(snapshot.total_ticks, 42);
     }
@@ -112,7 +138,9 @@ mod tests {
             total_ticks: 0,
             config: create_test_config(),
             seed: create_test_seed(),
+            id_generator: StableIdGenerator::new(),
             chunks: vec![],
+            agents: vec![],
         };
         assert!(snapshot.chunks.is_empty());
     }
@@ -179,8 +207,17 @@ mod tests {
             total_ticks: 10,
             tick_duration_hours: 1,
         };
-        let snapshot =
-            build_world_snapshot(&config, &seed, &clock, SNAPSHOT_SCHEMA_VERSION, &chunks);
+        let id_generator = StableIdGenerator::new();
+        let agents = vec![];
+        let snapshot = build_world_snapshot(
+            &config,
+            &seed,
+            &clock,
+            SNAPSHOT_SCHEMA_VERSION,
+            &chunks,
+            &id_generator,
+            &agents,
+        );
 
         let json = serde_json::to_string(&snapshot).expect("serialize should succeed");
         let deserialized: WorldSnapshot =

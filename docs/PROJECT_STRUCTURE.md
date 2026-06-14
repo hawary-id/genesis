@@ -1,6 +1,6 @@
 # Genesis Project Structure
 
-This document catalogs the directory layout and modular architecture of Project Genesis during Phase 2 (as of Milestone 13 completion). It details the purpose, responsibilities, key files, and dependencies of each submodule.
+This document catalogs the directory layout and modular architecture of Project Genesis during Phase 2 (as of Milestone 15 completion). It details the purpose, responsibilities, key files, and dependencies of each submodule.
 
 ---
 
@@ -29,7 +29,7 @@ The root workspace contains the following top-level directories:
 * **Responsibilities:** Holds the crate manifest, dependencies lists, and rust sources.
 * **Key Files:**
   - [Cargo.toml](https://github.com/hawary-id/genesis/blob/main/engine/Cargo.toml) — Engine dependencies and build targets.
-* **Dependencies:** `bevy_ecs`, `rand`, `rand_chacha`, `serde`, `serde_json`.
+* **Dependencies:** `bevy_ecs`, `serde`, `serde_json`, `rand`, `rand_chacha`.
 
 ---
 
@@ -105,20 +105,20 @@ The crate is structured into the following submodules:
 
 ### persistence/
 * **Purpose:** State snapshot serialization and file save/load.
-* **Responsibilities:** Compiles state snapshots, maps ECS components to file models, and writes/loads JSON strings.
+* **Responsibilities:** Compiles state snapshots, maps ECS components (both environmental chunk data and agent data) to schema version 2 file models, persists the StableIdGenerator resource, and writes/loads JSON strings.
 * **Key Files:**
-  - [io.rs](https://github.com/hawary-id/genesis/blob/main/engine/src/persistence/io.rs) — Stable snapshot sort serialization routines.
-  - [snapshot.rs](https://github.com/hawary-id/genesis/blob/main/engine/src/persistence/snapshot.rs) — Serialization structures.
-  - [systems.rs](https://github.com/hawary-id/genesis/blob/main/engine/src/persistence/systems.rs) — Persistence tick evaluation systems.
-* **Dependencies:** `bevy_ecs`, `config`, `time`, `world`, `serde`, `serde_json`.
+  - [io.rs](https://github.com/hawary-id/genesis/blob/main/engine/src/persistence/io.rs) — Stable snapshot sort serialization and agent load reconstruction routines.
+  - [snapshot.rs](https://github.com/hawary-id/genesis/blob/main/engine/src/persistence/snapshot.rs) — Serialization structures supporting version 2 (agents and generator state).
+  - [systems.rs](https://github.com/hawary-id/genesis/blob/main/engine/src/persistence/systems.rs) — Persistence tick evaluation systems collecting agent components.
+* **Dependencies:** `bevy_ecs`, `config`, `time`, `world`, `agent`, `serde`, `serde_json`.
 
 ### testing/
 * **Purpose:** Integration test execution.
-* **Responsibilities:** Hosts verification tests for seed sensitivity, ticking determinism, and year-long simulation stability.
+* **Responsibilities:** Hosts verification tests for seed sensitivity, ticking determinism, save/load equivalence, and year-long simulation stability with active agent populations.
 * **Key Files:**
-  - [determinism.rs](https://github.com/hawary-id/genesis/blob/main/engine/src/testing/determinism.rs) — The Milestone 10 integration test suite.
-  - [fixtures.rs](https://github.com/hawary-id/genesis/blob/main/engine/src/testing/fixtures.rs) — Test helpers and world assertions.
-* **Dependencies:** `bevy_ecs`, `app`, `config`, `rng`, `time`, `persistence`, `world`.
+  - [determinism.rs](https://github.com/hawary-id/genesis/blob/main/engine/src/testing/determinism.rs) — The integration test suite verifying determinism and long-run save/load stability.
+  - [fixtures.rs](https://github.com/hawary-id/genesis/blob/main/engine/src/testing/fixtures.rs) — Test helpers and world assertions verifying chunks, agent counts, agent states, and ID generator parity.
+* **Dependencies:** `bevy_ecs`, `app`, `config`, `rng`, `time`, `persistence`, `world`, `agent`.
 
 ---
 

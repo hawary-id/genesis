@@ -344,4 +344,40 @@ pub fn assert_worlds_equivalent(world_a: &mut World, world_b: &mut World) {
             );
         }
     }
+
+    // 6. Compare StableIdGenerator resource state
+    let id_gen_a = world_a.resource::<crate::agent::StableIdGenerator>();
+    let id_gen_b = world_b.resource::<crate::agent::StableIdGenerator>();
+    assert_eq!(id_gen_a, id_gen_b, "StableIdGenerator state mismatch");
+
+    // 7. Query and collect all agent entities from both worlds
+    let mut agent_query_a = world_a.query::<(
+        &crate::agent::AgentMetadata,
+        &crate::agent::AgentPosition,
+        &crate::agent::MetabolicStock,
+    )>();
+    let mut agents_a: Vec<_> = agent_query_a
+        .iter(world_a)
+        .map(|(m, p, s)| (*m, *p, *s))
+        .collect();
+    agents_a.sort_by_key(|a| a.0.id);
+
+    let mut agent_query_b = world_b.query::<(
+        &crate::agent::AgentMetadata,
+        &crate::agent::AgentPosition,
+        &crate::agent::MetabolicStock,
+    )>();
+    let mut agents_b: Vec<_> = agent_query_b
+        .iter(world_b)
+        .map(|(m, p, s)| (*m, *p, *s))
+        .collect();
+    agents_b.sort_by_key(|a| a.0.id);
+
+    assert_eq!(agents_a.len(), agents_b.len(), "agent count mismatch");
+
+    for (agent_a, agent_b) in agents_a.iter().zip(agents_b.iter()) {
+        assert_eq!(agent_a.0, agent_b.0, "agent metadata mismatch");
+        assert_eq!(agent_a.1, agent_b.1, "agent position mismatch");
+        assert_eq!(agent_a.2, agent_b.2, "agent metabolic stock mismatch");
+    }
 }

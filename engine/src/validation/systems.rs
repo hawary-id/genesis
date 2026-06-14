@@ -1,3 +1,4 @@
+use crate::agent::{AgentMetadata, AgentPosition, MetabolicStock};
 use crate::config::{WorldBounds, WorldConfig};
 use crate::time::season_state::validate_season_state;
 use crate::time::{SeasonState, SimulationClock};
@@ -7,7 +8,6 @@ use crate::world::coord::ChunkCoord;
 use crate::world::energy::{validate_energy_chunk, EnergyAvailabilityChunk};
 use crate::world::resource::{validate_resource_chunk, ResourceChunk};
 use crate::world::terrain::{validate_terrain_chunk, TerrainChunk};
-use crate::agent::{AgentMetadata, AgentPosition, MetabolicStock};
 use bevy_ecs::prelude::*;
 
 /// Startup validation system. Runs at the end of the `StartupGeneration` schedule.
@@ -78,9 +78,7 @@ pub fn validate_world_on_startup(
     for (meta, pos, stock) in agents {
         // Unique non-zero IDs
         if meta.id == 0 || !seen_ids.insert(meta.id) {
-            handle_validation_error(ValidationError::AgentDuplicateId {
-                agent_id: meta.id,
-            });
+            handle_validation_error(ValidationError::AgentDuplicateId { agent_id: meta.id });
             return;
         }
 
@@ -94,7 +92,10 @@ pub fn validate_world_on_startup(
         }
 
         // Initial stocks: energy must be exactly initial_agent_energy
-        if stock.energy != config.initial_agent_energy || stock.energy < 0.0 || stock.energy > config.agent_energy_max {
+        if stock.energy != config.initial_agent_energy
+            || stock.energy < 0.0
+            || stock.energy > config.agent_energy_max
+        {
             handle_validation_error(ValidationError::AgentEnergyOutOfBounds {
                 agent_id: meta.id,
                 energy: stock.energy,
@@ -184,9 +185,7 @@ pub fn validate_world_on_tick(
     for (meta, pos, stock) in agents {
         // Unique non-zero IDs
         if meta.id == 0 || !seen_ids.insert(meta.id) {
-            handle_validation_error(ValidationError::AgentDuplicateId {
-                agent_id: meta.id,
-            });
+            handle_validation_error(ValidationError::AgentDuplicateId { agent_id: meta.id });
             return;
         }
 

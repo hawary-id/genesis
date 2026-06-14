@@ -1,8 +1,8 @@
 //! ECS components for agents in Genesis.
 
+use crate::world::coord::WorldCoord;
 use bevy_ecs::prelude::Component;
 use serde::{Deserialize, Serialize};
-use crate::world::coord::WorldCoord;
 
 /// Intent of the agent behavior action request.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]

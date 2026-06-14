@@ -5,10 +5,10 @@
 use bevy_ecs::prelude::World;
 use serde::{Deserialize, Serialize};
 
+use crate::agent::StableIdGenerator;
 use crate::config::{WorldBounds, WorldConfig};
 use crate::rng::WorldSeed;
 use crate::time::{SeasonState, SimulationClock};
-use crate::agent::StableIdGenerator;
 
 use super::events::{SnapshotCompleted, SnapshotRequested, WorldGenerationCompleted};
 use super::schedules::register_schedules;

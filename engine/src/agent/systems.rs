@@ -5,11 +5,13 @@ use rand::Rng;
 use rand::SeedableRng;
 use rand_chacha::ChaCha8Rng;
 
-use crate::config::{WorldBounds, WorldConfig};
-use crate::rng::{WorldSeed, derive_agent_seed};
-use crate::world::coord::WorldCoord;
-use crate::agent::components::{AgentMetadata, AgentPosition, MetabolicStock, ActionRequest, ActionIntent};
+use crate::agent::components::{
+    ActionIntent, ActionRequest, AgentMetadata, AgentPosition, MetabolicStock,
+};
 use crate::agent::resources::StableIdGenerator;
+use crate::config::{WorldBounds, WorldConfig};
+use crate::rng::{derive_agent_seed, WorldSeed};
+use crate::world::coord::WorldCoord;
 
 /// Spawns the initial population of agents deterministically at startup.
 pub fn spawn_initial_agents(
@@ -42,9 +44,9 @@ pub fn spawn_initial_agents(
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::rng::WorldSeed;
-    use crate::config::WorldConfig;
     use crate::config::WorldBounds;
+    use crate::config::WorldConfig;
+    use crate::rng::WorldSeed;
 
     #[test]
     fn spawn_determinism() {
@@ -86,11 +88,27 @@ mod tests {
         world2.run_schedule(crate::app::StartupGeneration);
 
         // Fetch agents from both worlds
-        let mut query1 = world1.query::<(&AgentMetadata, &AgentPosition, &MetabolicStock, &ActionRequest)>();
-        let mut query2 = world2.query::<(&AgentMetadata, &AgentPosition, &MetabolicStock, &ActionRequest)>();
+        let mut query1 = world1.query::<(
+            &AgentMetadata,
+            &AgentPosition,
+            &MetabolicStock,
+            &ActionRequest,
+        )>();
+        let mut query2 = world2.query::<(
+            &AgentMetadata,
+            &AgentPosition,
+            &MetabolicStock,
+            &ActionRequest,
+        )>();
 
-        let mut agents1: Vec<_> = query1.iter(&world1).map(|(m, p, s, a)| (m.id, p.coord.x, p.coord.y, s.energy, s.age, a.intent)).collect();
-        let mut agents2: Vec<_> = query2.iter(&world2).map(|(m, p, s, a)| (m.id, p.coord.x, p.coord.y, s.energy, s.age, a.intent)).collect();
+        let mut agents1: Vec<_> = query1
+            .iter(&world1)
+            .map(|(m, p, s, a)| (m.id, p.coord.x, p.coord.y, s.energy, s.age, a.intent))
+            .collect();
+        let mut agents2: Vec<_> = query2
+            .iter(&world2)
+            .map(|(m, p, s, a)| (m.id, p.coord.x, p.coord.y, s.energy, s.age, a.intent))
+            .collect();
 
         // Sort by ID to ensure deterministic comparison
         agents1.sort_by_key(|a| a.0);
@@ -139,8 +157,14 @@ mod tests {
         let mut query1 = world1.query::<(&AgentMetadata, &AgentPosition)>();
         let mut query2 = world2.query::<(&AgentMetadata, &AgentPosition)>();
 
-        let mut agents1: Vec<_> = query1.iter(&world1).map(|(m, p)| (m.id, p.coord.x, p.coord.y)).collect();
-        let mut agents2: Vec<_> = query2.iter(&world2).map(|(m, p)| (m.id, p.coord.x, p.coord.y)).collect();
+        let mut agents1: Vec<_> = query1
+            .iter(&world1)
+            .map(|(m, p)| (m.id, p.coord.x, p.coord.y))
+            .collect();
+        let mut agents2: Vec<_> = query2
+            .iter(&world2)
+            .map(|(m, p)| (m.id, p.coord.x, p.coord.y))
+            .collect();
 
         agents1.sort_by_key(|a| a.0);
         agents2.sort_by_key(|a| a.0);

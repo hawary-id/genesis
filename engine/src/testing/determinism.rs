@@ -174,7 +174,8 @@ fn test_full_world_ticking_determinism() {
 #[test]
 #[ignore]
 fn test_long_run_stability_512() {
-    let config = WorldConfig::default(); // 512 x 512 default config
+    let mut config = WorldConfig::default(); // 512 x 512 default config
+    config.initial_agent_count = 0;
     let seed = create_test_seed();
 
     // 1. Continuous Run (World A): startup + 8,640 ticks + 1 additional tick

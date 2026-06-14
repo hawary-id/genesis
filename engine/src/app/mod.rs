@@ -172,7 +172,11 @@ mod tests {
         // Chunk entities generated: test configuration is 256x256 / 32 = 8x8 = 64 chunks.
         // Agent entities are also spawned at startup (Milestone 11) and are separate
         // from chunk entities. Count only chunk entities to verify terrain generation.
-        let chunk_count = app.world_mut().query::<&ChunkCoord>().iter(app.world()).count();
+        let chunk_count = app
+            .world_mut()
+            .query::<&ChunkCoord>()
+            .iter(app.world())
+            .count();
         assert_eq!(chunk_count, 64, "expected 64 chunk entities after startup");
 
         // Assert event was emitted

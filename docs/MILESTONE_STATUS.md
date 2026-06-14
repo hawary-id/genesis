@@ -2,25 +2,24 @@
 
 This registry tracks the status and deliverables of all milestones in the Genesis roadmap.
 
-* **Overall Progress Estimate:** Phase 1 Complete; Phase 2 Planning Complete
+* **Overall Progress Estimate:** Phase 1 Complete; Phase 2 Implementation Started
 * **Current Phase:** Phase 2 — Life
-* **Current Milestone:** Milestone 11 — Agent Data Foundation & Spawning
+* **Current Milestone:** Milestone 12 — Environmental Sensing Query API
 
 ---
 
 ## Current Active Work
 
-* **Active Phase:** Phase 2 — Life (Planning complete; Implementation not started)
-* **Current Milestone:** Milestone 11 — Agent Data Foundation & Spawning
+* **Active Phase:** Phase 2 — Life (Milestone 11 complete and verified)
+* **Current Milestone:** Milestone 12 — Environmental Sensing Query API
 
 ## Current Focus
 
-* Beginning Milestone 11 (Agent Data Foundation & Spawning).
-* Establishing agent data components, stable identifier generators, and spawning systems in Rust.
+* Implementing environmental sensing coordinate translation and read-only chunk property queries (Milestone 12).
 
 ## Next Milestone
 
-* **Milestone 11:** Agent Data Foundation & Spawning (Phase 2, Milestone 1)
+* **Milestone 12:** Environmental Sensing Query API (Phase 2, Milestone 2)
 
 ---
 
@@ -132,15 +131,20 @@ This registry tracks the status and deliverables of all milestones in the Genesi
   - [PHASE2_IMPLEMENTATION_PLAN.md](https://github.com/hawary-id/genesis/blob/main/docs/PHASE2_IMPLEMENTATION_PLAN.md) — Implementation Plan.
 
 ### Milestone 11: Agent Data Foundation & Spawning
-* **Status:** Ready
-* **Summary:** Spawning agent entities carrying data components for positions, metabolic stocks, stable sequence identifiers, and action request targets.
+* **Status:** Completed
+* **Summary:** Implemented foundational agent ECS components (`AgentMetadata`, `AgentPosition`, `MetabolicStock`, `ActionRequest`), deterministic seed derivation, stable identifier sequence generators, and spawner logic running on StartupGeneration. Extended validation framework to enforce ID uniqueness, count caps, coordinate boundary validity, and metabolic ranges.
 * **Dependencies:** Milestone 10.
 * **Related Documents:**
   - [PHASE2_LIFE_TECH_SPEC.md](https://github.com/hawary-id/genesis/blob/main/docs/PHASE2_LIFE_TECH_SPEC.md#data-ownership--functional-responsibilities) — Data layout guidelines.
   - [PHASE2_IMPLEMENTATION_PLAN.md](https://github.com/hawary-id/genesis/blob/main/docs/PHASE2_IMPLEMENTATION_PLAN.md#milestone-11-agent-data-foundation--spawning) — Milestone roadmap.
+* **Related Source Code:**
+  - [agent/components.rs](https://github.com/hawary-id/genesis/blob/main/engine/src/agent/components.rs) — ECS structures.
+  - [agent/resources.rs](https://github.com/hawary-id/genesis/blob/main/engine/src/agent/resources.rs) — Stable sequence counter.
+  - [agent/systems.rs](https://github.com/hawary-id/genesis/blob/main/engine/src/agent/systems.rs) — Spawn logic and spawn unit tests.
+  - [agent/mod.rs](https://github.com/hawary-id/genesis/blob/main/engine/src/agent/mod.rs) — Submodule re-exports.
 
 ### Milestone 12: Environmental Sensing Query API
-* **Status:** Planned
+* **Status:** Active
 * **Summary:** Implementing standard coordinate translation utilities and neighborhood sensing systems reading resource values from chunk components.
 * **Dependencies:** Milestone 11.
 * **Related Documents:**

@@ -2,14 +2,10 @@
 
 ## 1. Project Status
 
-Genesis is currently in Phase 1 (Environmental Substrate).
+Genesis is currently in Phase 2 (Life).
 
-- **Milestone 1:** Core ECS setup, configuration resources, root seed structures, and simulation clock. (Locked ✅)
-- **Milestone 2:** World bounds, generation events, and canonical schedule definitions. (Locked ✅)
-- **Milestone 3:** Deterministic world generation, coordinate systems, and terrain chunk structures. (Implemented and Locked ✅)
-- **Milestone 4:** Deterministic climate generation, climate chunk structures, and daily climate updates. (Implemented and Locked ✅)
-- **Milestone 5:** Resource generation, resource chunk structures, runtime resource updates, validation systems, and deterministic resource testing. (Implemented and Locked ✅)
-- **Milestone 6:** Energy Availability System Architecture (Approved and Locked ✅)
+- **Milestone 1-10 (Phase 1):** Complete and Locked ✅
+- **Milestone 11:** Agent Data Foundation & Spawning. (Implemented and Verified ✅)
 
 ---
 
@@ -25,11 +21,16 @@ Genesis uses Bevy ECS as its simulation framework. In accordance with data-orien
 - [`WorldBounds` (in config)](https://github.com/hawary-id/genesis/blob/main/engine/src/config/world_bounds.rs): Derived world coordinate limits, verified at startup.
 - [`WorldSeed` (in rng)](https://github.com/hawary-id/genesis/blob/main/engine/src/rng/seed.rs): Root seed resource for reproducible execution.
 - [`SimulationClock` (in time)](https://github.com/hawary-id/genesis/blob/main/engine/src/time/simulation_clock.rs): Canonically tracks monotonic tick progression.
+- [`StableIdGenerator` (in agent)](https://github.com/hawary-id/genesis/blob/main/engine/src/agent/resources.rs): Sequential agent identification counter.
 
 ### Active Components (Milestone 3 Approved)
 - `ChunkCoord`: Attaches global chunk-space indices `(x, y)` to chunk entities.
 - `TerrainChunk`: Stores cell-level variables (elevation, slope, water depth, soil depth, soil fertility) in flat, contiguous row-major vectors.
 - `Generated`: Marker component identifying chunks that completed generation.
+- `AgentMetadata` (in agent): Stores unique stable identifier for an agent.
+- `AgentPosition` (in agent): Stores coordinate representation `WorldCoord`.
+- `MetabolicStock` (in agent): Tracks agent age and current metabolic energy stocks.
+- `ActionRequest` (in agent): Holds requests for movement actions.
 
 ### Active Events
 - `WorldGenerationCompleted`: Signals that the startup generation schedule successfully finished and passed initial world validation.

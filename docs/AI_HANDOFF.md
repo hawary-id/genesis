@@ -6,23 +6,23 @@ This document serves as the immediate handoff instructions for any AI model resu
 
 ## Current Repository State
 
-* **Branch:** `main` (hash `cf6e76f`)
-* **Status:** Clean. All Phase 1 modules compile under standard profiles, and formatting (`cargo fmt`) and Clippy checks pass successfully.
-* **Test Outcome:** `98 passed, 0 failed, 1 ignored` (standard); `1 passed, 0 failed` (`--ignored` stability test).
+* **Branch:** `main`
+* **Status:** Clean. Phase 2 Milestone 11 modules compile under standard profiles, and formatting (`cargo fmt`) and Clippy checks pass successfully.
+* **Test Outcome:** `108 passed, 0 failed, 1 ignored` (standard); `1 passed, 0 failed` (`--ignored` stability test).
 
 ---
 
 ## Current Phase & Milestone
 
 * **Current Phase:** Phase 2 — Life
-* **Current Milestone:** Milestone 11 — Agent Data Foundation & Spawning (Not Started)
-* **Phase Progress:** Planning complete (Technical Spec and Implementation Plan approved; Rust implementation not started).
+* **Current Milestone:** Milestone 12 — Environmental Sensing Query API (Not Started)
+* **Phase Progress:** Milestone 11 completed and verified.
 
 ---
 
 ## Recent Major Changes
 
-* **Phase 2 Planning Completed:** Authored and approved the Phase 2 Technical Specification ([PHASE2_LIFE_TECH_SPEC.md](https://github.com/hawary-id/genesis/blob/main/docs/PHASE2_LIFE_TECH_SPEC.md)) and Implementation Plan ([PHASE2_IMPLEMENTATION_PLAN.md](https://github.com/hawary-id/genesis/blob/main/docs/PHASE2_IMPLEMENTATION_PLAN.md)) defining the biological simulation layer.
+* **Milestone 11 Completed:** Implemented agent data components (`AgentMetadata`, `AgentPosition`, `MetabolicStock`, `ActionRequest`), deterministic agent seed derivation, stable sequence ID generation (`StableIdGenerator` resource), and spawner system in Bevy startup generation schedule. Added startup validation rules.
 * **Link Portability Standardized:** Replaced all local `file:///` system references in the documentation with portable GitHub URLs.
 * **Governance Refinement:** Updated documentation authority governance to establish repository documentation as the primary source of truth, requiring clarification on conflicts.
 * **Lightweight State Registry:** Added [CURRENT_STATE.md](https://github.com/hawary-id/genesis/blob/main/docs/CURRENT_STATE.md) for high-velocity project tracking.
@@ -45,20 +45,18 @@ This document serves as the immediate handoff instructions for any AI model resu
 
 ## Current Development Target
 
-Begin Milestone 11 of Phase 2 (Life) to implement the agent data foundation and stable spawning systems.
+Begin Milestone 12 of Phase 2 (Life) to implement environmental sensing query API mapping cells to climate/resources.
 
 > [!IMPORTANT]
 > **No Architectural Redesign:** Under no circumstances should you redesign or replace the approved Phase 2 architecture, components, data responsibilities, or scheduling sequences locked in [PHASE2_LIFE_TECH_SPEC.md](https://github.com/hawary-id/genesis/blob/main/docs/PHASE2_LIFE_TECH_SPEC.md) and [PHASE2_IMPLEMENTATION_PLAN.md](https://github.com/hawary-id/genesis/blob/main/docs/PHASE2_IMPLEMENTATION_PLAN.md) without explicit human request.
 
 ## Current Open Tasks
 
-1.  **Agent Data Components (Milestone 11):** Register components satisfying agent data responsibilities: metadata with stable identifiers, physical location coordinates, metabolic energy/age stocks, and action request targets.
-2.  **Stable Identifier Generation (Milestone 11):** Implement the deterministic stable identifier generation resource.
-3.  **Agent Spawner (Milestone 11):** Implement spawning systems to initialize agents at configured coordinates with specified initial energy.
+1.  **Coordinate Mapping & Sensing Queries (Milestone 12):** Build read-only query utilities mapping coordinates to nutrient and climate arrays inside chunk entities.
 
 ## Blockers
 
-None. The Phase 2 planning files are approved and frozen.
+None.
 
 ## Human Decisions Pending
 
@@ -67,8 +65,7 @@ None for the active milestone.
 ## Safe Next Actions
 
 *   Propose a command to run tests to ensure the base compile is clean: `cargo test`.
-*   Define the layout for agent components according to the data responsibility guidelines in the technical specification.
-*   Implement unit tests that spawn an agent entity and verify the sequential assignment of unique stable identifiers.
+*   Define spatial queries linking agent locations to chunk-mapped coordinate offsets.
 
 ---
 

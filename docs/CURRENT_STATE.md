@@ -1,9 +1,9 @@
 # Current State
 
 * **Current Phase:** Phase 2 — Life
-* **Current Milestone:** Milestone 11 — Agent Data Foundation & Spawning
+* **Current Milestone:** Milestone 12 — Environmental Sensing Query API
 * **Current Branch:** main
-* **Current Status:** Phase 2 Planning Complete (Technical Spec and Implementation Plan approved; Rust implementation not started)
-* **Current Focus:** Implementing agent entities, stable identifier generators, and spawning systems (Milestone 11)
-* **Next Task:** Spawn agent entities on the grid and verify coordinates
-* **Last Updated:** 2026-06-14T11:48:03+07:00
+* **Current Status:** Phase 2 implementation started (Milestone 11 completed and verified under tag `phase2-milestone-11`)
+* **Current Focus:** Implementing coordinate translation utilities and neighborhood sensing systems reading resource values from chunk components (Milestone 12)
+* **Next Task:** Implement neighborhood sensing queries on chunk coordinates
+* **Last Updated:** 2026-06-14T18:00:00+07:00

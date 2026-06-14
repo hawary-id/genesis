@@ -41,6 +41,16 @@ All simulation logic resides under [engine/src/](https://github.com/hawary-id/ge
 
 The crate is structured into the following submodules:
 
+### agent/
+* **Purpose:** Biological agent entities structure, metadata, ID generation, and spawning.
+* **Responsibilities:** Defines agent metadata with stable sequence identifiers, spatial positions, metabolic stocks, action requests, and spawns the initial agent population deterministically.
+* **Key Files:**
+  - [components.rs](https://github.com/hawary-id/genesis/blob/main/engine/src/agent/components.rs) — Agent data structures (`AgentMetadata`, `AgentPosition`, `MetabolicStock`, `ActionRequest`).
+  - [resources.rs](https://github.com/hawary-id/genesis/blob/main/engine/src/agent/resources.rs) — `StableIdGenerator` identifier generation logic.
+  - [systems.rs](https://github.com/hawary-id/genesis/blob/main/engine/src/agent/systems.rs) — Spawning systems.
+  - [mod.rs](https://github.com/hawary-id/genesis/blob/main/engine/src/agent/mod.rs) — Submodule interface re-exports.
+* **Dependencies:** `bevy_ecs`, `config`, `rng`, `world::coord`.
+
 ### app/
 * **Purpose:** Application container bootstrap and schedule pipeline.
 * **Responsibilities:** Initializes the Bevy `World`, registers the five Phase 1 schedules, binds execution systems, and manages event signals.
@@ -127,7 +137,7 @@ The dependency graph below represents the hierarchical boundaries between Genesi
                                     │
                                     ▼
        ┌─────────────────────────────────────────────────────────┐
-       │                          world                          │
+       │                     world / agent                       │
        └────────────────────────────┬────────────────────────────┘
                                     │
                                     ▼

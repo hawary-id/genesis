@@ -16,13 +16,13 @@ The engine is engineered in Rust using data-oriented ECS (Entity Component Syste
 
 ## Current State
 
-* **Current Phase:** Phase 2 — Life (Planning complete; Implementation not started)
-* **Current Milestone:** Milestone 11 — Agent Data Foundation & Spawning
-* **Repository Status:** Clean (All phase 1 code and Phase 2 specs committed under hash `cf6e76f`)
+* **Current Phase:** Phase 2 — Life
+* **Current Milestone:** Milestone 12 — Environmental Sensing Query API
+* **Repository Status:** Clean
 * **Build Status:** PASS (Compares cleanly with zero warnings under Clippy)
 * **Test Status:** PASS
-  - Standard Test Suite: `98 passed; 0 failed; 1 ignored`
-  - Ignored Test Suite (`cargo test -- --ignored`): `1 passed` (stability check of 8,640 ticks / 1 simulation year completes successfully in 105.74s)
+  - Standard Test Suite: `108 passed; 0 failed; 1 ignored`
+  - Ignored Test Suite (`cargo test -- --ignored`): `1 passed` (stability check of 8,640 ticks / 1 simulation year completes successfully in 274.67s)
 
 ---
 
@@ -60,7 +60,7 @@ The following architectural rules are locked under ADR guidelines:
 ## Active Development Focus
 
 With Phase 2 planning completed and approved, focus transitions to implementing the biological simulation layer:
-* Spawning biological agent entities with stable sequence identifiers (Milestone 11).
+* Spawning biological agent entities with stable sequence identifiers (Milestone 11 - Completed).
 * Implementing neighborhood sensory queries mapping to Phase 1 environmental chunks (Milestone 12).
 * Driving agent lifecycle progression via metabolic decay tick updates (Milestone 13).
 * Constraining spatial transitions under grid-cell movement rules (Milestone 14).
@@ -69,9 +69,9 @@ With Phase 2 planning completed and approved, focus transitions to implementing 
 
 ## Next Recommended Objectives
 
-1. **Agent Data Foundation (Milestone 11):** Implement components satisfying data responsibilities and sequentially assign unique stable identifiers.
-2. **Environmental Sensing Queries (Milestone 12):** Build read-only query utilities mapping coordinates to nutrient and climate arrays inside chunk entities.
-3. **Metabolic Decay & Lifetimes (Milestone 13):** Increment age and apply base and environmental metabolic energy penalties per simulation tick.
+1. **Environmental Sensing Queries (Milestone 12):** Build read-only query utilities mapping coordinates to nutrient and climate arrays inside chunk entities.
+2. **Metabolic Decay & Lifetimes (Milestone 13):** Increment age and apply base and environmental metabolic energy penalties per simulation tick.
+3. **Spatial Movement Execution (Milestone 14):** Execute spatial transitions under boundary, slope, and water limits.
 
 ---
 
@@ -115,15 +115,14 @@ To load repository context quickly and efficiently while minimizing repository s
 
 ## Last Updated State
 
-* **Timestamp:** 2026-06-14T11:00:00+07:00
-* **Repository State:** Phase 1 complete, verified, and locked under tag `v0.1.0-phase1`.
+* **Timestamp:** 2026-06-14T18:00:00+07:00
+* **Repository State:** Phase 2 Milestone 11 complete, verified, and locked under tag `phase2-milestone-11`.
 
 ## Repository State
 
 * **Primary Branch:** main
 * **Active Development Branch:** main
-* **Last Verified Commit:** cf6e76fbd9940e7cc8d51434a5faca71e0cbf1b8
-* **Last Verified Tag:** v0.1.0-phase1
+* **Last Verified Tag:** phase2-milestone-11
 
 ---
 

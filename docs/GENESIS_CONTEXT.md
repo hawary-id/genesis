@@ -16,9 +16,9 @@ The engine is engineered in Rust using data-oriented ECS (Entity Component Syste
 
 ## Current State
 
-* **Current Phase:** Phase 1 — World Substrate (Persisted, deterministic physical substrate)
-* **Current Milestone:** Milestone 10 — Determinism Testing (Implementation completed, verified, and locked)
-* **Repository Status:** Clean (All phase 1 code committed under hash `3e3b542`)
+* **Current Phase:** Phase 2 — Life (Planning complete; Implementation not started)
+* **Current Milestone:** Milestone 11 — Agent Data Foundation & Spawning
+* **Repository Status:** Clean (All phase 1 code and Phase 2 specs committed under hash `cf6e76f`)
 * **Build Status:** PASS (Compares cleanly with zero warnings under Clippy)
 * **Test Status:** PASS
   - Standard Test Suite: `98 passed; 0 failed; 1 ignored`
@@ -59,17 +59,19 @@ The following architectural rules are locked under ADR guidelines:
 
 ## Active Development Focus
 
-With Phase 1 complete and verified, focus transitions to:
-* Planning and initiating Phase 2 (Life) agent mechanics.
-* Designing movement, metabolism, and decay variables for dynamic ECS entities.
+With Phase 2 planning completed and approved, focus transitions to implementing the biological simulation layer:
+* Spawning biological agent entities with stable sequence identifiers (Milestone 11).
+* Implementing neighborhood sensory queries mapping to Phase 1 environmental chunks (Milestone 12).
+* Driving agent lifecycle progression via metabolic decay tick updates (Milestone 13).
+* Constraining spatial transitions under grid-cell movement rules (Milestone 14).
 
 ---
 
 ## Next Recommended Objectives
 
-1. **Agent Entity Definition:** Create agent components (e.g. `Agent`, `Metabolism`) that can be spawned dynamically.
-2. **Environmental Query Interface:** Implement query helpers allowing agent entities to locate their chunk entity, translate world coordinates to local cell indexes, and query environmental resource values (e.g., fresh water, nutrients).
-3. **Metabolism Loop:** Implement tick systems for agent hunger, energy decay, and death.
+1. **Agent Data Foundation (Milestone 11):** Implement components satisfying data responsibilities and sequentially assign unique stable identifiers.
+2. **Environmental Sensing Queries (Milestone 12):** Build read-only query utilities mapping coordinates to nutrient and climate arrays inside chunk entities.
+3. **Metabolic Decay & Lifetimes (Milestone 13):** Increment age and apply base and environmental metabolic energy penalties per simulation tick.
 
 ---
 

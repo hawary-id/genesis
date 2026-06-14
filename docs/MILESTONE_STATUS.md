@@ -10,16 +10,16 @@ This registry tracks the status and deliverables of all milestones in the Genesi
 
 ## Current Active Work
 
-* **Active Phase:** Phase 1 Complete / Phase 2 Planning
+* **Active Phase:** Phase 2 — Life (Planning complete; Implementation not started)
 
 ## Current Focus
 
-* Transitioning from Phase 1 (Environmental Substrate) to Phase 2 (Life).
-* Planning agent component data layout, metabolism cycles, and movement/sensory systems.
+* Beginning Milestone 11 (Agent Data Foundation & Spawning).
+* Establishing agent data components, stable identifier generators, and spawning systems in Rust.
 
 ## Next Milestone
 
-* **Milestone 11:** Agent Initialization & Metabolic Loop (Phase 2, Milestone 1)
+* **Milestone 11:** Agent Data Foundation & Spawning (Phase 2, Milestone 1)
 
 ---
 
@@ -124,14 +124,51 @@ This registry tracks the status and deliverables of all milestones in the Genesi
 
 ---
 
-## Future Development Phases (Planned)
+## Phase 2 — Life (Planning Approved; Implementation Pending)
 
-### Phase 2 — Life
-* **Status:** Planned
-* **Summary:** Emergence of autonomous biological agents carrying movement, hunger, aging, and decay constraints.
-* **Dependencies:** Phase 1 (Milestones 1–10).
 * **Related Documents:**
-  - [ROADMAP.md](https://github.com/hawary-id/genesis/blob/main/docs/ROADMAP.md#L23-L41) — Phase 2 roadmap goals.
+  - [PHASE2_LIFE_TECH_SPEC.md](https://github.com/hawary-id/genesis/blob/main/docs/PHASE2_LIFE_TECH_SPEC.md) — Technical Specification.
+  - [PHASE2_IMPLEMENTATION_PLAN.md](https://github.com/hawary-id/genesis/blob/main/docs/PHASE2_IMPLEMENTATION_PLAN.md) — Implementation Plan.
+
+### Milestone 11: Agent Data Foundation & Spawning
+* **Status:** Ready
+* **Summary:** Spawning agent entities carrying data components for positions, metabolic stocks, stable sequence identifiers, and action request targets.
+* **Dependencies:** Milestone 10.
+* **Related Documents:**
+  - [PHASE2_LIFE_TECH_SPEC.md](https://github.com/hawary-id/genesis/blob/main/docs/PHASE2_LIFE_TECH_SPEC.md#data-ownership--functional-responsibilities) — Data layout guidelines.
+  - [PHASE2_IMPLEMENTATION_PLAN.md](https://github.com/hawary-id/genesis/blob/main/docs/PHASE2_IMPLEMENTATION_PLAN.md#milestone-11-agent-data-foundation--spawning) — Milestone roadmap.
+
+### Milestone 12: Environmental Sensing Query API
+* **Status:** Planned
+* **Summary:** Implementing standard coordinate translation utilities and neighborhood sensing systems reading resource values from chunk components.
+* **Dependencies:** Milestone 11.
+* **Related Documents:**
+  - [PHASE2_LIFE_TECH_SPEC.md](https://github.com/hawary-id/genesis/blob/main/docs/PHASE2_LIFE_TECH_SPEC.md#coordinate-mapping) — Sensing specifications.
+  - [PHASE2_IMPLEMENTATION_PLAN.md](https://github.com/hawary-id/genesis/blob/main/docs/PHASE2_IMPLEMENTATION_PLAN.md#milestone-12-environmental-sensing-query-api) — Milestone roadmap.
+
+### Milestone 13: Metabolic Tick Systems
+* **Status:** Planned
+* **Summary:** Advancing metabolic decay and lifespan age counters on ticks, and processing removals when energy is exhausted or lifespan thresholds are crossed.
+* **Dependencies:** Milestone 12.
+* **Related Documents:**
+  - [PHASE2_LIFE_TECH_SPEC.md](https://github.com/hawary-id/genesis/blob/main/docs/PHASE2_LIFE_TECH_SPEC.md#4-metabolism-energy-decay) — Metabolic guidelines.
+  - [PHASE2_IMPLEMENTATION_PLAN.md](https://github.com/hawary-id/genesis/blob/main/docs/PHASE2_IMPLEMENTATION_PLAN.md#milestone-13-metabolic-tick-systems) — Milestone roadmap.
+
+### Milestone 14: Spatial Movement Execution
+* **Status:** Planned
+* **Summary:** Executing grid steps on tick schedules, validating targets against boundaries, slopes, and water zones.
+* **Dependencies:** Milestone 13.
+* **Related Documents:**
+  - [PHASE2_LIFE_TECH_SPEC.md](https://github.com/hawary-id/genesis/blob/main/docs/PHASE2_LIFE_TECH_SPEC.md#2-movement-model) — Movement rules.
+  - [PHASE2_IMPLEMENTATION_PLAN.md](https://github.com/hawary-id/genesis/blob/main/docs/PHASE2_IMPLEMENTATION_PLAN.md#milestone-14-spatial-movement-execution) — Milestone roadmap.
+
+### Milestone 15: Persistence & Integration Testing
+* **Status:** Planned
+* **Summary:** Extending snapshot serialization to save sorted agent states, and verifying execution determinism under A+B=N save/load equivalence integration tests.
+* **Dependencies:** Milestone 14.
+* **Related Documents:**
+  - [PHASE2_LIFE_TECH_SPEC.md](https://github.com/hawary-id/genesis/blob/main/docs/PHASE2_LIFE_TECH_SPEC.md#determinism-requirements) — Determinism rules.
+  - [PHASE2_IMPLEMENTATION_PLAN.md](https://github.com/hawary-id/genesis/blob/main/docs/PHASE2_IMPLEMENTATION_PLAN.md#milestone-15-persistence--integration-testing) — Milestone roadmap.
 
 ### Phases 3 through 12 — Evolution, Memory, Agency, Society, Economy, Civilization
 * **Status:** Planned

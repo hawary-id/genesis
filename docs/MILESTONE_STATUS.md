@@ -2,24 +2,24 @@
 
 This registry tracks the status and deliverables of all milestones in the Genesis roadmap.
 
-* **Overall Progress Estimate:** Phase 1 Complete; Phase 2 Milestone 13 Completed
+* **Overall Progress Estimate:** Phase 1 Complete; Phase 2 Milestone 14 Completed
 * **Current Phase:** Phase 2 — Life
-* **Current Milestone:** Milestone 14 — Agent Movement & Kinematics
+* **Current Milestone:** Milestone 15 — Agent Persistence & Integration Testing
 
 ---
 
 ## Current Active Work
 
-* **Active Phase:** Phase 2 — Life (Milestone 13 complete and verified)
-* **Current Milestone:** Milestone 14 — Agent Movement & Kinematics
+* **Active Phase:** Phase 2 — Life (Milestone 14 complete and verified)
+* **Current Milestone:** Milestone 15 — Agent Persistence & Integration Testing
 
 ## Current Focus
 
-* Implementing spatial movement transitions, grid-cell movement execution, target validation against boundaries, slopes, and water zones (Milestone 14).
+* Extending snapshot serialization to save sorted agent states, and verifying execution determinism under A+B=N save/load equivalence integration tests (Milestone 15).
 
 ## Next Milestone
 
-* **Milestone 14:** Spatial Movement Execution (Phase 2, Milestone 14)
+* **Milestone 15:** Persistence & Integration Testing (Phase 2, Milestone 15)
 
 
 ---
@@ -170,15 +170,21 @@ This registry tracks the status and deliverables of all milestones in the Genesi
   - [app/mod.rs](https://github.com/hawary-id/genesis/blob/main/engine/src/app/mod.rs) — Sequenced schedule registration.
 
 ### Milestone 14: Spatial Movement Execution
-* **Status:** Active
-* **Summary:** Executing grid steps on tick schedules, validating targets against boundaries, slopes, and water zones.
+* **Status:** Completed
+* **Summary:** Implemented spatial movement execution along cardinal directions under Bevy schedules. Validates movement targets against boundaries, elevation slopes, and water zones, applying energy costs and clearing action requests on all execution paths. Deterministic behavior and movement limits were fully verified via unit tests.
 * **Dependencies:** Milestone 13.
 * **Related Documents:**
   - [PHASE2_LIFE_TECH_SPEC.md](https://github.com/hawary-id/genesis/blob/main/docs/PHASE2_LIFE_TECH_SPEC.md#2-movement-model) — Movement rules.
   - [PHASE2_IMPLEMENTATION_PLAN.md](https://github.com/hawary-id/genesis/blob/main/docs/PHASE2_IMPLEMENTATION_PLAN.md#milestone-14-spatial-movement-execution) — Milestone roadmap.
+* **Related Source Code:**
+  - [config/world_config.rs](https://github.com/hawary-id/genesis/blob/main/engine/src/config/world_config.rs) — Movement thresholds parameters.
+  - [testing/fixtures.rs](https://github.com/hawary-id/genesis/blob/main/engine/src/testing/fixtures.rs) — Fixtures updates.
+  - [agent/systems.rs](https://github.com/hawary-id/genesis/blob/main/engine/src/agent/systems.rs) — `process_agent_movement` logic and tests.
+  - [agent/mod.rs](https://github.com/hawary-id/genesis/blob/main/engine/src/agent/mod.rs) — Exporting the movement system.
+  - [app/mod.rs](https://github.com/hawary-id/genesis/blob/main/engine/src/app/mod.rs) — Schedule ordering integration.
 
 ### Milestone 15: Persistence & Integration Testing
-* **Status:** Planned
+* **Status:** Active
 * **Summary:** Extending snapshot serialization to save sorted agent states, and verifying execution determinism under A+B=N save/load equivalence integration tests.
 * **Dependencies:** Milestone 14.
 * **Related Documents:**

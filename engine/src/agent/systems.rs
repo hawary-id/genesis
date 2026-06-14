@@ -13,6 +13,7 @@ use crate::config::{WorldBounds, WorldConfig};
 use crate::rng::{derive_agent_seed, WorldSeed};
 use crate::world::climate::ClimateChunk;
 use crate::world::coord::{ChunkCoord, WorldCoord};
+use crate::world::terrain::TerrainChunk;
 
 /// Spawns the initial population of agents deterministically at startup.
 pub fn spawn_initial_agents(
@@ -107,6 +108,92 @@ pub fn process_agent_deaths(
         if stock.energy <= 0.0 || stock.age > config.agent_age_limit {
             commands.entity(entity).despawn();
         }
+    }
+}
+
+/// Processes agent movement requests, validating destinations against boundaries and terrain barriers.
+pub fn process_agent_movement(
+    config: Res<WorldConfig>,
+    bounds: Res<WorldBounds>,
+    terrain_chunks: Query<(&ChunkCoord, &TerrainChunk)>,
+    mut agents: Query<(&mut AgentPosition, &mut MetabolicStock, &mut ActionRequest)>,
+) {
+    let chunk_size = bounds.chunk_size;
+
+    for (mut pos, mut stock, mut req) in &mut agents {
+        let intent = req.intent;
+        if intent == ActionIntent::None {
+            continue;
+        }
+
+        let current_coord = pos.coord;
+        let mut target_coord = current_coord;
+
+        match intent {
+            ActionIntent::MoveNorth => {
+                if current_coord.y > 0 {
+                    target_coord.y -= 1;
+                } else {
+                    req.intent = ActionIntent::None;
+                    continue;
+                }
+            }
+            ActionIntent::MoveSouth => {
+                target_coord.y += 1;
+            }
+            ActionIntent::MoveEast => {
+                target_coord.x += 1;
+            }
+            ActionIntent::MoveWest => {
+                if current_coord.x > 0 {
+                    target_coord.x -= 1;
+                } else {
+                    req.intent = ActionIntent::None;
+                    continue;
+                }
+            }
+            ActionIntent::None => unreachable!(),
+        }
+
+        // Validate boundary constraints
+        if !bounds.contains_world_coord(target_coord) {
+            req.intent = ActionIntent::None;
+            continue;
+        }
+
+        // Translate cell coordinate to chunk index
+        let target_chunk = crate::world::coord::world_to_chunk(target_coord, chunk_size);
+        let local_coord = crate::world::coord::world_to_local(target_coord, chunk_size);
+        let index = (local_coord.y * chunk_size + local_coord.x) as usize;
+
+        // Retrieve local cell terrain
+        let mut local_terrain = None;
+        for (chunk_coord, chunk) in &terrain_chunks {
+            if *chunk_coord == target_chunk {
+                if index < chunk.slope.len() && index < chunk.water_depth.len() {
+                    local_terrain = Some((chunk.slope[index], chunk.water_depth[index]));
+                }
+                break;
+            }
+        }
+
+        let Some((slope, water_depth)) = local_terrain else {
+            req.intent = ActionIntent::None;
+            continue;
+        };
+
+        // Validate slope and water constraints
+        if slope > config.agent_movement_max_slope
+            || water_depth > config.agent_movement_max_water_depth
+        {
+            req.intent = ActionIntent::None;
+            continue;
+        }
+
+        // Apply successful movement and deduct energy cost
+        pos.coord = target_coord;
+        stock.energy = (stock.energy - config.agent_movement_cost).max(0.0);
+        req.intent = ActionIntent::None;
     }
 }
 
@@ -620,6 +707,232 @@ mod tests {
         assert!(
             world.get_entity(a1).is_none(),
             "agent at age limit should be despawned after metabolism increment"
+        );
+    }
+
+    #[test]
+    fn test_movement_success() {
+        let mut world = World::new();
+        let config = WorldConfig::default();
+        let bounds = WorldBounds::from_config(&config);
+        world.insert_resource(config);
+        world.insert_resource(bounds);
+
+        let chunk_size = 32;
+        let expected_len = (chunk_size * chunk_size) as usize;
+        world.spawn((
+            ChunkCoord::new(0, 0),
+            TerrainChunk {
+                elevation: vec![0.0; expected_len],
+                slope: vec![0.0; expected_len],
+                water_depth: vec![0.0; expected_len],
+                soil_depth: vec![0.0; expected_len],
+                soil_fertility: vec![0.0; expected_len],
+            },
+        ));
+
+        let entity = world
+            .spawn((
+                AgentPosition::new(WorldCoord::new(0, 0)),
+                MetabolicStock::new(100.0, 0),
+                ActionRequest::new(ActionIntent::MoveSouth),
+            ))
+            .id();
+
+        let mut schedule = Schedule::new(crate::app::FixedSimulationTick);
+        schedule.add_systems(process_agent_movement);
+        world.add_schedule(schedule);
+
+        world.run_schedule(crate::app::FixedSimulationTick);
+
+        let pos = world.entity(entity).get::<AgentPosition>().unwrap();
+        let stock = world.entity(entity).get::<MetabolicStock>().unwrap();
+        let req = world.entity(entity).get::<ActionRequest>().unwrap();
+
+        assert_eq!(pos.coord, WorldCoord::new(0, 1));
+        assert_eq!(stock.energy, 99.0);
+        assert_eq!(req.intent, ActionIntent::None);
+    }
+
+    #[test]
+    fn test_movement_boundary_clamp() {
+        let mut world = World::new();
+        let config = WorldConfig::default();
+        let bounds = WorldBounds::from_config(&config);
+        world.insert_resource(config);
+        world.insert_resource(bounds);
+
+        let entity = world
+            .spawn((
+                AgentPosition::new(WorldCoord::new(0, 0)),
+                MetabolicStock::new(100.0, 0),
+                ActionRequest::new(ActionIntent::MoveNorth),
+            ))
+            .id();
+
+        let mut schedule = Schedule::new(crate::app::FixedSimulationTick);
+        schedule.add_systems(process_agent_movement);
+        world.add_schedule(schedule);
+
+        world.run_schedule(crate::app::FixedSimulationTick);
+
+        let pos = world.entity(entity).get::<AgentPosition>().unwrap();
+        let stock = world.entity(entity).get::<MetabolicStock>().unwrap();
+        let req = world.entity(entity).get::<ActionRequest>().unwrap();
+
+        assert_eq!(pos.coord, WorldCoord::new(0, 0));
+        assert_eq!(stock.energy, 100.0);
+        assert_eq!(req.intent, ActionIntent::None);
+    }
+
+    #[test]
+    fn test_movement_slope_barrier() {
+        let mut world = World::new();
+        let config = WorldConfig::default();
+        let bounds = WorldBounds::from_config(&config);
+        world.insert_resource(config);
+        world.insert_resource(bounds);
+
+        let chunk_size = 32;
+        let expected_len = (chunk_size * chunk_size) as usize;
+        let mut slope = vec![0.0; expected_len];
+        // Target is index 1 i.e. (1, 0)
+        slope[1] = 0.5;
+
+        world.spawn((
+            ChunkCoord::new(0, 0),
+            TerrainChunk {
+                elevation: vec![0.0; expected_len],
+                slope,
+                water_depth: vec![0.0; expected_len],
+                soil_depth: vec![0.0; expected_len],
+                soil_fertility: vec![0.0; expected_len],
+            },
+        ));
+
+        let entity = world
+            .spawn((
+                AgentPosition::new(WorldCoord::new(0, 0)),
+                MetabolicStock::new(100.0, 0),
+                ActionRequest::new(ActionIntent::MoveEast),
+            ))
+            .id();
+
+        let mut schedule = Schedule::new(crate::app::FixedSimulationTick);
+        schedule.add_systems(process_agent_movement);
+        world.add_schedule(schedule);
+
+        world.run_schedule(crate::app::FixedSimulationTick);
+
+        let pos = world.entity(entity).get::<AgentPosition>().unwrap();
+        let stock = world.entity(entity).get::<MetabolicStock>().unwrap();
+        let req = world.entity(entity).get::<ActionRequest>().unwrap();
+
+        assert_eq!(pos.coord, WorldCoord::new(0, 0));
+        assert_eq!(stock.energy, 100.0);
+        assert_eq!(req.intent, ActionIntent::None);
+    }
+
+    #[test]
+    fn test_movement_water_barrier() {
+        let mut world = World::new();
+        let config = WorldConfig::default();
+        let bounds = WorldBounds::from_config(&config);
+        world.insert_resource(config);
+        world.insert_resource(bounds);
+
+        let chunk_size = 32;
+        let expected_len = (chunk_size * chunk_size) as usize;
+        let mut water_depth = vec![0.0; expected_len];
+        // Target is index 1 i.e. (1, 0)
+        water_depth[1] = 0.35;
+
+        world.spawn((
+            ChunkCoord::new(0, 0),
+            TerrainChunk {
+                elevation: vec![0.0; expected_len],
+                slope: vec![0.0; expected_len],
+                water_depth,
+                soil_depth: vec![0.0; expected_len],
+                soil_fertility: vec![0.0; expected_len],
+            },
+        ));
+
+        let entity = world
+            .spawn((
+                AgentPosition::new(WorldCoord::new(0, 0)),
+                MetabolicStock::new(100.0, 0),
+                ActionRequest::new(ActionIntent::MoveEast),
+            ))
+            .id();
+
+        let mut schedule = Schedule::new(crate::app::FixedSimulationTick);
+        schedule.add_systems(process_agent_movement);
+        world.add_schedule(schedule);
+
+        world.run_schedule(crate::app::FixedSimulationTick);
+
+        let pos = world.entity(entity).get::<AgentPosition>().unwrap();
+        let stock = world.entity(entity).get::<MetabolicStock>().unwrap();
+        let req = world.entity(entity).get::<ActionRequest>().unwrap();
+
+        assert_eq!(pos.coord, WorldCoord::new(0, 0));
+        assert_eq!(stock.energy, 100.0);
+        assert_eq!(req.intent, ActionIntent::None);
+    }
+
+    #[test]
+    fn test_movement_action_clearing() {
+        let mut world = World::new();
+        let config = WorldConfig::default();
+        let bounds = WorldBounds::from_config(&config);
+        world.insert_resource(config);
+        world.insert_resource(bounds);
+
+        let chunk_size = 32;
+        let expected_len = (chunk_size * chunk_size) as usize;
+        world.spawn((
+            ChunkCoord::new(0, 0),
+            TerrainChunk {
+                elevation: vec![0.0; expected_len],
+                slope: vec![0.0; expected_len],
+                water_depth: vec![0.0; expected_len],
+                soil_depth: vec![0.0; expected_len],
+                soil_fertility: vec![0.0; expected_len],
+            },
+        ));
+
+        // Successful path
+        let entity1 = world
+            .spawn((
+                AgentPosition::new(WorldCoord::new(0, 0)),
+                MetabolicStock::new(100.0, 0),
+                ActionRequest::new(ActionIntent::MoveSouth),
+            ))
+            .id();
+
+        // Blocked path (boundary clamp)
+        let entity2 = world
+            .spawn((
+                AgentPosition::new(WorldCoord::new(0, 0)),
+                MetabolicStock::new(100.0, 0),
+                ActionRequest::new(ActionIntent::MoveNorth),
+            ))
+            .id();
+
+        let mut schedule = Schedule::new(crate::app::FixedSimulationTick);
+        schedule.add_systems(process_agent_movement);
+        world.add_schedule(schedule);
+
+        world.run_schedule(crate::app::FixedSimulationTick);
+
+        assert_eq!(
+            world.entity(entity1).get::<ActionRequest>().unwrap().intent,
+            ActionIntent::None
+        );
+        assert_eq!(
+            world.entity(entity2).get::<ActionRequest>().unwrap().intent,
+            ActionIntent::None
         );
     }
 }

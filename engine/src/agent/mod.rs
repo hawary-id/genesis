@@ -8,4 +8,4 @@ pub mod systems;
 pub use components::{ActionIntent, ActionRequest, AgentMetadata, AgentPosition, MetabolicStock};
 pub use resources::StableIdGenerator;
 pub use sensing::{query_cell, query_neighborhood, SensedResource};
-pub use systems::spawn_initial_agents;
+pub use systems::{process_agent_deaths, spawn_initial_agents, update_agent_metabolism};

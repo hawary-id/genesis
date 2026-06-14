@@ -2,24 +2,24 @@
 
 This registry tracks the status and deliverables of all milestones in the Genesis roadmap.
 
-* **Overall Progress Estimate:** Phase 1 Complete; Phase 2 Implementation Ongoing
+* **Overall Progress Estimate:** Phase 1 Complete; Phase 2 Milestone 13 Completed
 * **Current Phase:** Phase 2 — Life
-* **Current Milestone:** Milestone 13 — Metabolic Decay & Lifetimes
+* **Current Milestone:** Milestone 14 — Agent Movement & Kinematics
 
 ---
 
 ## Current Active Work
 
-* **Active Phase:** Phase 2 — Life (Milestone 12 complete and verified)
-* **Current Milestone:** Milestone 13 — Metabolic Decay & Lifetimes
+* **Active Phase:** Phase 2 — Life (Milestone 13 complete and verified)
+* **Current Milestone:** Milestone 14 — Agent Movement & Kinematics
 
 ## Current Focus
 
-* Implementing metabolic decay systems, agent aging, energy decay per tick, and starvation/age limits validation (Milestone 13).
+* Implementing spatial movement transitions, grid-cell movement execution, target validation against boundaries, slopes, and water zones (Milestone 14).
 
 ## Next Milestone
 
-* **Milestone 13:** Metabolic Decay & Lifetimes (Phase 2, Milestone 13)
+* **Milestone 14:** Spatial Movement Execution (Phase 2, Milestone 14)
 
 
 ---
@@ -156,15 +156,21 @@ This registry tracks the status and deliverables of all milestones in the Genesi
   - [agent/mod.rs](https://github.com/hawary-id/genesis/blob/main/engine/src/agent/mod.rs) — Expose sensing components.
 
 ### Milestone 13: Metabolic Tick Systems
-* **Status:** Active
-* **Summary:** Advancing metabolic decay and lifespan age counters on ticks, and processing removals when energy is exhausted or lifespan thresholds are crossed.
+* **Status:** Completed
+* **Summary:** Implemented metabolic decay updates using the approved absolute difference penalty formula, chronological agent aging (using `saturating_add(1)`), and agent removal on tick boundaries when energy <= 0.0 or age > agent_age_limit. Registered systems in FixedSimulationTick schedule (metabolism sequentially after climate/resource/energy updates; death processing sequentially after metabolism).
 * **Dependencies:** Milestone 12.
 * **Related Documents:**
   - [PHASE2_LIFE_TECH_SPEC.md](https://github.com/hawary-id/genesis/blob/main/docs/PHASE2_LIFE_TECH_SPEC.md#4-metabolism-energy-decay) — Metabolic guidelines.
   - [PHASE2_IMPLEMENTATION_PLAN.md](https://github.com/hawary-id/genesis/blob/main/docs/PHASE2_IMPLEMENTATION_PLAN.md#milestone-13-metabolic-tick-systems) — Milestone roadmap.
+* **Related Source Code:**
+  - [config/world_config.rs](https://github.com/hawary-id/genesis/blob/main/engine/src/config/world_config.rs) — Metabolic decay configurations.
+  - [testing/fixtures.rs](https://github.com/hawary-id/genesis/blob/main/engine/src/testing/fixtures.rs) — Test configurations setup.
+  - [agent/systems.rs](https://github.com/hawary-id/genesis/blob/main/engine/src/agent/systems.rs) — `update_agent_metabolism` and `process_agent_deaths` systems and test suite.
+  - [agent/mod.rs](https://github.com/hawary-id/genesis/blob/main/engine/src/agent/mod.rs) — Agent module re-exports.
+  - [app/mod.rs](https://github.com/hawary-id/genesis/blob/main/engine/src/app/mod.rs) — Sequenced schedule registration.
 
 ### Milestone 14: Spatial Movement Execution
-* **Status:** Planned
+* **Status:** Active
 * **Summary:** Executing grid steps on tick schedules, validating targets against boundaries, slopes, and water zones.
 * **Dependencies:** Milestone 13.
 * **Related Documents:**

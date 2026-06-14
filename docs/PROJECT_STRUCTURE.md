@@ -43,12 +43,12 @@ The crate is structured into the following submodules:
 
 ### agent/
 * **Purpose:** Biological agent entities structure, metadata, ID generation, spawning, and environmental sensing queries.
-* **Responsibilities:** Defines agent metadata with stable sequence identifiers, spatial positions, metabolic stocks, action requests, spawns the initial agent population deterministically, and provides query utilities to sense nutrients and fresh water resources in the local neighborhood chunk cells.
+* **Responsibilities:** Defines agent metadata with stable sequence identifiers, spatial positions, metabolic stocks, action requests, spawns the initial agent population deterministically, provides query utilities to sense nutrients and fresh water resources in the local neighborhood chunk cells, updates agent age and metabolic stock energy, and despawns dead or over-aged agents.
 * **Key Files:**
   - [components.rs](https://github.com/hawary-id/genesis/blob/main/engine/src/agent/components.rs) — Agent data structures (`AgentMetadata`, `AgentPosition`, `MetabolicStock`, `ActionRequest`).
   - [resources.rs](https://github.com/hawary-id/genesis/blob/main/engine/src/agent/resources.rs) — `StableIdGenerator` identifier generation logic.
   - [sensing.rs](https://github.com/hawary-id/genesis/blob/main/engine/src/agent/sensing.rs) — Environmental sensing query API (`query_cell`, `query_neighborhood`, and `SensedResource`).
-  - [systems.rs](https://github.com/hawary-id/genesis/blob/main/engine/src/agent/systems.rs) — Spawning systems.
+  - [systems.rs](https://github.com/hawary-id/genesis/blob/main/engine/src/agent/systems.rs) — Spawning, metabolic decay update, age progression, and death processing systems.
   - [mod.rs](https://github.com/hawary-id/genesis/blob/main/engine/src/agent/mod.rs) — Submodule interface re-exports.
 * **Dependencies:** `bevy_ecs`, `config`, `rng`, `world::coord`, `world::resource`.
 

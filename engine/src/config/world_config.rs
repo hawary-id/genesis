@@ -164,6 +164,12 @@ pub struct WorldConfig {
 
     /// Spatial cell distance defining neighborhood sensing bounds.
     pub sensing_radius: u32,
+
+    /// Base metabolic energy decay rate per tick.
+    pub agent_base_decay_rate: f32,
+
+    /// Target temperature at which agent energy decay is minimized.
+    pub agent_thermal_optimum: f32,
 }
 
 impl Default for WorldConfig {
@@ -219,6 +225,8 @@ impl Default for WorldConfig {
             agent_age_limit: 1000,
             agent_density_cap: 1000,
             sensing_radius: 1,
+            agent_base_decay_rate: 1.0,
+            agent_thermal_optimum: 0.5,
         }
     }
 }

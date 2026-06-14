@@ -17,12 +17,12 @@ The engine is engineered in Rust using data-oriented ECS (Entity Component Syste
 ## Current State
 
 * **Current Phase:** Phase 2 — Life
-* **Current Milestone:** Milestone 13 — Metabolic Decay & Lifetimes
+* **Current Milestone:** Milestone 14 — Agent Movement & Kinematics
 * **Repository Status:** Clean
 * **Build Status:** PASS (Compares cleanly with zero warnings under Clippy)
 * **Test Status:** PASS
-  - Standard Test Suite: `111 passed; 0 failed; 1 ignored`
-  - Ignored Test Suite (`cargo test -- --ignored`): `1 passed` (stability check of 8,640 ticks / 1 simulation year completes successfully in 270.82s)
+  - Standard Test Suite: `119 passed; 0 failed; 1 ignored`
+  - Ignored Test Suite (`cargo test -- --ignored`): `1 passed` (stability check of 8,640 ticks / 1 simulation year completes successfully in 240.87s)
 
 ---
 
@@ -61,16 +61,16 @@ The following architectural rules are locked under ADR guidelines:
 
 With Phase 2 planning completed and approved, focus transitions to implementing the biological simulation layer:
 * Spawning biological agent entities with stable sequence identifiers (Milestone 11 - Completed).
-* Implementing neighborhood sensory queries mapping to Phase 1 environmental chunks (Milestone 12 - Completed; environmental sensing query layer available via `query_cell()` and `query_neighborhood()`).
-* Driving agent lifecycle progression via metabolic decay tick updates (Milestone 13).
+* Implementing neighborhood sensory queries mapping to Phase 1 environmental chunks (Milestone 12 - Completed).
+* Driving agent lifecycle progression via metabolic decay tick updates (Milestone 13 - Completed).
 * Constraining spatial transitions under grid-cell movement rules (Milestone 14).
 
 ---
 
 ## Next Recommended Objectives
 
-1. **Metabolic Decay & Lifetimes (Milestone 13):** Increment age and apply base and environmental metabolic energy penalties per simulation tick.
-2. **Spatial Movement Execution (Milestone 14):** Execute spatial transitions under boundary, slope, and water limits.
+1. **Spatial Movement Execution (Milestone 14):** Execute spatial transitions under boundary, slope, and water limits.
+2. **Persistence & Integration Testing (Milestone 15):** Extend snapshot serialization and determinism testing.
 
 ---
 
@@ -114,14 +114,14 @@ To load repository context quickly and efficiently while minimizing repository s
 
 ## Last Updated State
 
-* **Timestamp:** 2026-06-14T18:50:00+07:00
-* **Repository State:** Phase 2 Milestone 12 complete, verified, and locked under tag `phase2-milestone-12`.
+* **Timestamp:** 2026-06-14T19:50:00+07:00
+* **Repository State:** Phase 2 Milestone 13 complete, verified, and repository ready for tag `phase2-milestone-13`.
 
 ## Repository State
 
 * **Primary Branch:** main
 * **Active Development Branch:** main
-* **Last Verified Tag:** phase2-milestone-12
+* **Last Verified Tag:** phase2-milestone-12 (Repository ready for tag `phase2-milestone-13`)
 
 ---
 

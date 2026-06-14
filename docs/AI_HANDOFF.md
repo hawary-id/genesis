@@ -16,7 +16,7 @@ This document serves as the immediate handoff instructions for any AI model resu
 
 * **Current Phase:** Phase 2 — Life
 * **Current Milestone:** Milestone 14 — Agent Movement & Kinematics (Not Started)
-* **Phase Progress:** Milestone 13 completed and verified. Repository ready for tag `phase2-milestone-13`.
+* **Phase Progress:** Milestone 13 completed, verified, and locked under tag `phase2-milestone-13`.
 
 ---
 

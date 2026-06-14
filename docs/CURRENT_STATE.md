@@ -3,7 +3,7 @@
 * **Current Phase:** Phase 2 — Life
 * **Current Milestone:** Milestone 14 — Agent Movement & Kinematics
 * **Current Branch:** main
-* **Current Status:** Phase 2 implementation ongoing (Milestone 13 completed and verified. Repository ready for tag `phase2-milestone-13`.)
+* **Current Status:** Phase 2 implementation ongoing (Milestone 13 completed, verified, and locked under tag `phase2-milestone-13`.)
 * **Current Focus:** Implementing spatial movement transitions, grid-cell movement execution, target validation against boundaries, slopes, and water zones (Milestone 14)
 * **Next Task:** Design and implement agent movement systems and target coordinate validation
 * **Last Verified Test Counts:**

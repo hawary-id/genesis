@@ -1,6 +1,6 @@
 # Genesis Project Structure
 
-This document catalogs the directory layout and modular architecture of Project Genesis at the completion of Phase 1. It details the purpose, responsibilities, key files, and dependencies of each submodule.
+This document catalogs the directory layout and modular architecture of Project Genesis during Phase 2 (as of Milestone 13 completion). It details the purpose, responsibilities, key files, and dependencies of each submodule.
 
 ---
 
@@ -54,7 +54,7 @@ The crate is structured into the following submodules:
 
 ### app/
 * **Purpose:** Application container bootstrap and schedule pipeline.
-* **Responsibilities:** Initializes the Bevy `World`, registers the five Phase 1 schedules, binds execution systems, and manages event signals.
+* **Responsibilities:** Initializes the Bevy `World`, registers the Bevy simulation schedules (StartupGeneration, FixedSimulationTick, PostTickValidation, PersistenceBoundary, ObservationBoundary), binds execution systems, and manages event signals.
 * **Key Files:**
   - [mod.rs](https://github.com/hawary-id/genesis/blob/main/engine/src/app/mod.rs) — Struct `App` implementation and bootstrap logic.
   - [schedules.rs](https://github.com/hawary-id/genesis/blob/main/engine/src/app/schedules.rs) — Schedule labels (`StartupGeneration`, `FixedSimulationTick`, etc.).

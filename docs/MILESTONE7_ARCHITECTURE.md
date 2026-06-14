@@ -14,9 +14,9 @@
 - **`PHASE1_IMPLEMENTATION_PLAN.md`:** Defines Milestone 7 as the Simulation Clock implementation phase, where derived calculations (day, season, year) are formalized, and environmental systems are refactored to consume unified time and season state.
 
 ### Relevant ADR Constraints
-- **[ADR-001: ECS Boundaries](file:///c:/Genesis/docs/adr/ADR-001-ecs-architectural-boundaries.md):** Both `SimulationClock` and `SeasonState` must remain passive, data-only Bevy resources. System logic handles all state progression.
-- **[ADR-002: Deterministic Execution Contract](file:///c:/Genesis/docs/adr/ADR-002-deterministic-execution-contract.md):** Updates are strictly driven by ticks. No wall-clock timings or platform-dependent compilation schedulers are permitted.
-- **[ADR-004: Physical Time Model](file:///c:/Genesis/docs/adr/ADR-004-physical-time-model.md):** Ticking is monotonic. All cycles run on integer boundaries (e.g. daily, seasonally).
+- **[ADR-001: ECS Boundaries](https://github.com/hawary-id/genesis/blob/main/docs/adr/ADR-001-ecs-architectural-boundaries.md):** Both `SimulationClock` and `SeasonState` must remain passive, data-only Bevy resources. System logic handles all state progression.
+- **[ADR-002: Deterministic Execution Contract](https://github.com/hawary-id/genesis/blob/main/docs/adr/ADR-002-deterministic-execution-contract.md):** Updates are strictly driven by ticks. No wall-clock timings or platform-dependent compilation schedulers are permitted.
+- **[ADR-004: Physical Time Model](https://github.com/hawary-id/genesis/blob/main/docs/adr/ADR-004-physical-time-model.md):** Ticking is monotonic. All cycles run on integer boundaries (e.g. daily, seasonally).
 
 ---
 

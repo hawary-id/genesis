@@ -12,9 +12,9 @@
 
 - **`PHASE1_IMPLEMENTATION_PLAN.md`:** Milestone 9 objective is "Add minimal snapshot-based persistence behind the `PersistenceBoundary`." Required deliverables: JSON snapshot schema, schema version, snapshot construction from stable ECS state, load path for deterministic continuation, event handling for `SnapshotRequested`/`SnapshotCompleted`, and save/load tests.
 - **`PHASE1_WORLD_TECH_SPEC.md`:** Persistence scope is reproducibility, resume, save/load equivalence testing, and debug inspection only. States exact required fields. Prohibits history, event sourcing, per-tick logs, and database-first state. Defines six `PersistenceBoundary` systems in order.
-- **[ADR-001: ECS Boundaries](file:///c:/Genesis/docs/adr/ADR-001-ecs-architectural-boundaries.md):** Persistence systems may only read stable ECS state. They must not mutate simulation components or resources. State participating in persistence must be serializable.
-- **[ADR-002: Deterministic Execution Contract](file:///c:/Genesis/docs/adr/ADR-002-deterministic-execution-contract.md):** Running N ticks continuously must yield identical outcomes to running A ticks, saving, loading, and running B ticks where A + B = N. All RNG state needed for continuation must be captured.
-- **[ADR-004: Physical Time Model](file:///c:/Genesis/docs/adr/ADR-004-physical-time-model.md):** Only `SimulationClock.total_ticks` and `WorldConfig` time parameters need to be persisted for time. `SeasonState` is reconstructed, not persisted as authoritative state.
+- **[ADR-001: ECS Boundaries](https://github.com/hawary-id/genesis/blob/main/docs/adr/ADR-001-ecs-architectural-boundaries.md):** Persistence systems may only read stable ECS state. They must not mutate simulation components or resources. State participating in persistence must be serializable.
+- **[ADR-002: Deterministic Execution Contract](https://github.com/hawary-id/genesis/blob/main/docs/adr/ADR-002-deterministic-execution-contract.md):** Running N ticks continuously must yield identical outcomes to running A ticks, saving, loading, and running B ticks where A + B = N. All RNG state needed for continuation must be captured.
+- **[ADR-004: Physical Time Model](https://github.com/hawary-id/genesis/blob/main/docs/adr/ADR-004-physical-time-model.md):** Only `SimulationClock.total_ticks` and `WorldConfig` time parameters need to be persisted for time. `SeasonState` is reconstructed, not persisted as authoritative state.
 
 ---
 

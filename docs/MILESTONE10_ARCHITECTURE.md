@@ -20,7 +20,7 @@ This milestone is strictly verification-only. No new simulation mechanics, featu
 
 ## 2. Roadmap Requirements
 
-According to [PHASE1_IMPLEMENTATION_PLAN.md](file:///c:/Genesis/docs/PHASE1_IMPLEMENTATION_PLAN.md#L543-L575), the deliverables for Milestone 10 are:
+According to [PHASE1_IMPLEMENTATION_PLAN.md](https://github.com/hawary-id/genesis/blob/main/docs/PHASE1_IMPLEMENTATION_PLAN.md#L543-L575), the deliverables for Milestone 10 are:
 - Deterministic generation tests.
 - Deterministic ticking tests.
 - Save/load equivalence tests.
@@ -39,7 +39,7 @@ The criteria for success are:
 
 ## 3. Tech Spec Requirements
 
-According to [PHASE1_WORLD_TECH_SPEC.md](file:///c:/Genesis/docs/PHASE1_WORLD_TECH_SPEC.md#L943-L995), the verification plan must validate:
+According to [PHASE1_WORLD_TECH_SPEC.md](https://github.com/hawary-id/genesis/blob/main/docs/PHASE1_WORLD_TECH_SPEC.md#L943-L995), the verification plan must validate:
 - **Deterministic Generation:** Same seed + config produce identical terrain, climate, resource, and energy availability chunk values. Different seeds produce different chunk values. Stable generation order.
 - **Deterministic Ticking:** Running the same generated world for the same tick count produces identical final states. Clock advances exactly one tick per simulation step. Season state changes only according to config.
 - **Save/Load Equivalence:** Continuous ticking yields identical binary outcomes to a split save/load run. Snapshot preserves all state required for continuation without mutating simulation state.
@@ -51,10 +51,10 @@ According to [PHASE1_WORLD_TECH_SPEC.md](file:///c:/Genesis/docs/PHASE1_WORLD_TE
 ## 4. Current Codebase Assessment
 
 The current codebase is highly prepared for determinism verification:
-- **Sequential Schedule Ordering:** The schedule registration in [app/schedules.rs](file:///c:/Genesis/engine/src/app/schedules.rs) defines a strict sequential pipeline: `StartupGeneration` -> `FixedSimulationTick` -> `PostTickValidation` -> `PersistenceBoundary` -> `ObservationBoundary`. In [app/mod.rs:L48-L57](file:///c:/Genesis/engine/src/app/mod.rs#L48-L57), ticking systems are explicitly ordered using Bevy `.after()` constraints, completely eliminating schedule-based race conditions.
-- **Coordinate-Salted RNG:** Pseudo-randomness in [world/terrain.rs](file:///c:/Genesis/engine/src/world/terrain.rs) and [world/resource.rs](file:///c:/Genesis/engine/src/world/resource.rs) is derived locally from coordinate-salted hashes via `rand_chacha`, meaning chunk values are independent of processing order.
-- **Stable Serialization Layout:** The persistence module in [persistence/io.rs](file:///c:/Genesis/engine/src/persistence/io.rs) sorts chunk snapshots by `(coord.y, coord.x)` before JSON serialization, preventing Bevy ECS query iteration order from producing non-deterministic snapshot structures.
-- **Existing Verification Logic:** The codebase has a unit test for save/load equivalence (`save_load_equivalence` in [persistence/io.rs:L852-L919](file:///c:/Genesis/engine/src/persistence/io.rs#L852-L919)) which tests $A+B=N$ equivalence on a `256 x 256` configuration. However, this is currently a unit test on a test configuration, rather than a broad integration test covering all requirements and scales.
+- **Sequential Schedule Ordering:** The schedule registration in [app/schedules.rs](https://github.com/hawary-id/genesis/blob/main/engine/src/app/schedules.rs) defines a strict sequential pipeline: `StartupGeneration` -> `FixedSimulationTick` -> `PostTickValidation` -> `PersistenceBoundary` -> `ObservationBoundary`. In [app/mod.rs:L48-L57](https://github.com/hawary-id/genesis/blob/main/engine/src/app/mod.rs#L48-L57), ticking systems are explicitly ordered using Bevy `.after()` constraints, completely eliminating schedule-based race conditions.
+- **Coordinate-Salted RNG:** Pseudo-randomness in [world/terrain.rs](https://github.com/hawary-id/genesis/blob/main/engine/src/world/terrain.rs) and [world/resource.rs](https://github.com/hawary-id/genesis/blob/main/engine/src/world/resource.rs) is derived locally from coordinate-salted hashes via `rand_chacha`, meaning chunk values are independent of processing order.
+- **Stable Serialization Layout:** The persistence module in [persistence/io.rs](https://github.com/hawary-id/genesis/blob/main/engine/src/persistence/io.rs) sorts chunk snapshots by `(coord.y, coord.x)` before JSON serialization, preventing Bevy ECS query iteration order from producing non-deterministic snapshot structures.
+- **Existing Verification Logic:** The codebase has a unit test for save/load equivalence (`save_load_equivalence` in [persistence/io.rs:L852-L919](https://github.com/hawary-id/genesis/blob/main/engine/src/persistence/io.rs#L852-L919)) which tests $A+B=N$ equivalence on a `256 x 256` configuration. However, this is currently a unit test on a test configuration, rather than a broad integration test covering all requirements and scales.
 
 ---
 
@@ -64,15 +64,15 @@ The following tests in the current test suite satisfy Milestone 10 determinism v
 
 | Test Name | File Location | Verified Determinism Element |
 | :--- | :--- | :--- |
-| `generation_is_deterministic` | [world/terrain.rs](file:///c:/Genesis/engine/src/world/terrain.rs) | Verifies that a terrain chunk is generated identically on identical seeds. |
-| `different_seeds_produce_different_terrain` | [world/terrain.rs](file:///c:/Genesis/engine/src/world/terrain.rs) | Verifies that different seeds generate distinct elevation profiles. |
-| `value_noise_is_deterministic` | [world/resource.rs](file:///c:/Genesis/engine/src/world/resource.rs) | Verifies that mineral value noise generation is deterministic. |
-| `chunk_seed_derivation_is_deterministic` | [rng/seed.rs](file:///c:/Genesis/engine/src/rng/seed.rs) | Verifies that coordinate-salted seed derivation is reproducible. |
-| `deterministic_season_state_generation` | [time/simulation_clock.rs](file:///c:/Genesis/engine/src/time/simulation_clock.rs) | Verifies that season updates are deterministic across tick runs. |
-| `season_state_reconstruction` | [time/simulation_clock.rs](file:///c:/Genesis/engine/src/time/simulation_clock.rs) | Verifies that season state can be reconstructed deterministically on load. |
-| `build_snapshot_is_deterministic` | [persistence/io.rs](file:///c:/Genesis/engine/src/persistence/io.rs) | Verifies that compiling the snapshot structure is deterministic. |
-| `save_load_equivalence` | [persistence/io.rs](file:///c:/Genesis/engine/src/persistence/io.rs) | Verifies $A+B=N$ ticks save/load continuation equivalence for `256 x 256`. |
-| `persistence_does_not_mutate_state` | [persistence/systems.rs](file:///c:/Genesis/engine/src/persistence/systems.rs) | Verifies that taking a snapshot has no side effects on simulation state. |
+| `generation_is_deterministic` | [world/terrain.rs](https://github.com/hawary-id/genesis/blob/main/engine/src/world/terrain.rs) | Verifies that a terrain chunk is generated identically on identical seeds. |
+| `different_seeds_produce_different_terrain` | [world/terrain.rs](https://github.com/hawary-id/genesis/blob/main/engine/src/world/terrain.rs) | Verifies that different seeds generate distinct elevation profiles. |
+| `value_noise_is_deterministic` | [world/resource.rs](https://github.com/hawary-id/genesis/blob/main/engine/src/world/resource.rs) | Verifies that mineral value noise generation is deterministic. |
+| `chunk_seed_derivation_is_deterministic` | [rng/seed.rs](https://github.com/hawary-id/genesis/blob/main/engine/src/rng/seed.rs) | Verifies that coordinate-salted seed derivation is reproducible. |
+| `deterministic_season_state_generation` | [time/simulation_clock.rs](https://github.com/hawary-id/genesis/blob/main/engine/src/time/simulation_clock.rs) | Verifies that season updates are deterministic across tick runs. |
+| `season_state_reconstruction` | [time/simulation_clock.rs](https://github.com/hawary-id/genesis/blob/main/engine/src/time/simulation_clock.rs) | Verifies that season state can be reconstructed deterministically on load. |
+| `build_snapshot_is_deterministic` | [persistence/io.rs](https://github.com/hawary-id/genesis/blob/main/engine/src/persistence/io.rs) | Verifies that compiling the snapshot structure is deterministic. |
+| `save_load_equivalence` | [persistence/io.rs](https://github.com/hawary-id/genesis/blob/main/engine/src/persistence/io.rs) | Verifies $A+B=N$ ticks save/load continuation equivalence for `256 x 256`. |
+| `persistence_does_not_mutate_state` | [persistence/systems.rs](https://github.com/hawary-id/genesis/blob/main/engine/src/persistence/systems.rs) | Verifies that taking a snapshot has no side effects on simulation state. |
 
 ---
 
@@ -108,7 +108,7 @@ The following decisions lock the execution of Milestone 10:
 - **No new resources:** No new ECS resources are registered.
 - **No new schedules:** No new scheduling boundaries are introduced.
 - **Determinism proven through tests only:** All requirements are verified through automated integration and unit tests.
-- **Existing save/load equivalence remains authoritative:** The `assert_worlds_equivalent` assertion helper in [persistence/io.rs](file:///c:/Genesis/engine/src/persistence/io.rs) is the authoritative check for world state equality.
+- **Existing save/load equivalence remains authoritative:** The `assert_worlds_equivalent` assertion helper in [persistence/io.rs](https://github.com/hawary-id/genesis/blob/main/engine/src/persistence/io.rs) is the authoritative check for world state equality.
 - **Absolute Float Equality:** Assertions comparing continuous environmental fields (`f32` arrays) must check for absolute binary equality (`assert_eq!`) rather than epsilon-based checks.
 - **In-Memory Fixtures:** Rather than checking in massive JSON snapshot files to the repository (which bloats git history), test configurations and reference worlds are generated in memory from fixed seeds.
 

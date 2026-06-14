@@ -21,10 +21,10 @@ Genesis uses Bevy ECS as its simulation framework. In accordance with data-orien
 - **Managers** (controllers, centralized classes, god objects) are strictly banned.
 
 ### Active Resources
-- [`WorldConfig` (in config)](file:///c:/Genesis/engine/src/config/world_config.rs): Immutable simulation parameters (world size, chunk size, cycle ticks, validation ranges).
-- [`WorldBounds` (in config)](file:///c:/Genesis/engine/src/config/world_bounds.rs): Derived world coordinate limits, verified at startup.
-- [`WorldSeed` (in rng)](file:///c:/Genesis/engine/src/rng/seed.rs): Root seed resource for reproducible execution.
-- [`SimulationClock` (in time)](file:///c:/Genesis/engine/src/time/simulation_clock.rs): Canonically tracks monotonic tick progression.
+- [`WorldConfig` (in config)](https://github.com/hawary-id/genesis/blob/main/engine/src/config/world_config.rs): Immutable simulation parameters (world size, chunk size, cycle ticks, validation ranges).
+- [`WorldBounds` (in config)](https://github.com/hawary-id/genesis/blob/main/engine/src/config/world_bounds.rs): Derived world coordinate limits, verified at startup.
+- [`WorldSeed` (in rng)](https://github.com/hawary-id/genesis/blob/main/engine/src/rng/seed.rs): Root seed resource for reproducible execution.
+- [`SimulationClock` (in time)](https://github.com/hawary-id/genesis/blob/main/engine/src/time/simulation_clock.rs): Canonically tracks monotonic tick progression.
 
 ### Active Components (Milestone 3 Approved)
 - `ChunkCoord`: Attaches global chunk-space indices `(x, y)` to chunk entities.
@@ -47,11 +47,11 @@ Schedules are registered in Bevy's execution registry in canonical order:
 ## 3. Accepted ADR Index
 
 All changes to Genesis must conform to the decisions recorded in the following Architecture Decision Records:
-- [ADR-001: ECS Architectural Boundaries](file:///c:/Genesis/docs/adr/ADR-001-ecs-architectural-boundaries.md)
-- [ADR-002: Deterministic Execution Contract](file:///c:/Genesis/docs/adr/ADR-002-deterministic-execution-contract.md)
-- [ADR-003: Spatial Coordinate Model](file:///c:/Genesis/docs/adr/ADR-003-spatial-coordinate-model.md)
-- [ADR-004: Physical Time Model](file:///c:/Genesis/docs/adr/ADR-004-physical-time-model.md)
-- [ADR-005: World Generation Strategy](file:///c:/Genesis/docs/adr/ADR-005-world-generation-strategy.md)
+- [ADR-001: ECS Architectural Boundaries](https://github.com/hawary-id/genesis/blob/main/docs/adr/ADR-001-ecs-architectural-boundaries.md)
+- [ADR-002: Deterministic Execution Contract](https://github.com/hawary-id/genesis/blob/main/docs/adr/ADR-002-deterministic-execution-contract.md)
+- [ADR-003: Spatial Coordinate Model](https://github.com/hawary-id/genesis/blob/main/docs/adr/ADR-003-spatial-coordinate-model.md)
+- [ADR-004: Physical Time Model](https://github.com/hawary-id/genesis/blob/main/docs/adr/ADR-004-physical-time-model.md)
+- [ADR-005: World Generation Strategy](https://github.com/hawary-id/genesis/blob/main/docs/adr/ADR-005-world-generation-strategy.md)
 
 ---
 

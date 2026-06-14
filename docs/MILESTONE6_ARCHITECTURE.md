@@ -13,12 +13,12 @@
 - **`PHASE1_IMPLEMENTATION_PLAN.md`:** Places the Energy Availability System as Milestone 6, acting as the primary abiotic energy constraint for the future Life system.
 
 ### Relevant ADR Constraints
-- **[ADR-001: ECS Boundaries](file:///c:/Genesis/docs/adr/ADR-001-ecs-architectural-boundaries.md):** `EnergyAvailabilityChunk` must remain a passive, data-only component. System logic handles all generation and periodic calculations. No manager classes.
+- **[ADR-001: ECS Boundaries](https://github.com/hawary-id/genesis/blob/main/docs/adr/ADR-001-ecs-architectural-boundaries.md):** `EnergyAvailabilityChunk` must remain a passive, data-only component. System logic handles all generation and periodic calculations. No manager classes.
 - **[ADR-002: Deterministic Execution Contract]:**
 Energy availability must remain a pure deterministic function of previously generated world state and configuration parameters. Clock ticks are fixed and updates run on daily boundaries.
-- **[ADR-003: Spatial Model](file:///c:/Genesis/docs/adr/ADR-003-spatial-coordinate-model.md):** Arrays are stored contiguously in row-major order within chunk entities.
-- **[ADR-004: Physical Time Model](file:///c:/Genesis/docs/adr/ADR-004-physical-time-model.md):** Tick count drives the cycle cadence of updates.
-- **[ADR-005: World Generation Strategy](file:///c:/Genesis/docs/adr/ADR-005-world-generation-strategy.md):** Energy availability is derived directly and deterministically from other generated substrate components.
+- **[ADR-003: Spatial Model](https://github.com/hawary-id/genesis/blob/main/docs/adr/ADR-003-spatial-coordinate-model.md):** Arrays are stored contiguously in row-major order within chunk entities.
+- **[ADR-004: Physical Time Model](https://github.com/hawary-id/genesis/blob/main/docs/adr/ADR-004-physical-time-model.md):** Tick count drives the cycle cadence of updates.
+- **[ADR-005: World Generation Strategy](https://github.com/hawary-id/genesis/blob/main/docs/adr/ADR-005-world-generation-strategy.md):** Energy availability is derived directly and deterministically from other generated substrate components.
 
 ### Dependency Analysis from Milestone 1–5
 - **Milestone 3 (Terrain):** Provides elevation, slope, and water depth.
@@ -133,7 +133,7 @@ and consumes existing world-state components:
 - Update equations use the parameterized coefficients and weights configured in `WorldConfig`.
 
 ### Mathematical Model & Helper Functions
-To avoid calculation duplication and ensure model consistency, the system uses two pure helper functions in [energy.rs](file:///c:/Genesis/engine/src/world/energy.rs):
+To avoid calculation duplication and ensure model consistency, the system uses two pure helper functions in [energy.rs](https://github.com/hawary-id/genesis/blob/main/engine/src/world/energy.rs):
 
 1. **Solar Exposure (`calculate_solar_exposure`):**
    $$solar\_exposure = base\_solar \times solar\_exposure\_max$$

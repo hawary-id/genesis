@@ -13,11 +13,11 @@
 - **`PHASE1_IMPLEMENTATION_PLAN.md`:** Places the Resource System as Milestone 5, acting as the primary abiotic material constraint for the future Life system.
 
 ### Relevant ADR Constraints
-- **[ADR-001: ECS Boundaries](file:///c:/Genesis/docs/adr/ADR-001-ecs-architectural-boundaries.md):** `ResourceChunk` must remain a passive, data-only component. System logic handles all generation and periodic calculations. No manager classes.
-- **[ADR-002: Deterministic Execution Contract](file:///c:/Genesis/docs/adr/ADR-002-deterministic-execution-contract.md):** Seeding uses coordinate-salted deterministic generators. Clock ticks are fixed. Updates run on daily boundaries.
-- **[ADR-003: Spatial Model](file:///c:/Genesis/docs/adr/ADR-003-spatial-coordinate-model.md):** Arrays are stored contiguously in row-major order within chunk entities.
-- **[ADR-004: Physical Time Model](file:///c:/Genesis/docs/adr/ADR-004-physical-time-model.md):** Tick count drives the cycle cadence of updates.
-- **[ADR-005: World Generation Strategy](file:///c:/Genesis/docs/adr/ADR-005-world-generation-strategy.md):** Unique salted domain derivation for resources RNG initialization.
+- **[ADR-001: ECS Boundaries](https://github.com/hawary-id/genesis/blob/main/docs/adr/ADR-001-ecs-architectural-boundaries.md):** `ResourceChunk` must remain a passive, data-only component. System logic handles all generation and periodic calculations. No manager classes.
+- **[ADR-002: Deterministic Execution Contract](https://github.com/hawary-id/genesis/blob/main/docs/adr/ADR-002-deterministic-execution-contract.md):** Seeding uses coordinate-salted deterministic generators. Clock ticks are fixed. Updates run on daily boundaries.
+- **[ADR-003: Spatial Model](https://github.com/hawary-id/genesis/blob/main/docs/adr/ADR-003-spatial-coordinate-model.md):** Arrays are stored contiguously in row-major order within chunk entities.
+- **[ADR-004: Physical Time Model](https://github.com/hawary-id/genesis/blob/main/docs/adr/ADR-004-physical-time-model.md):** Tick count drives the cycle cadence of updates.
+- **[ADR-005: World Generation Strategy](https://github.com/hawary-id/genesis/blob/main/docs/adr/ADR-005-world-generation-strategy.md):** Unique salted domain derivation for resources RNG initialization.
 
 ### Dependency Analysis from Milestone 1–4
 - **Milestone 3 (Terrain):** Reads `elevation`, `slope`, `water_depth`, `soil_depth`, and `soil_fertility` variables to calculate baseline nutrients and water accumulation.

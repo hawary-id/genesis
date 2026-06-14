@@ -11,8 +11,8 @@
 ### Relevant Roadmap & Spec References
 - **`PHASE1_WORLD_TECH_SPEC.md`:** Lists concrete invariants for chunk consistency, terrain ranges, resource ranges, climate ranges, energy ranges, and time validity. States that validation failures must panic in development/test builds, and release builds must report structured errors and halt/reject progression.
 - **`PHASE1_IMPLEMENTATION_PLAN.md`:** Formally places Milestone 8 as the validation centralization phase, specifying panic behavior in debug/test and structured validation error output in release.
-- **[ADR-001: ECS Boundaries](file:///c:/Genesis/docs/adr/ADR-001-ecs-architectural-boundaries.md):** Validation logic must be implemented inside read-only systems scheduled at explicit boundaries, keeping components/resources as passive data containers.
-- **[ADR-002: Deterministic Execution Contract](file:///c:/Genesis/docs/adr/ADR-002-deterministic-execution-contract.md):** Validation checks must be deterministic, order-independent, and must not introduce side-effects or external dependencies.
+- **[ADR-001: ECS Boundaries](https://github.com/hawary-id/genesis/blob/main/docs/adr/ADR-001-ecs-architectural-boundaries.md):** Validation logic must be implemented inside read-only systems scheduled at explicit boundaries, keeping components/resources as passive data containers.
+- **[ADR-002: Deterministic Execution Contract](https://github.com/hawary-id/genesis/blob/main/docs/adr/ADR-002-deterministic-execution-contract.md):** Validation checks must be deterministic, order-independent, and must not introduce side-effects or external dependencies.
 
 ---
 

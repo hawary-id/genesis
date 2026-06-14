@@ -2,15 +2,16 @@
 
 This registry tracks the status and deliverables of all milestones in the Genesis roadmap.
 
-* **Overall Progress Estimate:** 100% of Phase 1 (Environmental Substrate)
-* **Current Phase:** Phase 1 — World
-* **Current Milestone:** Milestone 10 — Determinism Testing
+* **Overall Progress Estimate:** Phase 1 Complete; Phase 2 Planning Complete
+* **Current Phase:** Phase 2 — Life
+* **Current Milestone:** Milestone 11 — Agent Data Foundation & Spawning
 
 ---
 
 ## Current Active Work
 
 * **Active Phase:** Phase 2 — Life (Planning complete; Implementation not started)
+* **Current Milestone:** Milestone 11 — Agent Data Foundation & Spawning
 
 ## Current Focus
 

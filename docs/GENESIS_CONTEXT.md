@@ -17,12 +17,12 @@ The engine is engineered in Rust using data-oriented ECS (Entity Component Syste
 ## Current State
 
 * **Current Phase:** Phase 2 — Life
-* **Current Milestone:** Milestone 14 — Agent Movement & Kinematics
+* **Current Milestone:** Milestone 15 — Agent Persistence & Integration Testing
 * **Repository Status:** Clean
 * **Build Status:** PASS (Compares cleanly with zero warnings under Clippy)
 * **Test Status:** PASS
-  - Standard Test Suite: `119 passed; 0 failed; 1 ignored`
-  - Ignored Test Suite (`cargo test -- --ignored`): `1 passed` (stability check of 8,640 ticks / 1 simulation year completes successfully in 240.87s)
+  - Standard Test Suite: `124 passed; 0 failed; 1 ignored`
+  - Ignored Test Suite (`cargo test -- --ignored`): `1 passed` (stability check of 8,640 ticks / 1 simulation year completes successfully in 260.84s)
 
 ---
 
@@ -63,14 +63,14 @@ With Phase 2 planning completed and approved, focus transitions to implementing 
 * Spawning biological agent entities with stable sequence identifiers (Milestone 11 - Completed).
 * Implementing neighborhood sensory queries mapping to Phase 1 environmental chunks (Milestone 12 - Completed).
 * Driving agent lifecycle progression via metabolic decay tick updates (Milestone 13 - Completed).
-* Constraining spatial transitions under grid-cell movement rules (Milestone 14).
+* Constraining spatial transitions under grid-cell movement rules (Milestone 14 - Completed).
+* Extending snapshot serialization and verifying execution determinism under save/load equivalence integration tests (Milestone 15).
 
 ---
 
 ## Next Recommended Objectives
 
-1. **Spatial Movement Execution (Milestone 14):** Execute spatial transitions under boundary, slope, and water limits.
-2. **Persistence & Integration Testing (Milestone 15):** Extend snapshot serialization and determinism testing.
+1. **Persistence & Integration Testing (Milestone 15):** Extend snapshot serialization to save sorted agent states, and verify execution determinism under save/load equivalence integration tests.
 
 ---
 
@@ -114,14 +114,14 @@ To load repository context quickly and efficiently while minimizing repository s
 
 ## Last Updated State
 
-* **Timestamp:** 2026-06-14T19:50:00+07:00
-* **Repository State:** Phase 2 Milestone 13 complete, verified, and locked under tag `phase2-milestone-13`.
+* **Timestamp:** 2026-06-14T22:54:00+07:00
+* **Repository State:** Phase 2 Milestone 14 complete, verified, and locked under tag `phase2-milestone-14`.
 
 ## Repository State
 
 * **Primary Branch:** main
 * **Active Development Branch:** main
-* **Last Verified Tag:** phase2-milestone-13
+* **Last Verified Tag:** phase2-milestone-14
 
 ---
 

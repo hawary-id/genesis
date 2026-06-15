@@ -64,6 +64,8 @@ pub fn create_test_config() -> WorldConfig {
         agent_movement_max_slope: 0.40,
         agent_movement_max_water_depth: 0.30,
         agent_movement_cost: 1.0,
+        max_harvest_rate: 10.0,
+        consumption_efficiency: 0.8,
     }
 }
 

@@ -179,6 +179,14 @@ pub struct WorldConfig {
 
     /// Energy cost of a movement step.
     pub agent_movement_cost: f32,
+
+    /// Maximum resource intake rate per cell per tick.
+    /// Used to cap nutrient and fresh water consumption.
+    pub max_harvest_rate: f32,
+
+    /// Efficiency factor for converting consumed resource mass to metabolic energy stock.
+    /// Represents digestion/assimilation efficiency in range [0.0, 1.0].
+    pub consumption_efficiency: f32,
 }
 
 impl Default for WorldConfig {
@@ -239,6 +247,8 @@ impl Default for WorldConfig {
             agent_movement_max_slope: 0.40,
             agent_movement_max_water_depth: 0.30,
             agent_movement_cost: 1.0,
+            max_harvest_rate: 10.0,
+            consumption_efficiency: 0.8,
         }
     }
 }

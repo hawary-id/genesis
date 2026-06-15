@@ -12,6 +12,6 @@ pub use components::{
 pub use resources::{GenomeConfig, StableIdGenerator};
 pub use sensing::{query_cell, query_neighborhood, SensedResource};
 pub use systems::{
-    derive_phenotype_on_spawn, process_agent_deaths, process_agent_movement, spawn_initial_agents,
-    update_agent_metabolism,
+    derive_phenotype_on_spawn, process_agent_consumption, process_agent_deaths,
+    process_agent_movement, spawn_initial_agents, update_agent_metabolism,
 };

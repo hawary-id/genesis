@@ -220,6 +220,84 @@ pub fn process_agent_deaths(
     }
 }
 
+/// Processes resource consumption for biological agents, depleting nutrients and water
+/// from environment chunks and replenishing agent energy stocks.
+pub fn process_agent_consumption(
+    config: Res<WorldConfig>,
+    bounds: Res<WorldBounds>,
+    mut chunks: Query<(&ChunkCoord, &mut crate::world::resource::ResourceChunk)>,
+    mut agents: Query<(
+        Entity,
+        &AgentPosition,
+        &Phenotype,
+        &mut MetabolicStock,
+        &AgentMetadata,
+    )>,
+) {
+    // 1. Collect and sort agents by ID ascending to guarantee deterministic order-independence
+    let mut sorted_agents: Vec<_> = agents
+        .iter()
+        .map(|(entity, pos, phenotype, _stock, metadata)| {
+            (
+                metadata.id,
+                entity,
+                pos.coord,
+                phenotype.physical_size,
+                phenotype.diet_preference,
+            )
+        })
+        .collect();
+    sorted_agents.sort_by_key(|a| a.0);
+
+    let chunk_size = bounds.chunk_size;
+
+    // 2. Iterate through sorted agents to perform consumption
+    for (_id, entity, coord, size, diet_preference) in sorted_agents {
+        // Validate coordinate bounds
+        if !bounds.contains_world_coord(coord) {
+            continue;
+        }
+
+        let target_chunk = crate::world::coord::world_to_chunk(coord, chunk_size);
+        let local_coord = crate::world::coord::world_to_local(coord, chunk_size);
+        let cell_index = (local_coord.y * chunk_size + local_coord.x) as usize;
+
+        // Lookup containing chunk mutably
+        for (chunk_coord, mut resource_chunk) in &mut chunks {
+            if *chunk_coord == target_chunk {
+                if cell_index < resource_chunk.nutrients.len()
+                    && cell_index < resource_chunk.fresh_water.len()
+                {
+                    // Step 1: Sensing local cell densities
+                    let cell_nutrient = resource_chunk.nutrients[cell_index];
+                    let cell_water = resource_chunk.fresh_water[cell_index];
+
+                    // Step 2: Harvesting resources capped by physical size and max_harvest_rate
+                    let max_harvest = config.max_harvest_rate * size;
+                    let intake_nutrient = cell_nutrient.min(max_harvest);
+                    let intake_water = cell_water.min(max_harvest);
+
+                    // Step 3: Deplete resource chunk (Conservation of mass)
+                    resource_chunk.nutrients[cell_index] =
+                        (cell_nutrient - intake_nutrient).max(0.0);
+                    resource_chunk.fresh_water[cell_index] = (cell_water - intake_water).max(0.0);
+
+                    // Step 4: Convert to metabolic energy
+                    let energy_gain =
+                        intake_nutrient * (1.0 - diet_preference) * config.consumption_efficiency
+                            + intake_water * diet_preference * config.consumption_efficiency;
+
+                    // Step 5: Replenish and clamp agent stock energy
+                    if let Ok((_, _, _, mut stock, _)) = agents.get_mut(entity) {
+                        stock.energy = (stock.energy + energy_gain).min(config.agent_energy_max);
+                    }
+                }
+                break;
+            }
+        }
+    }
+}
+
 /// Processes agent movement requests, validating destinations against boundaries and terrain barriers.
 pub fn process_agent_movement(
     config: Res<WorldConfig>,
@@ -1281,5 +1359,246 @@ mod tests {
             reconstructed_phenotype.derived_movement_cost,
             parent_phenotype.derived_movement_cost
         );
+    }
+
+    #[test]
+    fn test_resource_consumption_semantics() {
+        use crate::world::resource::ResourceChunk;
+
+        let mut world = World::new();
+        let config = WorldConfig {
+            max_harvest_rate: 10.0,
+            consumption_efficiency: 0.8,
+            agent_energy_max: 100.0,
+            ..WorldConfig::default()
+        };
+        let bounds = WorldBounds::from_config(&config);
+        world.insert_resource(config);
+        world.insert_resource(bounds);
+
+        let chunk_size = 32;
+        let mut nutrients = vec![0.0; (chunk_size * chunk_size) as usize];
+        let mut fresh_water = vec![0.0; (chunk_size * chunk_size) as usize];
+        nutrients[0] = 20.0;
+        fresh_water[0] = 20.0;
+
+        world.spawn((
+            ChunkCoord::new(0, 0),
+            ResourceChunk {
+                fresh_water,
+                nutrients,
+                minerals: vec![0.0; (chunk_size * chunk_size) as usize],
+                biomass_potential: vec![0.0; (chunk_size * chunk_size) as usize],
+            },
+        ));
+
+        let pheno_nutrient = Phenotype {
+            diet_preference: 0.0,
+            physical_size: 1.0,
+            ..Phenotype::new(0.5, 0.0, 0.4, 0.3, 1, 200.0, 50, 1.0, 1.0, 1.0)
+        };
+        let a1 = world
+            .spawn((
+                AgentMetadata::new(1),
+                AgentPosition::new(WorldCoord::new(0, 0)),
+                MetabolicStock::new(50.0, 0),
+                pheno_nutrient,
+            ))
+            .id();
+
+        let mut schedule = Schedule::new(crate::app::FixedSimulationTick);
+        schedule.add_systems(process_agent_consumption);
+        world.add_schedule(schedule);
+
+        world.run_schedule(crate::app::FixedSimulationTick);
+
+        let mut chunk_query = world.query::<&ResourceChunk>();
+        let rc = chunk_query.iter(&world).next().unwrap();
+        assert_eq!(rc.nutrients[0], 10.0);
+        assert_eq!(rc.fresh_water[0], 10.0);
+
+        let stock_a1 = world.entity(a1).get::<MetabolicStock>().unwrap();
+        assert_eq!(stock_a1.energy, 58.0);
+    }
+
+    #[test]
+    fn test_water_consumption_and_clamping() {
+        use crate::world::resource::ResourceChunk;
+
+        let mut world = World::new();
+        let config = WorldConfig {
+            max_harvest_rate: 10.0,
+            consumption_efficiency: 0.8,
+            agent_energy_max: 100.0,
+            ..WorldConfig::default()
+        };
+        let bounds = WorldBounds::from_config(&config);
+        world.insert_resource(config);
+        world.insert_resource(bounds);
+
+        let chunk_size = 32;
+        let mut nutrients = vec![0.0; (chunk_size * chunk_size) as usize];
+        let mut fresh_water = vec![0.0; (chunk_size * chunk_size) as usize];
+        nutrients[0] = 5.0;
+        fresh_water[0] = 50.0;
+
+        world.spawn((
+            ChunkCoord::new(0, 0),
+            ResourceChunk {
+                fresh_water,
+                nutrients,
+                minerals: vec![0.0; (chunk_size * chunk_size) as usize],
+                biomass_potential: vec![0.0; (chunk_size * chunk_size) as usize],
+            },
+        ));
+
+        let pheno_water = Phenotype {
+            diet_preference: 1.0,
+            physical_size: 1.0,
+            ..Phenotype::new(0.5, 1.0, 0.4, 0.3, 1, 200.0, 50, 1.0, 1.0, 1.0)
+        };
+        let a1 = world
+            .spawn((
+                AgentMetadata::new(1),
+                AgentPosition::new(WorldCoord::new(0, 0)),
+                MetabolicStock::new(95.0, 0),
+                pheno_water,
+            ))
+            .id();
+
+        let mut schedule = Schedule::new(crate::app::FixedSimulationTick);
+        schedule.add_systems(process_agent_consumption);
+        world.add_schedule(schedule);
+
+        world.run_schedule(crate::app::FixedSimulationTick);
+
+        let mut chunk_query = world.query::<&ResourceChunk>();
+        let rc = chunk_query.iter(&world).next().unwrap();
+        assert_eq!(rc.nutrients[0], 0.0);
+        assert_eq!(rc.fresh_water[0], 40.0);
+
+        let stock_a1 = world.entity(a1).get::<MetabolicStock>().unwrap();
+        assert_eq!(stock_a1.energy, 100.0);
+    }
+
+    #[test]
+    fn test_diet_preference_scaling_omnivore() {
+        use crate::world::resource::ResourceChunk;
+
+        let mut world = World::new();
+        let config = WorldConfig {
+            max_harvest_rate: 10.0,
+            consumption_efficiency: 0.8,
+            agent_energy_max: 200.0,
+            ..WorldConfig::default()
+        };
+        let bounds = WorldBounds::from_config(&config);
+        world.insert_resource(config);
+        world.insert_resource(bounds);
+
+        let chunk_size = 32;
+        let mut nutrients = vec![0.0; (chunk_size * chunk_size) as usize];
+        let mut fresh_water = vec![0.0; (chunk_size * chunk_size) as usize];
+        nutrients[0] = 20.0;
+        fresh_water[0] = 20.0;
+
+        world.spawn((
+            ChunkCoord::new(0, 0),
+            ResourceChunk {
+                fresh_water,
+                nutrients,
+                minerals: vec![0.0; (chunk_size * chunk_size) as usize],
+                biomass_potential: vec![0.0; (chunk_size * chunk_size) as usize],
+            },
+        ));
+
+        let pheno_omni = Phenotype {
+            diet_preference: 0.5,
+            physical_size: 1.0,
+            ..Phenotype::new(0.5, 0.5, 0.4, 0.3, 1, 200.0, 50, 1.0, 1.0, 1.0)
+        };
+        let a1 = world
+            .spawn((
+                AgentMetadata::new(1),
+                AgentPosition::new(WorldCoord::new(0, 0)),
+                MetabolicStock::new(10.0, 0),
+                pheno_omni,
+            ))
+            .id();
+
+        let mut schedule = Schedule::new(crate::app::FixedSimulationTick);
+        schedule.add_systems(process_agent_consumption);
+        world.add_schedule(schedule);
+
+        world.run_schedule(crate::app::FixedSimulationTick);
+
+        let stock_a1 = world.entity(a1).get::<MetabolicStock>().unwrap();
+        assert_eq!(stock_a1.energy, 18.0);
+    }
+
+    #[test]
+    fn test_consumption_determinism_same_cell() {
+        use crate::world::resource::ResourceChunk;
+
+        let mut world = World::new();
+        let config = WorldConfig {
+            max_harvest_rate: 10.0,
+            consumption_efficiency: 0.8,
+            agent_energy_max: 200.0,
+            ..WorldConfig::default()
+        };
+        let bounds = WorldBounds::from_config(&config);
+        world.insert_resource(config);
+        world.insert_resource(bounds);
+
+        let chunk_size = 32;
+        let mut nutrients = vec![0.0; (chunk_size * chunk_size) as usize];
+        nutrients[0] = 10.0;
+
+        world.spawn((
+            ChunkCoord::new(0, 0),
+            ResourceChunk {
+                fresh_water: vec![0.0; (chunk_size * chunk_size) as usize],
+                nutrients,
+                minerals: vec![0.0; (chunk_size * chunk_size) as usize],
+                biomass_potential: vec![0.0; (chunk_size * chunk_size) as usize],
+            },
+        ));
+
+        let pheno = Phenotype {
+            diet_preference: 0.0,
+            physical_size: 1.0,
+            ..Phenotype::new(0.5, 0.0, 0.4, 0.3, 1, 200.0, 50, 1.0, 1.0, 1.0)
+        };
+
+        let a2 = world
+            .spawn((
+                AgentMetadata::new(2),
+                AgentPosition::new(WorldCoord::new(0, 0)),
+                MetabolicStock::new(10.0, 0),
+                pheno,
+            ))
+            .id();
+
+        let a1 = world
+            .spawn((
+                AgentMetadata::new(1),
+                AgentPosition::new(WorldCoord::new(0, 0)),
+                MetabolicStock::new(10.0, 0),
+                pheno,
+            ))
+            .id();
+
+        let mut schedule = Schedule::new(crate::app::FixedSimulationTick);
+        schedule.add_systems(process_agent_consumption);
+        world.add_schedule(schedule);
+
+        world.run_schedule(crate::app::FixedSimulationTick);
+
+        let stock_a1 = world.entity(a1).get::<MetabolicStock>().unwrap();
+        let stock_a2 = world.entity(a2).get::<MetabolicStock>().unwrap();
+
+        assert_eq!(stock_a1.energy, 18.0);
+        assert_eq!(stock_a2.energy, 10.0);
     }
 }

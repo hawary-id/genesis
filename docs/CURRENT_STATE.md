@@ -8,11 +8,16 @@
 
 ### Current Progress
 
-* M16 Complete
-* M17 Next
+* M17 Complete
+* M18 Active
 
 ### Newly Added Systems
 
+* Resource consumption (`process_agent_consumption` system)
+* Nutrient & Fresh Water cell harvesting and environmental depletion (Conservation of Mass)
+* Diet-preference scaled assimilation to energy stock
+* Stable ID sorting ascending for consumption determinism
+* Consumption parameters config (`max_harvest_rate` & `consumption_efficiency`)
 * Genetics foundation (`Genome`, `Phenotype`, `LineageMetadata`, `GenomeConfig`)
 * Phenotype derivation on spawn/load (`derive_phenotype_on_spawn`)
 * Snapshot v3 persistence (`Genome` & `LineageMetadata` serialized, `Phenotype` re-derived)
@@ -20,15 +25,23 @@
 ### Verification & Testing Status
 
 * **Branch:** main
-* **Status:** Milestone 16 is fully completed, verified, clippy-compliant, and passes determinism and snapshot validation.
+* **Status:** Milestone 17 is fully completed, verified, clippy-compliant, and passes determinism and snapshot validation.
 * **Test Counts:**
-  - `cargo test`: 127 passed, 0 failed, 1 ignored
-  - `cargo test -- --ignored`: 1 passed (test_long_run_stability_512 checks A+B=N save/load equivalence over 8,640 ticks / 1 simulation year with genetics enabled)
+  - `cargo test`: 131 passed, 0 failed, 1 ignored
+  - `cargo test -- --ignored`: 1 passed (test_long_run_stability_512 checks A+B=N save/load equivalence over 8,640 ticks / 1 simulation year with genetics and consumption enabled)
   - `cargo clippy --all-targets --all-features -- -D warnings`: PASS
   - `cargo fmt`: PASS
-* **Last Updated:** 2026-06-15T09:54:00+07:00
+* **Last Updated:** 2026-06-15T11:45:00+07:00
 
 ---
+
+## Completed in Milestone 17: Resource Consumption (Eating & Drinking)
+
+* **Deterministic Consumption System**: Implemented the `process_agent_consumption` system to harvest cell nutrients and fresh water resource components.
+* **Mass Conservation**: Subtracts harvested resource quantities directly from chunk cells and adds corresponding energy to agent `MetabolicStock`, clamped at `agent_energy_max`.
+* **Preference-Scaled Assimilation**: Integrates agent `diet_preference` and global `consumption_efficiency` to scale energy gains (omnivore vs specialist).
+* **ID-Based Order Determinism**: Collects and sorts agent list by unique `AgentMetadata.id` ascending to ensure order-independent consumption execution.
+* **Configuration Metrics**: Added `max_harvest_rate` and `consumption_efficiency` to `WorldConfig` and testing configurations.
 
 ## Completed in Milestone 16: Genetics & Phenotype Mapping
 
@@ -57,5 +70,5 @@
 
 > [!NOTE]
 > **ClimateChunk and TerrainChunk Lookup Scan Complexity**
-> ClimateChunk and TerrainChunk lookups in agent sensing, metabolism, and movement currently perform linear chunk scans (O(agent_count × chunk_count)).
-> This is intentionally accepted for Phase 2 correctness-first implementation and should be replaced with indexed chunk lookup (HashMap or equivalent deterministic spatial index) during a future performance optimization pass.
+> ClimateChunk and TerrainChunk lookups in agent sensing, metabolism, movement, and consumption currently perform linear chunk scans (O(agent_count × chunk_count)).
+> This is intentionally accepted for Phase 2/3 correctness-first implementation and should be replaced with indexed chunk lookup (HashMap or equivalent deterministic spatial index) during a future performance optimization pass.

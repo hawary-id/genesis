@@ -2,24 +2,24 @@
 
 This registry tracks the status and deliverables of all milestones in the Genesis roadmap.
 
-* **Overall Progress Estimate:** Phase 1 Complete; Phase 2 Complete; Phase 3 Active (Milestone 16 Completed)
+* **Overall Progress Estimate:** Phase 1 Complete; Phase 2 Complete; Phase 3 Active (Milestones 16 & 17 Completed)
 * **Current Phase:** Phase 3 — Evolution
-* **Current Milestone:** Milestone 17 — Resource Consumption (Eating & Drinking)
+* **Current Milestone:** Milestone 18 — Reproduction, Inheritance & Lineage
 
 ---
 
 ## Current Active Work
 
 * **Active Phase:** Phase 3 — Evolution
-* **Current Milestone:** Milestone 17 — Resource Consumption (Eating & Drinking) (Active)
+* **Current Milestone:** Milestone 18 — Reproduction, Inheritance & Lineage (Active)
 
 ## Current Focus
 
-* Implementing environmental resource harvesting, neighborhood sensing of nutrient/fresh water chunks, and agent energy stock replenishment.
+* Implementing asexual reproduction (energy splitting 50/50), genetic inheritance, parent stable ID lineage tracking, and adjacent coordinate spawning sequence.
 
 ## Next Milestone
 
-* **Next Milestone:** Milestone 17: Resource Consumption (Eating & Drinking) (Phase 3, Milestone 17)
+* **Next Milestone:** Milestone 18: Reproduction, Inheritance & Lineage (Phase 3, Milestone 18)
 
 ---
 
@@ -230,6 +230,30 @@ This registry tracks the status and deliverables of all milestones in the Genesi
   - [persistence/snapshot.rs](https://github.com/hawary-id/genesis/blob/main/engine/src/persistence/snapshot.rs) — AgentSnapshot updates.
   - [persistence/io.rs](https://github.com/hawary-id/genesis/blob/main/engine/src/persistence/io.rs) — Snapshot reconstruction and save/load equivalence.
   - [validation/systems.rs](https://github.com/hawary-id/genesis/blob/main/engine/src/validation/systems.rs) — Invariant checks for genome/lineage.
+
+### Milestone 17: Resource Consumption (Eating & Drinking)
+* **Status:** Completed
+* **Summary:** Implemented grid-cell environmental resource consumption. Senses nutrients and fresh water at the agent's coordinate, depletes the chunk resource arrays, and assimilates the raw intake into metabolic stock energy scaled by the agent's dietary preference and efficiency. Ensured execution determinism by sorting agents by unique stable ID before processing.
+* **Major Deliverables:**
+  - `process_agent_consumption` system
+  - Nutrient cell harvesting and fresh water cell harvesting
+  - Conservation of mass resource subtraction from local chunk resource vectors
+  - Diet preference and consumption efficiency stock energy gain assimilation
+  - Stable sorting by `AgentMetadata.id` ascending for same-cell consumption order independence
+  - Config fields `max_harvest_rate` and `consumption_efficiency` added to `WorldConfig` and testing configurations
+* **Verification Summary:**
+  - `cargo fmt` PASS
+  - `cargo clippy -- -D warnings` PASS
+  - `cargo test` PASS (including nutrient/water consumption, preference scaling, energy clamping, depletion, and ordering determinism tests)
+  - `cargo test -- --ignored` PASS (stability test equivalence check over 8,640 ticks / 1 simulation year with consumption enabled)
+  - determinism & snapshot validation PASS
+* **Dependencies:** Milestone 16.
+* **Related Source Code:**
+  - [agent/mod.rs](https://github.com/hawary-id/genesis/blob/main/engine/src/agent/mod.rs) — Expose consumption system.
+  - [agent/systems.rs](https://github.com/hawary-id/genesis/blob/main/engine/src/agent/systems.rs) — Consumption system and unit tests.
+  - [app/mod.rs](https://github.com/hawary-id/genesis/blob/main/engine/src/app/mod.rs) — Schedule ordering integration.
+  - [config/world_config.rs](https://github.com/hawary-id/genesis/blob/main/engine/src/config/world_config.rs) — Configuration parameters.
+  - [testing/fixtures.rs](https://github.com/hawary-id/genesis/blob/main/engine/src/testing/fixtures.rs) — Test configuration initializers.
 
 ---
 

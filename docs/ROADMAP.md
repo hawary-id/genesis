@@ -54,8 +54,8 @@ Adaptive populations and selection pressures.
 Milestones:
 
 - [x] M16 Genetics & Phenotype Mapping
-- [ ] M17 Resource Consumption
-- [ ] M18 Reproduction & Inheritance
+- [x] M17 Resource Consumption
+- [/] M18 Reproduction & Inheritance
 - [ ] M19 Mutation & Drift
 - [ ] M20 Natural Selection & Adaptation
 - [ ] M21 Diagnostics & Validation

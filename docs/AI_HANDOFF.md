@@ -7,22 +7,29 @@ This document serves as the immediate handoff instructions for any AI model resu
 ## Current Repository State
 
 * **Branch:** `main`
-* **Status:** Clean. All Phase 3 Evolution Milestone 16 modules compile under standard profiles, and formatting (`cargo fmt`) and Clippy checks pass successfully.
-* **Test Outcome:** `127 passed, 0 failed, 1 ignored` (standard); `1 passed, 0 failed` (`--ignored` stability test).
+* **Status:** Clean. All Phase 3 Evolution Milestone 17 modules compile under standard profiles, and formatting (`cargo fmt`) and Clippy checks pass successfully.
+* **Test Outcome:** `131 passed, 0 failed, 1 ignored` (standard); `1 passed, 0 failed` (`--ignored` stability test).
 
 ---
 
 ## Current Phase & Milestone
 
 * **Current Phase:** Phase 3 — Evolution (Active)
-* **Current Milestone:** Milestone 17 — Resource Consumption (Eating & Drinking) (Active)
-* **Last Completed Milestone:** Milestone 16 — Genetics & Phenotype Mapping
-* **Phase Progress:** Milestone 16 completed, verified, and locked. Milestone 17 (Resource Consumption) is active.
+* **Current Milestone:** Milestone 18 — Reproduction, Inheritance & Lineage (Active)
+* **Last Completed Milestone:** Milestone 17 — Resource Consumption (Eating & Drinking)
+* **Phase Progress:** Milestone 17 completed, verified, and locked. Milestone 18 is active.
 
 ---
 
 ## Recent Major Changes
 
+* **Milestone 17 Completed:** Implemented resource consumption.
+  - Implemented the `process_agent_consumption` system to harvest cell nutrients and fresh water resources.
+  - Subtracted harvested quantities from chunk resource cells and replenished agent `MetabolicStock` energy (clamped at `agent_energy_max`).
+  - Added dietary preference and consumption efficiency scaling (herbivore/hydrator preference).
+  - Ensured determinism by sorting agent list by `AgentMetadata.id` ascending before processing.
+  - Added config fields `max_harvest_rate` and `consumption_efficiency` to `WorldConfig` and testing configurations.
+  - Added unit tests checking nutrient/water consumption, diet preference scaling, energy clamping, resource depletion, resource non-negativity, and coordinate order determinism.
 * **Milestone 16 Completed:** Implemented genetics and phenotype mapping.
   - Implemented `Genome`, `Phenotype`, and `LineageMetadata` components and `GenomeConfig` resource.
   - Implemented dynamic phenotype caching derived on spawn (`derive_phenotype_on_spawn` system).
@@ -31,12 +38,31 @@ This document serves as the immediate handoff instructions for any AI model resu
   - Updated tests and validation systems to allow running on restored worlds at tick $>0$ without initial spawner constraints failing.
   - Added genome mapping mapping, serialization round-trip, and phenotype reconstruction unit tests.
 * **Milestone 15 Completed:** Implemented agent persistence and integration testing.
-  - Snapshot schema version upgraded to `2` to include the `StableIdGenerator` and `agents` collections.
-  - Mapped agent metadata, position, and metabolic stock to snapshot formats.
-  - Restored `StableIdGenerator` resource and spawned reconstructed agent entities with default `ActionRequest(None)` to prevent query freezes.
-  - Updated `assert_worlds_equivalent` to perform structural comparisons of both the generator resource and live agent collections sorted by stable identifier.
-  - Verified A+B=N save/load split ticking equivalence through standard integration tests and the year-long `test_long_run_stability_512` stability test.
-* **Milestone 14 Completed:** Implemented spatial movement execution. Agents step cardinally, validating against world boundaries, slopes, and water zones.
+
+---
+
+## Completed Milestone 17 Summary
+
+### Features Delivered
+*   `process_agent_consumption` system (performs local grid resource harvesting and agent energy replenishment).
+*   Diet preference and consumption efficiency scaling formulas.
+*   Stable order execution using `AgentMetadata.id` ascending (ADR-002 compliance).
+*   Mass conservation subtraction from `ResourceChunk` arrays.
+*   Config fields `max_harvest_rate` and `consumption_efficiency` added to `WorldConfig`.
+
+### Files Modified
+*   `engine/src/agent/mod.rs`
+*   `engine/src/agent/systems.rs`
+*   `engine/src/app/mod.rs`
+*   `engine/src/config/world_config.rs`
+*   `engine/src/testing/fixtures.rs`
+
+### Test Results & Determinism Status
+*   All 131 standard tests and clippy checks pass.
+*   Ignored stability test `test_long_run_stability_512` passes, proving save/load determinism holds bit-perfectly over 1 simulation year with consumption enabled.
+
+### Technical Debt Notes
+*   Consumption lookup iterates O(agents * chunks) linearly to resolve chunk coordinates instead of caching or reusing sensing API helpers (accepted debt matching movement systems design).
 
 ---
 
@@ -63,7 +89,7 @@ This document serves as the immediate handoff instructions for any AI model resu
 
 ## Open Problems & Technical Debt
 
-* **Known Technical Debt (Metabolism/Sensing/Movement O(N) Lookup):** ClimateChunk and TerrainChunk lookups in agent systems currently perform linear chunk scans (O(agent_count × chunk_count)). This is intentionally accepted for Phase 2 correctness-first implementation and should be replaced with indexed chunk lookup (HashMap or equivalent deterministic spatial index) during a future performance optimization pass.
+* **Known Technical Debt (Metabolism/Sensing/Movement/Consumption O(N) Lookup):** ClimateChunk and TerrainChunk lookups in agent systems currently perform linear chunk scans (O(agent_count × chunk_count)). This is intentionally accepted for Phase 2/3 correctness-first implementation and should be replaced with indexed chunk lookup (HashMap or equivalent deterministic spatial index) during a future performance optimization pass.
 * **Manual Array Indexing:** Systems calculate 1D cell offsets manually from 2D coordinates: `local_y * chunk_size + local_x`. This requires introducing an abstract `ChunkField<T>` struct to avoid index out-of-bounds risks in future phases.
 * **Synchronous Serialization Blocking:** Snapshot loading and saving operations are run synchronously on the Bevy main loop, which will block frames during large world persistence in a client interface context.
 
@@ -71,13 +97,13 @@ This document serves as the immediate handoff instructions for any AI model resu
 
 ## Current Development Target
 
-Begin Milestone 17 — Resource Consumption (Eating & Drinking).
+Begin Milestone 18 — Reproduction, Inheritance & Lineage.
 
 ## Recommended Next Actions
 
 *   Confirm that standard tests and clippy compile cleanly: `cargo test` and `cargo clippy --all-targets --all-features -- -D warnings`.
-*   Formulate the implementation strategy for Milestone 17.
-*   Tag the repository with release marker `v0.3.0-phase3-m16` or similar.
+*   Formulate the implementation strategy for Milestone 18.
+*   Tag the repository with release marker `v0.3.0-phase3-m17` or similar.
 
 ---
 

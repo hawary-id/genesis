@@ -12,7 +12,7 @@ Based on the architecture constraints of Genesis, the implementation is partitio
 
 ---
 
-### Milestone 16: Genetics and Phenotype Mapping
+### Milestone 16: Genetics and Phenotype Mapping [COMPLETE]
 *   **Goal:** Introduce the genetic representation and map continuous gene vectors to concrete phenotypic traits.
 *   **Scope:** 
     *   Create the `Genome` component storing genes in a `Vec<f32>` vector for long-term future extensibility.
@@ -39,7 +39,7 @@ Based on the architecture constraints of Genesis, the implementation is partitio
 
 ---
 
-### Milestone 17: Resource Consumption (Eating & Drinking)
+### Milestone 17: Resource Consumption (Eating & Drinking) [COMPLETE]
 *   **Goal:** Establish the metabolic energy acquisition loop.
 *   **Scope:**
     *   Allow agents to consume nutrients and fresh water at their coordinates.
@@ -57,7 +57,7 @@ Based on the architecture constraints of Genesis, the implementation is partitio
 
 ---
 
-### Milestone 18: Reproduction, Inheritance, and Lineage
+### Milestone 18: Reproduction, Inheritance, and Lineage [ACTIVE]
 *   **Goal:** Enable population continuity via deterministic asexual reproduction and lineage tracking.
 *   **Scope:**
     *   Check birth requirements (energy threshold and maturity age bounds).

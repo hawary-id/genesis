@@ -17,12 +17,12 @@ The engine is engineered in Rust using data-oriented ECS (Entity Component Syste
 ## Current State
 
 * **Current Phase:** Phase 3 — Evolution (Active)
-* **Current Milestone:** Milestone 17 — Resource Consumption (Eating & Drinking)
-* **Last Completed Milestone:** Milestone 16 — Genetics & Phenotype Mapping
+* **Current Milestone:** Milestone 18 — Reproduction, Inheritance & Lineage
+* **Last Completed Milestone:** Milestone 17 — Resource Consumption (Eating & Drinking)
 * **Repository Status:** Clean
 * **Build Status:** PASS (Compares cleanly with zero warnings under Clippy)
 * **Test Status:** PASS
-  - Standard Test Suite: `127 passed; 0 failed; 1 ignored`
+  - Standard Test Suite: `131 passed; 0 failed; 1 ignored`
   - Ignored Test Suite (`cargo test -- --ignored`): `1 passed` (stability check of 8,640 ticks / 1 simulation year completes successfully in 216.53s)
 
 ---
@@ -67,12 +67,13 @@ With Phase 2 (Life) completed and verified, Phase 3 (Evolution) has begun:
 * Constraining spatial transitions under grid-cell movement rules (Milestone 14 - Completed).
 * Extending snapshot serialization and verifying execution determinism under save/load equivalence integration tests (Milestone 15 - Completed).
 * Implementing genetic representations, phenotype mapping cache, generation tracking, and version 3 snapshots (Milestone 16 - Completed).
+* Implementing environmental resource harvesting, neighborhood sensing of nutrient/fresh water chunks, and agent energy stock replenishment (Milestone 17 - Completed).
 
 ---
 
 ## Next Recommended Objectives
 
-1. **Milestone 17: Resource Consumption (Eating & Drinking):** Implement environmental resource harvesting, neighborhood sensing of nutrient/fresh water chunks, and agent energy stock replenishment.
+1. **Milestone 18: Reproduction, Inheritance & Lineage:** Enable population continuity via deterministic asexual reproduction and lineage tracking.
 
 ---
 
@@ -116,8 +117,8 @@ To load repository context quickly and efficiently while minimizing repository s
 
 ## Last Updated State
 
-* **Timestamp:** 2026-06-15T09:54:00+07:00
-* **Repository State:** Phase 3 Milestone 16 complete, verified, and active development on Milestone 17.
+* **Timestamp:** 2026-06-15T11:45:00+07:00
+* **Repository State:** Phase 3 Milestone 17 complete, verified, and active development on Milestone 18.
 
 ## Repository State
 

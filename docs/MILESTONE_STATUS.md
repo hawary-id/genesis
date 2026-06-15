@@ -2,24 +2,24 @@
 
 This registry tracks the status and deliverables of all milestones in the Genesis roadmap.
 
-* **Overall Progress Estimate:** Phase 1 Complete; Phase 2 Complete (Milestones 11-15 Completed)
-* **Current Phase:** Phase 3 — Evolution (Transitioning from Phase 2)
-* **Current Milestone:** Phase 2 Complete (v0.2.0-phase2 release candidate)
+* **Overall Progress Estimate:** Phase 1 Complete; Phase 2 Complete; Phase 3 Active (Milestone 16 Completed)
+* **Current Phase:** Phase 3 — Evolution
+* **Current Milestone:** Milestone 17 — Resource Consumption (Eating & Drinking)
 
 ---
 
 ## Current Active Work
 
 * **Active Phase:** Phase 3 — Evolution
-* **Current Milestone:** Milestone 16 — Genetics, Mutation, and Inheritance (Not Started)
+* **Current Milestone:** Milestone 17 — Resource Consumption (Eating & Drinking) (Active)
 
 ## Current Focus
 
-* Designing and planning genomic vectors, inheritance mapping, mutation rules, and environmental selection pressures (Phase 3).
+* Implementing environmental resource harvesting, neighborhood sensing of nutrient/fresh water chunks, and agent energy stock replenishment.
 
 ## Next Milestone
 
-* **Milestone 16:** Genetics & Heredity (Phase 3, Milestone 16)
+* **Next Milestone:** Milestone 17: Resource Consumption (Eating & Drinking) (Phase 3, Milestone 17)
 
 ---
 
@@ -198,10 +198,45 @@ This registry tracks the status and deliverables of all milestones in the Genesi
 
 ---
 
-## Phases 3 through 12 — Evolution, Memory, Agency, Society, Economy, Civilization
+## Phase 3 — Evolution (Active)
+
+* **Related Documents:**
+  - [PHASE3_EVOLUTION_TECH_SPEC.md](https://github.com/hawary-id/genesis/blob/main/docs/PHASE3_EVOLUTION_TECH_SPEC.md) — Technical Specification.
+  - [PHASE3_IMPLEMENTATION_PLAN.md](https://github.com/hawary-id/genesis/blob/main/docs/PHASE3_IMPLEMENTATION_PLAN.md) — Implementation Plan.
+
+### Milestone 16: Genetics and Phenotype Mapping
+* **Status:** Completed
+* **Summary:** Implemented foundational genetic structures and phenotype cache. Mapped raw gene float arrays to physical traits configured via genome ranges, re-derived phenotypes dynamically on load, and verified version 3 JSON persistence for lineage and genetic information. Note that the Phenotype component is successfully cached and reconstructed but does not yet influence agent movement, metabolism, or survival (intentional; scheduled for Milestone 20).
+* **Major Deliverables:**
+  - `Genome` component (`Vec<f32>` float array)
+  - `Phenotype` component (cached derived traits)
+  - `LineageMetadata` component (`parent_id`, `generation`)
+  - `GenomeConfig` resource (bounds limits ranges)
+  - `derive_phenotype_on_spawn` system
+  - Snapshot schema version 3 upgrade (`Genome` & `LineageMetadata` persistence, dynamic `Phenotype` reconstruction on load)
+  - Validation rules for genomes and lineages in validation systems
+* **Verification Summary:**
+  - `cargo fmt` PASS
+  - `cargo clippy` PASS
+  - `cargo test` PASS (including genetics mapping, snapshot round-trip, and phenotype reconstruction tests)
+  - `cargo test -- --ignored` PASS (stability test equivalence check)
+  - determinism & snapshot validation PASS
+  - manual testing PASS
+* **Dependencies:** Milestone 15.
+* **Related Source Code:**
+  - [agent/components.rs](https://github.com/hawary-id/genesis/blob/main/engine/src/agent/components.rs) — ECS component definitions.
+  - [agent/resources.rs](https://github.com/hawary-id/genesis/blob/main/engine/src/agent/resources.rs) — Config ranges bounds parameters.
+  - [agent/systems.rs](https://github.com/hawary-id/genesis/blob/main/engine/src/agent/systems.rs) — Phenotype mapping systems and unit tests.
+  - [persistence/snapshot.rs](https://github.com/hawary-id/genesis/blob/main/engine/src/persistence/snapshot.rs) — AgentSnapshot updates.
+  - [persistence/io.rs](https://github.com/hawary-id/genesis/blob/main/engine/src/persistence/io.rs) — Snapshot reconstruction and save/load equivalence.
+  - [validation/systems.rs](https://github.com/hawary-id/genesis/blob/main/engine/src/validation/systems.rs) — Invariant checks for genome/lineage.
+
+---
+
+## Phases 4 through 12 — Memory, Agency, Society, Economy, Civilization
 
 * **Status:** Planned
-* **Summary:** Implementation of genomes, location memories, priorities prioritization, rep trading, specialized technology trees, and institutional governance.
-* **Dependencies:** Phase 2.
+* **Summary:** Implementation of location memories, goals prioritization, cooperation trust, specialized technologies, and institutional governance.
+* **Dependencies:** Phase 3.
 * **Related Documents:**
-  - [ROADMAP.md](https://github.com/hawary-id/genesis/blob/main/docs/ROADMAP.md#L43-L184) — Long-term phases descriptions.
+  - [ROADMAP.md](https://github.com/hawary-id/genesis/blob/main/docs/ROADMAP.md#L58-L184) — Long-term phases descriptions.

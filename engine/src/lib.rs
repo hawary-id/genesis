@@ -3,6 +3,9 @@
 //! Genesis is an Artificial Civilization Engine built on data-oriented principles using Bevy ECS.
 //! This crate contains the core simulation engine.
 
+#![allow(clippy::field_reassign_with_default)]
+#![allow(clippy::manual_range_contains)]
+
 pub mod agent;
 pub mod app;
 pub mod config;

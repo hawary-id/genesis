@@ -54,8 +54,9 @@ impl App {
                     .after(crate::world::climate::update_climate_fields),
                 crate::world::energy::update_energy_availability_fields
                     .after(crate::world::resource::update_resource_fields),
-                crate::agent::process_agent_movement
+                crate::agent::derive_phenotype_on_spawn
                     .after(crate::world::energy::update_energy_availability_fields),
+                crate::agent::process_agent_movement.after(crate::agent::derive_phenotype_on_spawn),
                 crate::agent::update_agent_metabolism.after(crate::agent::process_agent_movement),
                 crate::agent::process_agent_deaths.after(crate::agent::update_agent_metabolism),
             ));

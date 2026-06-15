@@ -1,4 +1,4 @@
-use crate::agent::{AgentMetadata, AgentPosition, MetabolicStock};
+use crate::agent::{AgentMetadata, AgentPosition, Genome, LineageMetadata, MetabolicStock};
 use crate::config::{WorldBounds, WorldConfig};
 use crate::time::season_state::validate_season_state;
 use crate::time::{SeasonState, SimulationClock};
@@ -14,6 +14,7 @@ use bevy_ecs::prelude::*;
 pub fn validate_world_on_startup(
     config: Res<WorldConfig>,
     bounds: Res<WorldBounds>,
+    clock: Res<SimulationClock>,
     query: Query<(
         &ChunkCoord,
         &TerrainChunk,
@@ -21,7 +22,13 @@ pub fn validate_world_on_startup(
         &ResourceChunk,
         &EnergyAvailabilityChunk,
     )>,
-    agents_query: Query<(&AgentMetadata, &AgentPosition, &MetabolicStock)>,
+    agents_query: Query<(
+        &AgentMetadata,
+        &AgentPosition,
+        &MetabolicStock,
+        &Genome,
+        &LineageMetadata,
+    )>,
 ) {
     let expected_chunks = (bounds.chunks_x * bounds.chunks_y) as usize;
     let actual_chunks = query.iter().count();
@@ -58,24 +65,38 @@ pub fn validate_world_on_startup(
         }
     }
 
+    let is_restored = clock.total_ticks > 0;
+
     // Validate agents at startup
-    let expected_agent_count = (config.initial_agent_count.min(config.agent_density_cap)) as usize;
-    let actual_agent_count = agents_query.iter().count();
-    if actual_agent_count != expected_agent_count {
-        handle_validation_error(ValidationError::AgentCountMismatch {
-            expected: expected_agent_count,
-            actual: actual_agent_count,
-        });
-        return;
+    if is_restored {
+        let actual_agent_count = agents_query.iter().count();
+        if actual_agent_count > config.agent_density_cap as usize {
+            handle_validation_error(ValidationError::AgentCountMismatch {
+                expected: config.agent_density_cap as usize,
+                actual: actual_agent_count,
+            });
+            return;
+        }
+    } else {
+        let expected_agent_count =
+            (config.initial_agent_count.min(config.agent_density_cap)) as usize;
+        let actual_agent_count = agents_query.iter().count();
+        if actual_agent_count != expected_agent_count {
+            handle_validation_error(ValidationError::AgentCountMismatch {
+                expected: expected_agent_count,
+                actual: actual_agent_count,
+            });
+            return;
+        }
     }
 
     // Sort agents by stable ID to guarantee order-independent verification
     let mut agents: Vec<_> = agents_query.iter().collect();
-    agents.sort_by_key(|(meta, _, _)| meta.id);
+    agents.sort_by_key(|(meta, _, _, _, _)| meta.id);
 
     let mut seen_ids = std::collections::HashSet::new();
 
-    for (meta, pos, stock) in agents {
+    for (meta, pos, stock, genome, lineage) in agents {
         // Unique non-zero IDs
         if meta.id == 0 || !seen_ids.insert(meta.id) {
             handle_validation_error(ValidationError::AgentDuplicateId { agent_id: meta.id });
@@ -91,22 +112,73 @@ pub fn validate_world_on_startup(
             return;
         }
 
-        // Initial stocks: energy must be exactly initial_agent_energy
-        if stock.energy != config.initial_agent_energy
-            || stock.energy < 0.0
-            || stock.energy > config.agent_energy_max
-        {
-            handle_validation_error(ValidationError::AgentEnergyOutOfBounds {
+        if is_restored {
+            if stock.energy < 0.0 || stock.energy > config.agent_energy_max {
+                handle_validation_error(ValidationError::AgentEnergyOutOfBounds {
+                    agent_id: meta.id,
+                    energy: stock.energy,
+                });
+                return;
+            }
+            if stock.age > config.agent_age_limit {
+                handle_validation_error(ValidationError::AgentAgeOutOfBounds {
+                    agent_id: meta.id,
+                    age: stock.age,
+                });
+                return;
+            }
+        } else {
+            // Initial stocks: energy must be exactly initial_agent_energy
+            if stock.energy != config.initial_agent_energy
+                || stock.energy < 0.0
+                || stock.energy > config.agent_energy_max
+            {
+                handle_validation_error(ValidationError::AgentEnergyOutOfBounds {
+                    agent_id: meta.id,
+                    energy: stock.energy,
+                });
+                return;
+            }
+
+            if stock.age != 0 {
+                handle_validation_error(ValidationError::AgentAgeOutOfBounds {
+                    agent_id: meta.id,
+                    age: stock.age,
+                });
+                return;
+            }
+        }
+
+        // Genome validation
+        if genome.genes.is_empty() {
+            handle_validation_error(ValidationError::AgentGenomeInvalid {
                 agent_id: meta.id,
-                energy: stock.energy,
+                detail: "Genome genes vector is empty",
             });
             return;
         }
+        for &gene in &genome.genes {
+            if !(0.0..=1.0).contains(&gene) {
+                handle_validation_error(ValidationError::AgentGenomeInvalid {
+                    agent_id: meta.id,
+                    detail: "Gene value out of bounds [0.0, 1.0]",
+                });
+                return;
+            }
+        }
 
-        if stock.age != 0 {
-            handle_validation_error(ValidationError::AgentAgeOutOfBounds {
+        // Lineage validation
+        if lineage.parent_id == Some(meta.id) {
+            handle_validation_error(ValidationError::AgentLineageInvalid {
                 agent_id: meta.id,
-                age: stock.age,
+                detail: "Agent parent_id cannot be equal to agent_id",
+            });
+            return;
+        }
+        if lineage.parent_id.is_some() && lineage.generation == 0 {
+            handle_validation_error(ValidationError::AgentLineageInvalid {
+                agent_id: meta.id,
+                detail: "Agent generation must be greater than 0 if parent_id is Some",
             });
             return;
         }
@@ -125,7 +197,13 @@ pub fn validate_world_on_tick(
         &ResourceChunk,
         &EnergyAvailabilityChunk,
     )>,
-    agents_query: Query<(&AgentMetadata, &AgentPosition, &MetabolicStock)>,
+    agents_query: Query<(
+        &AgentMetadata,
+        &AgentPosition,
+        &MetabolicStock,
+        &Genome,
+        &LineageMetadata,
+    )>,
     mut previous_tick: Local<Option<u32>>,
 ) {
     // 1. Clock monotonicity check
@@ -178,11 +256,11 @@ pub fn validate_world_on_tick(
 
     // Sort agents by stable ID to guarantee order-independent checks
     let mut agents: Vec<_> = agents_query.iter().collect();
-    agents.sort_by_key(|(meta, _, _)| meta.id);
+    agents.sort_by_key(|(meta, _, _, _, _)| meta.id);
 
     let mut seen_ids = std::collections::HashSet::new();
 
-    for (meta, pos, stock) in agents {
+    for (meta, pos, stock, genome, lineage) in agents {
         // Unique non-zero IDs
         if meta.id == 0 || !seen_ids.insert(meta.id) {
             handle_validation_error(ValidationError::AgentDuplicateId { agent_id: meta.id });
@@ -211,6 +289,40 @@ pub fn validate_world_on_tick(
             handle_validation_error(ValidationError::AgentAgeOutOfBounds {
                 agent_id: meta.id,
                 age: stock.age,
+            });
+            return;
+        }
+
+        // Genome validation
+        if genome.genes.is_empty() {
+            handle_validation_error(ValidationError::AgentGenomeInvalid {
+                agent_id: meta.id,
+                detail: "Genome genes vector is empty",
+            });
+            return;
+        }
+        for &gene in &genome.genes {
+            if !(0.0..=1.0).contains(&gene) {
+                handle_validation_error(ValidationError::AgentGenomeInvalid {
+                    agent_id: meta.id,
+                    detail: "Gene value out of bounds [0.0, 1.0]",
+                });
+                return;
+            }
+        }
+
+        // Lineage validation
+        if lineage.parent_id == Some(meta.id) {
+            handle_validation_error(ValidationError::AgentLineageInvalid {
+                agent_id: meta.id,
+                detail: "Agent parent_id cannot be equal to agent_id",
+            });
+            return;
+        }
+        if lineage.parent_id.is_some() && lineage.generation == 0 {
+            handle_validation_error(ValidationError::AgentLineageInvalid {
+                agent_id: meta.id,
+                detail: "Agent generation must be greater than 0 if parent_id is Some",
             });
             return;
         }
@@ -323,6 +435,14 @@ mod tests {
             field: "solar_exposure",
             value: 100.0,
         };
+        let err8 = ValidationError::AgentGenomeInvalid {
+            agent_id: 42,
+            detail: "empty genes",
+        };
+        let err9 = ValidationError::AgentLineageInvalid {
+            agent_id: 42,
+            detail: "invalid generation",
+        };
 
         assert_eq!(
             err1,
@@ -372,6 +492,20 @@ mod tests {
                 coord: ChunkCoord::new(0, 0),
                 field: "solar_exposure",
                 value: 100.0
+            }
+        );
+        assert_eq!(
+            err8,
+            ValidationError::AgentGenomeInvalid {
+                agent_id: 42,
+                detail: "empty genes",
+            }
+        );
+        assert_eq!(
+            err9,
+            ValidationError::AgentLineageInvalid {
+                agent_id: 42,
+                detail: "invalid generation",
             }
         );
     }
@@ -474,11 +608,15 @@ mod tests {
             AgentMetadata::new(10),
             AgentPosition::new(crate::world::coord::WorldCoord::new(0, 0)),
             MetabolicStock::new(100.0, 0),
+            Genome::new(vec![0.5; 8]),
+            LineageMetadata::new(None, 0),
         ));
         world.spawn((
             AgentMetadata::new(10),
             AgentPosition::new(crate::world::coord::WorldCoord::new(1, 1)),
             MetabolicStock::new(100.0, 0),
+            Genome::new(vec![0.5; 8]),
+            LineageMetadata::new(None, 0),
         ));
 
         world.run_schedule(crate::app::PostTickValidation);
@@ -495,6 +633,8 @@ mod tests {
             AgentMetadata::new(1),
             AgentPosition::new(crate::world::coord::WorldCoord::new(100, 0)),
             MetabolicStock::new(100.0, 0),
+            Genome::new(vec![0.5; 8]),
+            LineageMetadata::new(None, 0),
         ));
 
         world.run_schedule(crate::app::PostTickValidation);
@@ -515,11 +655,15 @@ mod tests {
             AgentMetadata::new(1),
             AgentPosition::new(crate::world::coord::WorldCoord::new(0, 0)),
             MetabolicStock::new(100.0, 0),
+            Genome::new(vec![0.5; 8]),
+            LineageMetadata::new(None, 0),
         ));
         world.spawn((
             AgentMetadata::new(2),
             AgentPosition::new(crate::world::coord::WorldCoord::new(1, 1)),
             MetabolicStock::new(100.0, 0),
+            Genome::new(vec![0.5; 8]),
+            LineageMetadata::new(None, 0),
         ));
 
         // This schedule run calls validate_world_on_startup
@@ -537,6 +681,8 @@ mod tests {
             AgentMetadata::new(1),
             AgentPosition::new(crate::world::coord::WorldCoord::new(0, 0)),
             MetabolicStock::new(-5.0, 0),
+            Genome::new(vec![0.5; 8]),
+            LineageMetadata::new(None, 0),
         ));
 
         world.run_schedule(crate::app::PostTickValidation);
@@ -554,6 +700,8 @@ mod tests {
             AgentMetadata::new(1),
             AgentPosition::new(crate::world::coord::WorldCoord::new(0, 0)),
             MetabolicStock::new(100.0, limit + 1),
+            Genome::new(vec![0.5; 8]),
+            LineageMetadata::new(None, 0),
         ));
 
         world.run_schedule(crate::app::PostTickValidation);

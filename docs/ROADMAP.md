@@ -1,18 +1,23 @@
 # Development Roadmap
 
-## Phase 1 — World
+## Phase 1 — World (Completed)
 
 Goal:
 
 Persistent world.
 
-Features:
+Milestones:
 
-- terrain
-- climate
-- seasons
-- resources
-- simulation clock
+- [x] M1 Foundation
+- [x] M2 ECS Setup
+- [x] M3 Terrain
+- [x] M4 Climate
+- [x] M5 Resources
+- [x] M6 Energy Availability
+- [x] M7 Simulation Clock & Seasons
+- [x] M8 Validation
+- [x] M9 Persistence
+- [x] M10 Determinism
 
 Success:
 
@@ -20,19 +25,19 @@ World survives independently.
 
 ---
 
-## Phase 2 — Life
+## Phase 2 — Life (Completed)
 
 Goal:
 
 Autonomous life.
 
-Features:
+Milestones:
 
-- movement
-- hunger
-- energy
-- aging
-- death
+- [x] M11 Agent Data Foundation & Spawning
+- [x] M12 Environmental Sensing Query API
+- [x] M13 Metabolic Tick Systems
+- [x] M14 Spatial Movement Execution
+- [x] M15 Persistence & Integration Testing
 
 Success:
 
@@ -40,14 +45,20 @@ Life survives.
 
 ---
 
-## Phase 3 — Evolution
+## Phase 3 — Evolution (Active)
 
-Features:
+Goal:
 
-- genetics
-- mutation
-- inheritance
-- natural selection
+Adaptive populations and selection pressures.
+
+Milestones:
+
+- [x] M16 Genetics & Phenotype Mapping
+- [ ] M17 Resource Consumption
+- [ ] M18 Reproduction & Inheritance
+- [ ] M19 Mutation & Drift
+- [ ] M20 Natural Selection & Adaptation
+- [ ] M21 Diagnostics & Validation
 
 Success:
 

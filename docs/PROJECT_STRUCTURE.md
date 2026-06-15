@@ -1,6 +1,6 @@
 # Genesis Project Structure
 
-This document catalogs the directory layout and modular architecture of Project Genesis during Phase 2 (as of Milestone 15 completion). It details the purpose, responsibilities, key files, and dependencies of each submodule.
+This document catalogs the directory layout and modular architecture of Project Genesis during Phase 3 (as of Milestone 16 completion). It details the purpose, responsibilities, key files, and dependencies of each submodule.
 
 ---
 
@@ -42,13 +42,13 @@ All simulation logic resides under [engine/src/](https://github.com/hawary-id/ge
 The crate is structured into the following submodules:
 
 ### agent/
-* **Purpose:** Biological agent entities structure, metadata, ID generation, spawning, and environmental sensing queries.
-* **Responsibilities:** Defines agent metadata with stable sequence identifiers, spatial positions, metabolic stocks, action requests, spawns the initial agent population deterministically, provides query utilities to sense nutrients and fresh water resources in the local neighborhood chunk cells, updates agent age and metabolic stock energy, and despawns dead or over-aged agents.
+* **Purpose:** Biological agent entities structure, metadata, ID generation, spawning, environmental sensing, and genetics/phenotype mapping.
+* **Responsibilities:** Defines agent metadata with stable sequence identifiers, spatial positions, metabolic stocks, action requests, `Genome` vectors, cached `Phenotype` traits, and `LineageMetadata`. Spawns the initial agent population deterministically, derives agent phenotypes on spawn, provides query utilities to sense resources in neighborhood cells, updates agent metabolism and age, and handles death. Manages the `StableIdGenerator` and `GenomeConfig` resources.
 * **Key Files:**
-  - [components.rs](https://github.com/hawary-id/genesis/blob/main/engine/src/agent/components.rs) — Agent data structures (`AgentMetadata`, `AgentPosition`, `MetabolicStock`, `ActionRequest`).
-  - [resources.rs](https://github.com/hawary-id/genesis/blob/main/engine/src/agent/resources.rs) — `StableIdGenerator` identifier generation logic.
+  - [components.rs](https://github.com/hawary-id/genesis/blob/main/engine/src/agent/components.rs) — Agent data structures (`AgentMetadata`, `AgentPosition`, `MetabolicStock`, `ActionRequest`, `Genome`, `Phenotype`, `LineageMetadata`).
+  - [resources.rs](https://github.com/hawary-id/genesis/blob/main/engine/src/agent/resources.rs) — Resources (`StableIdGenerator` counter state and `GenomeConfig` traits bounds).
   - [sensing.rs](https://github.com/hawary-id/genesis/blob/main/engine/src/agent/sensing.rs) — Environmental sensing query API (`query_cell`, `query_neighborhood`, and `SensedResource`).
-  - [systems.rs](https://github.com/hawary-id/genesis/blob/main/engine/src/agent/systems.rs) — Spawning, metabolic decay update, age progression, and death processing systems.
+  - [systems.rs](https://github.com/hawary-id/genesis/blob/main/engine/src/agent/systems.rs) — Spawning, phenotype derivation (`derive_phenotype_on_spawn`), metabolic decay update, age progression, and death processing systems.
   - [mod.rs](https://github.com/hawary-id/genesis/blob/main/engine/src/agent/mod.rs) — Submodule interface re-exports.
 * **Dependencies:** `bevy_ecs`, `config`, `rng`, `world::coord`, `world::resource`.
 
@@ -105,10 +105,10 @@ The crate is structured into the following submodules:
 
 ### persistence/
 * **Purpose:** State snapshot serialization and file save/load.
-* **Responsibilities:** Compiles state snapshots, maps ECS components (both environmental chunk data and agent data) to schema version 2 file models, persists the StableIdGenerator resource, and writes/loads JSON strings.
+* **Responsibilities:** Compiles state snapshots, maps ECS components (both environmental chunk data and agent data) to schema version 3 file models, persists the `StableIdGenerator` resource, serializes agent `Genome` and `LineageMetadata`, dynamically reconstructs agent `Phenotype` cache on load, and writes/loads JSON strings.
 * **Key Files:**
-  - [io.rs](https://github.com/hawary-id/genesis/blob/main/engine/src/persistence/io.rs) — Stable snapshot sort serialization and agent load reconstruction routines.
-  - [snapshot.rs](https://github.com/hawary-id/genesis/blob/main/engine/src/persistence/snapshot.rs) — Serialization structures supporting version 2 (agents and generator state).
+  - [io.rs](https://github.com/hawary-id/genesis/blob/main/engine/src/persistence/io.rs) — Stable snapshot sort serialization and agent load reconstruction routines with phenotype re-derivation.
+  - [snapshot.rs](https://github.com/hawary-id/genesis/blob/main/engine/src/persistence/snapshot.rs) — Serialization structures supporting version 3 (genetics and lineage metadata).
   - [systems.rs](https://github.com/hawary-id/genesis/blob/main/engine/src/persistence/systems.rs) — Persistence tick evaluation systems collecting agent components.
 * **Dependencies:** `bevy_ecs`, `config`, `time`, `world`, `agent`, `serde`, `serde_json`.
 

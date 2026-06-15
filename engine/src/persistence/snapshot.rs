@@ -5,7 +5,9 @@
 
 use serde::{Deserialize, Serialize};
 
-use crate::agent::{AgentMetadata, AgentPosition, MetabolicStock, StableIdGenerator};
+use crate::agent::{
+    AgentMetadata, AgentPosition, Genome, LineageMetadata, MetabolicStock, StableIdGenerator,
+};
 use crate::config::WorldConfig;
 use crate::rng::WorldSeed;
 use crate::world::climate::ClimateChunk;
@@ -72,6 +74,12 @@ pub struct AgentSnapshot {
 
     /// Metabolic stocks (energy, age).
     pub stock: MetabolicStock,
+
+    /// Raw genetic values vector.
+    pub genome: Genome,
+
+    /// Generational lineage metadata.
+    pub lineage: LineageMetadata,
 }
 
 /// Complete state of one chunk entity at snapshot time.
@@ -114,7 +122,7 @@ mod tests {
             chunks: vec![],
             agents: vec![],
         };
-        assert_eq!(snapshot.schema_version, 2);
+        assert_eq!(snapshot.schema_version, 3);
     }
 
     #[test]

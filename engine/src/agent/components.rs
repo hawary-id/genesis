@@ -76,3 +76,91 @@ impl ActionRequest {
         Self { intent }
     }
 }
+
+/// Genetic representation of an agent.
+#[derive(Component, Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct Genome {
+    /// Vector of gene values in the range [0.0, 1.0].
+    pub genes: Vec<f32>,
+}
+
+impl Genome {
+    /// Creates a new `Genome` from a vector of gene values.
+    pub fn new(genes: Vec<f32>) -> Self {
+        Self { genes }
+    }
+}
+
+/// Concrete traits derived from agent's genome.
+#[derive(Component, Debug, Clone, Copy, PartialEq, Serialize, Deserialize)]
+pub struct Phenotype {
+    /// Thermal optimum temperature.
+    pub thermal_optimum: f32,
+    /// Diet preference (0.0 = pure nutrient consumer, 1.0 = pure fresh water consumer).
+    pub diet_preference: f32,
+    /// Max elevation slope traversed.
+    pub max_slope: f32,
+    /// Max water depth traversed.
+    pub max_water_depth: f32,
+    /// Sensing cell radius.
+    pub sensing_radius: u32,
+    /// Energy threshold to reproduce.
+    pub reproduction_threshold: f32,
+    /// Maturity age in simulation ticks.
+    pub maturity_age: u32,
+    /// Physical size multiplier.
+    pub physical_size: f32,
+    /// Derived base decay rate.
+    pub derived_base_decay: f32,
+    /// Derived step movement energy cost.
+    pub derived_movement_cost: f32,
+}
+
+impl Phenotype {
+    /// Creates a new `Phenotype` with the given values.
+    #[allow(clippy::too_many_arguments)]
+    pub fn new(
+        thermal_optimum: f32,
+        diet_preference: f32,
+        max_slope: f32,
+        max_water_depth: f32,
+        sensing_radius: u32,
+        reproduction_threshold: f32,
+        maturity_age: u32,
+        physical_size: f32,
+        derived_base_decay: f32,
+        derived_movement_cost: f32,
+    ) -> Self {
+        Self {
+            thermal_optimum,
+            diet_preference,
+            max_slope,
+            max_water_depth,
+            sensing_radius,
+            reproduction_threshold,
+            maturity_age,
+            physical_size,
+            derived_base_decay,
+            derived_movement_cost,
+        }
+    }
+}
+
+/// Family lineage and generational depth metadata.
+#[derive(Component, Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+pub struct LineageMetadata {
+    /// Unique stable identifier of the direct parent.
+    pub parent_id: Option<u64>,
+    /// Generation count.
+    pub generation: u32,
+}
+
+impl LineageMetadata {
+    /// Creates a new `LineageMetadata`.
+    pub fn new(parent_id: Option<u64>, generation: u32) -> Self {
+        Self {
+            parent_id,
+            generation,
+        }
+    }
+}

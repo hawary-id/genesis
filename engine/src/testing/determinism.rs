@@ -174,8 +174,10 @@ fn test_full_world_ticking_determinism() {
 #[test]
 #[ignore]
 fn test_long_run_stability_512() {
-    let mut config = WorldConfig::default(); // 512 x 512 default config
-    config.initial_agent_count = 10;
+    let config = WorldConfig {
+        initial_agent_count: 10,
+        ..WorldConfig::default()
+    };
     let seed = create_test_seed();
 
     // 1. Continuous Run (World A): startup + 8,640 ticks + 1 additional tick
@@ -220,13 +222,17 @@ fn test_long_run_stability_512() {
         &crate::agent::AgentMetadata,
         &crate::agent::AgentPosition,
         &crate::agent::MetabolicStock,
+        &crate::agent::Genome,
+        &crate::agent::LineageMetadata,
     )>();
     let agents: Vec<_> = agent_query
         .iter(world_split)
-        .map(|(m, p, s)| crate::persistence::AgentSnapshot {
+        .map(|(m, p, s, g, l)| crate::persistence::AgentSnapshot {
             metadata: *m,
             position: *p,
             stock: *s,
+            genome: g.clone(),
+            lineage: *l,
         })
         .collect();
 

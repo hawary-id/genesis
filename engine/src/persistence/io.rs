@@ -163,12 +163,18 @@ pub fn reconstruct_world_from_snapshot(world: &mut World, snapshot: WorldSnapsho
         ));
     }
 
+    let gen_config = crate::agent::GenomeConfig::default();
     for agent in snapshot.agents {
+        let phenotype =
+            crate::agent::systems::derive_phenotype(&agent.genome, &gen_config, &config);
         world.spawn((
             agent.metadata,
             agent.position,
             agent.stock,
             crate::agent::ActionRequest::new(crate::agent::ActionIntent::None),
+            agent.genome,
+            agent.lineage,
+            phenotype,
         ));
     }
 }
@@ -677,13 +683,17 @@ mod tests {
             &crate::agent::AgentMetadata,
             &crate::agent::AgentPosition,
             &crate::agent::MetabolicStock,
+            &crate::agent::Genome,
+            &crate::agent::LineageMetadata,
         )>();
         let agents: Vec<_> = agent_query
             .iter(world_split)
-            .map(|(m, p, s)| crate::persistence::AgentSnapshot {
+            .map(|(m, p, s, g, l)| crate::persistence::AgentSnapshot {
                 metadata: *m,
                 position: *p,
                 stock: *s,
+                genome: g.clone(),
+                lineage: *l,
             })
             .collect();
         let snapshot = build_world_snapshot(

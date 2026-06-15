@@ -16,12 +16,13 @@ The engine is engineered in Rust using data-oriented ECS (Entity Component Syste
 
 ## Current State
 
-* **Current Phase:** Phase 3 — Evolution (Transitioning from Phase 2)
-* **Current Milestone:** Phase 2 Complete (v0.2.0-phase2 release candidate)
+* **Current Phase:** Phase 3 — Evolution (Active)
+* **Current Milestone:** Milestone 17 — Resource Consumption (Eating & Drinking)
+* **Last Completed Milestone:** Milestone 16 — Genetics & Phenotype Mapping
 * **Repository Status:** Clean
 * **Build Status:** PASS (Compares cleanly with zero warnings under Clippy)
 * **Test Status:** PASS
-  - Standard Test Suite: `124 passed; 0 failed; 1 ignored`
+  - Standard Test Suite: `127 passed; 0 failed; 1 ignored`
   - Ignored Test Suite (`cargo test -- --ignored`): `1 passed` (stability check of 8,640 ticks / 1 simulation year completes successfully in 216.53s)
 
 ---
@@ -59,18 +60,19 @@ The following architectural rules are locked under ADR guidelines:
 
 ## Active Development Focus
 
-With Phase 2 (Life) completed and verified, focus transitions to the evolution layer:
+With Phase 2 (Life) completed and verified, Phase 3 (Evolution) has begun:
 * Spawning biological agent entities with stable sequence identifiers (Milestone 11 - Completed).
 * Implementing neighborhood sensory queries mapping to Phase 1 environmental chunks (Milestone 12 - Completed).
 * Driving agent lifecycle progression via metabolic decay tick updates (Milestone 13 - Completed).
 * Constraining spatial transitions under grid-cell movement rules (Milestone 14 - Completed).
 * Extending snapshot serialization and verifying execution determinism under save/load equivalence integration tests (Milestone 15 - Completed).
+* Implementing genetic representations, phenotype mapping cache, generation tracking, and version 3 snapshots (Milestone 16 - Completed).
 
 ---
 
 ## Next Recommended Objectives
 
-1. **Phase 3 Evolution Planning (Milestone 16):** Formulate technical specifications and implementation plans for the genomic representation, mutations, natural selection pressures, and inheritance models.
+1. **Milestone 17: Resource Consumption (Eating & Drinking):** Implement environmental resource harvesting, neighborhood sensing of nutrient/fresh water chunks, and agent energy stock replenishment.
 
 ---
 
@@ -114,8 +116,8 @@ To load repository context quickly and efficiently while minimizing repository s
 
 ## Last Updated State
 
-* **Timestamp:** 2026-06-15T00:50:00+07:00
-* **Repository State:** Phase 2 complete, verified, and locked under release candidate tag `v0.2.0-phase2`.
+* **Timestamp:** 2026-06-15T09:54:00+07:00
+* **Repository State:** Phase 3 Milestone 16 complete, verified, and active development on Milestone 17.
 
 ## Repository State
 

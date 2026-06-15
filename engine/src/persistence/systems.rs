@@ -8,7 +8,9 @@
 
 use bevy_ecs::prelude::*;
 
-use crate::agent::{AgentMetadata, AgentPosition, MetabolicStock, StableIdGenerator};
+use crate::agent::{
+    AgentMetadata, AgentPosition, Genome, LineageMetadata, MetabolicStock, StableIdGenerator,
+};
 use crate::app::events::{SnapshotCompleted, SnapshotRequested};
 use crate::app::plugins::SnapshotConfig;
 use crate::persistence::{build_world_snapshot, write_world_snapshot, AgentSnapshot};
@@ -74,7 +76,13 @@ pub fn handle_snapshot_requests(
         &ResourceChunk,
         &EnergyAvailabilityChunk,
     )>,
-    agent_query: Query<(&AgentMetadata, &AgentPosition, &MetabolicStock)>,
+    agent_query: Query<(
+        &AgentMetadata,
+        &AgentPosition,
+        &MetabolicStock,
+        &Genome,
+        &LineageMetadata,
+    )>,
     mut completed: EventWriter<SnapshotCompleted>,
 ) {
     for _ in events.read() {
@@ -93,11 +101,15 @@ pub fn handle_snapshot_requests(
 
         let agents: Vec<AgentSnapshot> = agent_query
             .iter()
-            .map(|(metadata, position, stock)| AgentSnapshot {
-                metadata: *metadata,
-                position: *position,
-                stock: *stock,
-            })
+            .map(
+                |(metadata, position, stock, genome, lineage)| AgentSnapshot {
+                    metadata: *metadata,
+                    position: *position,
+                    stock: *stock,
+                    genome: genome.clone(),
+                    lineage: *lineage,
+                },
+            )
             .collect();
 
         let snapshot = build_world_snapshot(

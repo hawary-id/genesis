@@ -103,4 +103,20 @@ pub enum ValidationError {
         /// Violating age value.
         age: u32,
     },
+
+    /// Agent genome genes vector is empty or values are out of bounds [0.0, 1.0].
+    AgentGenomeInvalid {
+        /// Stable identifier of the violating agent.
+        agent_id: u64,
+        /// Description of the violation.
+        detail: &'static str,
+    },
+
+    /// Agent lineage metadata is invalid.
+    AgentLineageInvalid {
+        /// Stable identifier of the violating agent.
+        agent_id: u64,
+        /// Description of the violation.
+        detail: &'static str,
+    },
 }

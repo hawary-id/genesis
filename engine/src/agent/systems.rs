@@ -6,9 +6,10 @@ use rand::SeedableRng;
 use rand_chacha::ChaCha8Rng;
 
 use crate::agent::components::{
-    ActionIntent, ActionRequest, AgentMetadata, AgentPosition, MetabolicStock,
+    ActionIntent, ActionRequest, AgentMetadata, AgentPosition, Genome, LineageMetadata,
+    MetabolicStock, Phenotype,
 };
-use crate::agent::resources::StableIdGenerator;
+use crate::agent::resources::{GenomeConfig, StableIdGenerator};
 use crate::config::{WorldBounds, WorldConfig};
 use crate::rng::{derive_agent_seed, WorldSeed};
 use crate::world::climate::ClimateChunk;
@@ -39,7 +40,115 @@ pub fn spawn_initial_agents(
             AgentPosition::new(coord),
             MetabolicStock::new(config.initial_agent_energy, 0),
             ActionRequest::new(ActionIntent::None),
+            Genome::new(vec![0.5; 8]),
+            LineageMetadata::new(None, 0),
         ));
+    }
+}
+
+/// Maps a gene float in the range [0.0, 1.0] to a continuous float range.
+pub fn map_gene_to_range(gene: f32, min: f32, max: f32) -> f32 {
+    min + gene.clamp(0.0, 1.0) * (max - min)
+}
+
+/// Maps a gene float in the range [0.0, 1.0] to a discrete u32 range.
+pub fn map_gene_to_range_discrete(gene: f32, min: u32, max: u32) -> u32 {
+    let range = (max - min) as f32;
+    let val = (min as f32 + gene.clamp(0.0, 1.0) * range).round() as u32;
+    val.min(max).max(min)
+}
+
+/// Pure helper function to derive a Phenotype from a Genome and configurations.
+pub fn derive_phenotype(
+    genome: &Genome,
+    gen_config: &GenomeConfig,
+    world_config: &WorldConfig,
+) -> Phenotype {
+    let g0 = genome.genes.first().copied().unwrap_or(0.5); // thermal optimum
+    let g1 = genome.genes.get(1).copied().unwrap_or(0.5); // diet preference
+    let g2 = genome.genes.get(2).copied().unwrap_or(0.5); // max slope limit
+    let g3 = genome.genes.get(3).copied().unwrap_or(0.5); // max water limit
+    let g4 = genome.genes.get(4).copied().unwrap_or(0.5); // sensing radius
+    let g5 = genome.genes.get(5).copied().unwrap_or(0.5); // reproduction threshold
+    let g6 = genome.genes.get(6).copied().unwrap_or(0.5); // maturity age
+    let g7 = genome.genes.get(7).copied().unwrap_or(0.5); // physical size
+
+    let thermal_optimum = map_gene_to_range(
+        g0,
+        gen_config.thermal_optimum_range.0,
+        gen_config.thermal_optimum_range.1,
+    );
+    let diet_preference = map_gene_to_range(
+        g1,
+        gen_config.diet_preference_range.0,
+        gen_config.diet_preference_range.1,
+    );
+    let max_slope = map_gene_to_range(
+        g2,
+        gen_config.max_slope_range.0,
+        gen_config.max_slope_range.1,
+    );
+    let max_water_depth = map_gene_to_range(
+        g3,
+        gen_config.max_water_depth_range.0,
+        gen_config.max_water_depth_range.1,
+    );
+    let sensing_radius = map_gene_to_range_discrete(
+        g4,
+        gen_config.sensing_radius_range.0,
+        gen_config.sensing_radius_range.1,
+    );
+    let reproduction_threshold = map_gene_to_range(
+        g5,
+        gen_config.reproduction_threshold_range.0,
+        gen_config.reproduction_threshold_range.1,
+    );
+    let maturity_age = map_gene_to_range_discrete(
+        g6,
+        gen_config.maturity_age_range.0,
+        gen_config.maturity_age_range.1,
+    );
+    let physical_size = map_gene_to_range(
+        g7,
+        gen_config.physical_size_range.0,
+        gen_config.physical_size_range.1,
+    );
+
+    // Size-Sensing Metabolic Penalty (from tech spec section 3.2):
+    // decay_base = agent_base_decay_rate * size * (1.0 + 0.15 * (sensing_radius - 1))
+    let derived_base_decay = world_config.agent_base_decay_rate
+        * physical_size
+        * (1.0 + 0.15 * (sensing_radius.saturating_sub(1) as f32));
+
+    // Kinematic Frictional Costs (from tech spec section 3.2):
+    // movement_cost = agent_movement_cost * (1.0 + 0.50 * max_slope + 0.50 * max_water)
+    let derived_movement_cost =
+        world_config.agent_movement_cost * (1.0 + 0.50 * max_slope + 0.50 * max_water_depth);
+
+    Phenotype::new(
+        thermal_optimum,
+        diet_preference,
+        max_slope,
+        max_water_depth,
+        sensing_radius,
+        reproduction_threshold,
+        maturity_age,
+        physical_size,
+        derived_base_decay,
+        derived_movement_cost,
+    )
+}
+
+/// Derives a Phenotype component and attaches it when a Genome is added.
+pub fn derive_phenotype_on_spawn(
+    mut commands: Commands,
+    gen_config: Res<GenomeConfig>,
+    world_config: Res<WorldConfig>,
+    query: Query<(Entity, &Genome), Added<Genome>>,
+) {
+    for (entity, genome) in &query {
+        let phenotype = derive_phenotype(genome, &gen_config, &world_config);
+        commands.entity(entity).insert(phenotype);
     }
 }
 
@@ -608,6 +717,8 @@ mod tests {
                 AgentMetadata::new(1),
                 AgentPosition::new(WorldCoord::new(0, 0)),
                 MetabolicStock::new(100.0, 10),
+                Genome::new(vec![0.5; 8]),
+                LineageMetadata::new(None, 0),
             ))
             .id();
 
@@ -933,6 +1044,242 @@ mod tests {
         assert_eq!(
             world.entity(entity2).get::<ActionRequest>().unwrap().intent,
             ActionIntent::None
+        );
+    }
+
+    #[test]
+    fn test_genome_mapping() {
+        let gen_config = GenomeConfig::default();
+        let world_config = WorldConfig::default();
+
+        // gene = 0.0
+        let g_min = Genome::new(vec![0.0; 8]);
+        let pheno_min = derive_phenotype(&g_min, &gen_config, &world_config);
+        assert_eq!(pheno_min.thermal_optimum, 0.0);
+        assert_eq!(pheno_min.diet_preference, 0.0);
+        assert_eq!(pheno_min.max_slope, 0.10);
+        assert_eq!(pheno_min.max_water_depth, 0.10);
+        assert_eq!(pheno_min.sensing_radius, 1);
+        assert_eq!(pheno_min.reproduction_threshold, 150.0);
+        assert_eq!(pheno_min.maturity_age, 20);
+        assert_eq!(pheno_min.physical_size, 0.5);
+
+        // gene = 0.5
+        let g_mid = Genome::new(vec![0.5; 8]);
+        let pheno_mid = derive_phenotype(&g_mid, &gen_config, &world_config);
+        assert_eq!(pheno_mid.thermal_optimum, 0.5);
+        assert_eq!(pheno_mid.diet_preference, 0.5);
+        assert_eq!(pheno_mid.max_slope, 0.35);
+        assert_eq!(pheno_mid.max_water_depth, 0.30);
+        assert_eq!(pheno_mid.sensing_radius, 3); // (1 + 0.5 * (4 - 1)) = 2.5, round() is 3
+        assert_eq!(pheno_mid.reproduction_threshold, 325.0);
+        assert_eq!(pheno_mid.maturity_age, 110); // (20 + 0.5 * 180) = 110
+        assert_eq!(pheno_mid.physical_size, 1.25);
+
+        // gene = 1.0
+        let g_max = Genome::new(vec![1.0; 8]);
+        let pheno_max = derive_phenotype(&g_max, &gen_config, &world_config);
+        assert_eq!(pheno_max.thermal_optimum, 1.0);
+        assert_eq!(pheno_max.diet_preference, 1.0);
+        assert_eq!(pheno_max.max_slope, 0.60);
+        assert_eq!(pheno_max.max_water_depth, 0.50);
+        assert_eq!(pheno_max.sensing_radius, 4);
+        assert_eq!(pheno_max.reproduction_threshold, 500.0);
+        assert_eq!(pheno_max.maturity_age, 200);
+        assert_eq!(pheno_max.physical_size, 2.0);
+    }
+
+    #[test]
+    fn test_serialization_and_lineage_preservation() {
+        use crate::persistence::{
+            build_world_snapshot, reconstruct_world_from_snapshot, AgentSnapshot, WorldSnapshot,
+            SNAPSHOT_SCHEMA_VERSION,
+        };
+        use crate::rng::WorldSeed;
+        use crate::time::SimulationClock;
+
+        let config = WorldConfig::default();
+        let seed = WorldSeed::new(12345);
+        let clock = SimulationClock::default();
+        let id_generator = crate::agent::StableIdGenerator::new();
+
+        let agents = vec![
+            AgentSnapshot {
+                metadata: AgentMetadata::new(1),
+                position: AgentPosition::new(WorldCoord::new(2, 3)),
+                stock: MetabolicStock::new(100.0, 5),
+                genome: Genome::new(vec![0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8]),
+                lineage: LineageMetadata::new(None, 0),
+            },
+            AgentSnapshot {
+                metadata: AgentMetadata::new(2),
+                position: AgentPosition::new(WorldCoord::new(5, 7)),
+                stock: MetabolicStock::new(200.0, 10),
+                genome: Genome::new(vec![0.8, 0.7, 0.6, 0.5, 0.4, 0.3, 0.2, 0.1]),
+                lineage: LineageMetadata::new(Some(1), 1),
+            },
+        ];
+
+        let snapshot1 = build_world_snapshot(
+            &config,
+            &seed,
+            &clock,
+            SNAPSHOT_SCHEMA_VERSION,
+            &[],
+            &id_generator,
+            &agents,
+        );
+
+        let json1 = serde_json::to_string(&snapshot1).expect("serialization failed");
+        let deserialized1: WorldSnapshot =
+            serde_json::from_str(&json1).expect("deserialization failed");
+
+        let mut world2 = World::new();
+        reconstruct_world_from_snapshot(&mut world2, deserialized1);
+
+        let mut agent_query = world2.query::<(
+            &AgentMetadata,
+            &AgentPosition,
+            &MetabolicStock,
+            &Genome,
+            &LineageMetadata,
+        )>();
+
+        let mut agents2: Vec<_> = agent_query
+            .iter(&world2)
+            .map(|(m, p, s, g, l)| AgentSnapshot {
+                metadata: *m,
+                position: *p,
+                stock: *s,
+                genome: g.clone(),
+                lineage: *l,
+            })
+            .collect();
+        agents2.sort_by_key(|a| a.metadata.id);
+
+        assert_eq!(agents2.len(), 2);
+        assert_eq!(agents2[0].metadata.id, 1);
+        assert_eq!(agents2[0].position.coord, WorldCoord::new(2, 3));
+        assert_eq!(agents2[0].stock.energy, 100.0);
+        assert_eq!(agents2[0].stock.age, 5);
+        assert_eq!(
+            agents2[0].genome.genes,
+            vec![0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8]
+        );
+        assert_eq!(agents2[0].lineage.parent_id, None);
+        assert_eq!(agents2[0].lineage.generation, 0);
+
+        assert_eq!(agents2[1].metadata.id, 2);
+        assert_eq!(agents2[1].position.coord, WorldCoord::new(5, 7));
+        assert_eq!(agents2[1].stock.energy, 200.0);
+        assert_eq!(agents2[1].stock.age, 10);
+        assert_eq!(
+            agents2[1].genome.genes,
+            vec![0.8, 0.7, 0.6, 0.5, 0.4, 0.3, 0.2, 0.1]
+        );
+        assert_eq!(agents2[1].lineage.parent_id, Some(1));
+        assert_eq!(agents2[1].lineage.generation, 1);
+
+        let snapshot2 = build_world_snapshot(
+            &config,
+            &seed,
+            &clock,
+            SNAPSHOT_SCHEMA_VERSION,
+            &[],
+            &id_generator,
+            &agents2,
+        );
+        let json2 = serde_json::to_string(&snapshot2).expect("serialization failed");
+        assert_eq!(json1, json2);
+    }
+
+    #[test]
+    fn test_phenotype_reconstruction() {
+        use crate::persistence::{
+            build_world_snapshot, reconstruct_world_from_snapshot, AgentSnapshot, WorldSnapshot,
+            SNAPSHOT_SCHEMA_VERSION,
+        };
+        use crate::rng::WorldSeed;
+        use crate::time::SimulationClock;
+
+        let config = WorldConfig::default();
+        let seed = WorldSeed::new(12345);
+        let clock = SimulationClock::default();
+        let id_generator = crate::agent::StableIdGenerator::new();
+        let gen_config = GenomeConfig::default();
+
+        let parent_genome = Genome::new(vec![0.2, 0.4, 0.6, 0.8, 0.1, 0.3, 0.5, 0.7]);
+        let parent_phenotype = derive_phenotype(&parent_genome, &gen_config, &config);
+
+        let agents = vec![AgentSnapshot {
+            metadata: AgentMetadata::new(1),
+            position: AgentPosition::new(WorldCoord::new(1, 1)),
+            stock: MetabolicStock::new(100.0, 0),
+            genome: parent_genome.clone(),
+            lineage: LineageMetadata::new(None, 0),
+        }];
+
+        let snapshot = build_world_snapshot(
+            &config,
+            &seed,
+            &clock,
+            SNAPSHOT_SCHEMA_VERSION,
+            &[],
+            &id_generator,
+            &agents,
+        );
+
+        let json = serde_json::to_string(&snapshot).expect("serialization failed");
+        let deserialized: WorldSnapshot =
+            serde_json::from_str(&json).expect("deserialization failed");
+
+        let mut world2 = World::new();
+        // Since reconstruct_world_from_snapshot internally runs derive_phenotype and inserts it,
+        // we can query the phenotype component after reconstruction.
+        reconstruct_world_from_snapshot(&mut world2, deserialized);
+
+        let mut pheno_query = world2.query::<&Phenotype>();
+        let reconstructed_phenotype = pheno_query.iter(&world2).next().unwrap();
+
+        assert_eq!(
+            reconstructed_phenotype.thermal_optimum,
+            parent_phenotype.thermal_optimum
+        );
+        assert_eq!(
+            reconstructed_phenotype.diet_preference,
+            parent_phenotype.diet_preference
+        );
+        assert_eq!(
+            reconstructed_phenotype.max_slope,
+            parent_phenotype.max_slope
+        );
+        assert_eq!(
+            reconstructed_phenotype.max_water_depth,
+            parent_phenotype.max_water_depth
+        );
+        assert_eq!(
+            reconstructed_phenotype.sensing_radius,
+            parent_phenotype.sensing_radius
+        );
+        assert_eq!(
+            reconstructed_phenotype.reproduction_threshold,
+            parent_phenotype.reproduction_threshold
+        );
+        assert_eq!(
+            reconstructed_phenotype.maturity_age,
+            parent_phenotype.maturity_age
+        );
+        assert_eq!(
+            reconstructed_phenotype.physical_size,
+            parent_phenotype.physical_size
+        );
+        assert_eq!(
+            reconstructed_phenotype.derived_base_decay,
+            parent_phenotype.derived_base_decay
+        );
+        assert_eq!(
+            reconstructed_phenotype.derived_movement_cost,
+            parent_phenotype.derived_movement_cost
         );
     }
 }

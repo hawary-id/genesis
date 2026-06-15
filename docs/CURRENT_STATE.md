@@ -1,16 +1,43 @@
 # Current State
 
-* **Current Phase:** Phase 3 — Evolution (Transitioning from Phase 2)
-* **Current Milestone:** Phase 2 Complete (v0.2.0-phase2 release candidate)
-* **Current Branch:** main
-* **Current Status:** Phase 2 (Life) implementation is fully completed, clippy-compliant, and verified under integration/stability tests.
-* **Current Focus:** Transitioning to Phase 3 — Evolution (genetics, mutation, inheritance, and natural selection).
-* **Next Task:** Design and plan Phase 3 (Evolution) implementation roadmap.
-* **Last Verified Test Counts:**
-  - `cargo test`: 124 passed, 0 failed, 1 ignored
-  - `cargo test -- --ignored`: 1 passed (test_long_run_stability_512 checks A+B=N save/load equivalence over 8,640 ticks / 1 simulation year)
-  - `cargo clippy -- -D warnings`: PASS
-* **Last Updated:** 2026-06-15T00:45:00+07:00
+### Phase Status
+
+* Phase 1 Complete
+* Phase 2 Complete
+* Phase 3 Active
+
+### Current Progress
+
+* M16 Complete
+* M17 Next
+
+### Newly Added Systems
+
+* Genetics foundation (`Genome`, `Phenotype`, `LineageMetadata`, `GenomeConfig`)
+* Phenotype derivation on spawn/load (`derive_phenotype_on_spawn`)
+* Snapshot v3 persistence (`Genome` & `LineageMetadata` serialized, `Phenotype` re-derived)
+
+### Verification & Testing Status
+
+* **Branch:** main
+* **Status:** Milestone 16 is fully completed, verified, clippy-compliant, and passes determinism and snapshot validation.
+* **Test Counts:**
+  - `cargo test`: 127 passed, 0 failed, 1 ignored
+  - `cargo test -- --ignored`: 1 passed (test_long_run_stability_512 checks A+B=N save/load equivalence over 8,640 ticks / 1 simulation year with genetics enabled)
+  - `cargo clippy --all-targets --all-features -- -D warnings`: PASS
+  - `cargo fmt`: PASS
+* **Last Updated:** 2026-06-15T09:54:00+07:00
+
+---
+
+## Completed in Milestone 16: Genetics & Phenotype Mapping
+
+* **Extensible Genome Component**: Added the `Genome` component storing genetic traits in a `Vec<f32>` format of length `8` for startup agents, allowing future genes to be appended without breaking struct layout compiler interfaces.
+* **Lineage & Generation Tracking**: Added the `LineageMetadata` component storing `parent_id` (`Option<u64>`) and `generation` (`u32`). Startup agents default to `parent_id = None` and `generation = 0`.
+* **Phenotype Derivation & Cache**: Added the `Phenotype` component caching mapped physical traits. Mapped raw gene float arrays to concrete trait bounds defined in `GenomeConfig`. Base metabolic decay and movement step cost penalties are mathematically derived based on size, sensing radius, slope tolerance, and water limits. *Note: In accordance with the roadmap, these derived traits do not yet influence movement, metabolism, or survival; their integration into agent behavior systems is deferred to Milestone 20 (Natural Selection & Adaptation).*
+* **Snapshot Version 3 Upgrade**: Upgraded snapshot version to schema version `3` to serialize `Genome` and `LineageMetadata`. Excluded `Phenotype` from serialization, re-deriving it dynamically on load.
+* **Genetics Validation**: Implemented validation systems in `validate_world_on_startup` and `validate_world_on_tick` checking genome boundaries and lineage metadata.
+* **Restored World Spawning Rules**: Bypassed initial world count and age/energy constraints in startup validation when `clock.total_ticks > 0` to support loaded snapshots.
 
 ## Completed in Milestone 15: Persistence & Integration Testing
 

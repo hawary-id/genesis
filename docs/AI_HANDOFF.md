@@ -7,21 +7,29 @@ This document serves as the immediate handoff instructions for any AI model resu
 ## Current Repository State
 
 * **Branch:** `main`
-* **Status:** Clean. All Phase 2 modules compile under standard profiles, and formatting (`cargo fmt`) and Clippy checks pass successfully.
-* **Test Outcome:** `124 passed, 0 failed, 1 ignored` (standard); `1 passed, 0 failed` (`--ignored` stability test).
+* **Status:** Clean. All Phase 3 Evolution Milestone 16 modules compile under standard profiles, and formatting (`cargo fmt`) and Clippy checks pass successfully.
+* **Test Outcome:** `127 passed, 0 failed, 1 ignored` (standard); `1 passed, 0 failed` (`--ignored` stability test).
 
 ---
 
 ## Current Phase & Milestone
 
-* **Current Phase:** Phase 3 — Evolution (Transitioning from Phase 2)
-* **Current Milestone:** Phase 2 Complete (v0.2.0-phase2 release candidate)
-* **Phase Progress:** Milestone 15 completed, verified, and locked.
+* **Current Phase:** Phase 3 — Evolution (Active)
+* **Current Milestone:** Milestone 17 — Resource Consumption (Eating & Drinking) (Active)
+* **Last Completed Milestone:** Milestone 16 — Genetics & Phenotype Mapping
+* **Phase Progress:** Milestone 16 completed, verified, and locked. Milestone 17 (Resource Consumption) is active.
 
 ---
 
 ## Recent Major Changes
 
+* **Milestone 16 Completed:** Implemented genetics and phenotype mapping.
+  - Implemented `Genome`, `Phenotype`, and `LineageMetadata` components and `GenomeConfig` resource.
+  - Implemented dynamic phenotype caching derived on spawn (`derive_phenotype_on_spawn` system).
+  - Upgraded snapshot version to schema version `3` to serialize `Genome` and `LineageMetadata`, dynamically re-deriving `Phenotype` on load.
+  - Implemented genetics validation (bounds checking and lineage validity).
+  - Updated tests and validation systems to allow running on restored worlds at tick $>0$ without initial spawner constraints failing.
+  - Added genome mapping mapping, serialization round-trip, and phenotype reconstruction unit tests.
 * **Milestone 15 Completed:** Implemented agent persistence and integration testing.
   - Snapshot schema version upgraded to `2` to include the `StableIdGenerator` and `agents` collections.
   - Mapped agent metadata, position, and metabolic stock to snapshot formats.
@@ -32,25 +40,23 @@ This document serves as the immediate handoff instructions for any AI model resu
 
 ---
 
-## Completed Milestone 15 Summary
+## Completed Milestone 16 Summary
 
 ### Completed Work
-* Snapshot schema version 2 added
-* `StableIdGenerator` resource serialization and load reconstruction completed
-* Agent metadata, coordinates, and metabolic stock serialization and reconstruction completed
-* Deterministic sorting by stable ID completed
-* World equivalence utility (`assert_worlds_equivalent`) updated to compare ID generators and sorted agent populations
-* `save_load_equivalence` test updated to verify agent saving and loading
-* `test_long_run_stability_512` stability test updated to verify year-long split run equivalence with agents enabled
+* Snapshot schema version 3 added
+* `Genome` and `LineageMetadata` components and `GenomeConfig` resource added
+* `derive_phenotype_on_spawn` system added to cache dynamic phenotypes on spawn
+* Reconstruct loader in `reconstruct_world_from_snapshot` updated to deserialize `Genome` and `LineageMetadata`, dynamically re-deriving agent `Phenotype` components
+* Genetics validation rules added to `validate_world_on_startup` and `validate_world_on_tick`
+* Startup validation corrected to support running at tick $>0$ for loaded snapshots
 
 ---
 
 ## Known Risks & Design Constraints
 
-* **Startup Validation Mismatch on Restored Worlds:**
-  - `validate_world_on_startup` is designed to validate freshly generated worlds at tick `0` (asserting `initial_agent_count`, agent ages `== 0`, and agent energy `== initial_agent_energy`).
-  - This system must **not** be executed on reconstructed worlds loaded from snapshots at tick $>0$, as age bounds and count expectations will fail.
-  - This is a known architectural risk to be redesigned in subsequent validation updates.
+* **Phenotype Influences & Selection Penalties Pending:**
+  - The `Phenotype` cache component is correctly calculated and reconstructed on load, but it does **not** yet influence agent movement limits, metabolic decay, or natural selection survival.
+  - Agents currently still use default/global configurations for these metrics. This is **intentional**; trait-driven adaptation and metabolic costs are scheduled for Milestone 20.
 * **Float Target Optimization Divergence:** Vector mathematics in the environment are calculated using standard `f32` floats. Compile-time optimizations (like contract/FMA) might introduce minor divergence on target CPUs other than the test host.
 
 ---
@@ -65,13 +71,13 @@ This document serves as the immediate handoff instructions for any AI model resu
 
 ## Current Development Target
 
-Begin Phase 3 (Evolution) planning to design genetics, mutation, inheritance, and natural selection.
+Begin Milestone 17 — Resource Consumption (Eating & Drinking).
 
 ## Recommended Next Actions
 
-*   Confirm that standard tests and clippy compile cleanly: `cargo test` and `cargo clippy -- -D warnings`.
-*   Formulate the `docs/PHASE3_EVOLUTION_TECH_SPEC.md` and `docs/PHASE3_IMPLEMENTATION_PLAN.md` roadmap.
-*   Tag the repository with release marker `v0.2.0-phase2`.
+*   Confirm that standard tests and clippy compile cleanly: `cargo test` and `cargo clippy --all-targets --all-features -- -D warnings`.
+*   Formulate the implementation strategy for Milestone 17.
+*   Tag the repository with release marker `v0.3.0-phase3-m16` or similar.
 
 ---
 

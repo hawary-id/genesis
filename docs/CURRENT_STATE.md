@@ -2,17 +2,25 @@
 
 ### Phase Status
 
-* Phase 1 Complete
-* Phase 2 Complete
-* Phase 3 Active
+* Phase 1: COMPLETE
+* Phase 2: COMPLETE
+* Phase 3: ACTIVE
 
-### Current Progress
+### Completed Milestones
 
-* M17 Complete
-* M18 Active
+* Milestone 16 — Genetics & Phenotype Mapping
+* Milestone 17 — Resource Consumption
+* Milestone 18 — Reproduction, Inheritance & Lineage
+
+### Current Active Milestone
+
+* Milestone 19 — Mutation Engine & Genetic Drift
 
 ### Newly Added Systems
 
+* Asexual reproduction (`process_agent_reproduction` system)
+* Lineage propagation and stable ID generation during reproduction
+* Emergency density cap enforcement during reproduction
 * Resource consumption (`process_agent_consumption` system)
 * Nutrient & Fresh Water cell harvesting and environmental depletion (Conservation of Mass)
 * Diet-preference scaled assimilation to energy stock
@@ -25,15 +33,31 @@
 ### Verification & Testing Status
 
 * **Branch:** main
-* **Status:** Milestone 17 is fully completed, verified, clippy-compliant, and passes determinism and snapshot validation.
+* **Status:** Milestone 18 is fully completed, verified, clippy-compliant, and passes determinism and snapshot validation.
 * **Test Counts:**
-  - `cargo test`: 131 passed, 0 failed, 1 ignored
-  - `cargo test -- --ignored`: 1 passed (test_long_run_stability_512 checks A+B=N save/load equivalence over 8,640 ticks / 1 simulation year with genetics and consumption enabled)
+  - `cargo test`: 137 passed, 0 failed, 1 ignored
+  - `cargo test -- --ignored`: 1 passed (test_long_run_stability_512 checks A+B=N save/load equivalence over 8,640 ticks / 1 simulation year with genetics, consumption, and reproduction enabled)
   - `cargo clippy --all-targets --all-features -- -D warnings`: PASS
   - `cargo fmt`: PASS
-* **Last Updated:** 2026-06-15T11:45:00+07:00
+* **Last Updated:** 2026-06-15T14:15:51+07:00
 
 ---
+
+## Completed in Milestone 18: Reproduction, Inheritance & Lineage
+
+* **Deterministic Reproduction**: Implemented the asexual reproduction system `process_agent_reproduction` processing birth requests deterministically.
+* **Deterministic Parent Ordering**: Reproduction requests are sorted by `AgentMetadata.id` ascending before processing offspring entities to guarantee order-independence.
+* **Stable ID Allocation**: Allocates unique sequence identifiers to offspring via the `StableIdGenerator` resource.
+* **Energy Splitting**: Divides parent energy stock 50/50, allocating half to the parent and half to the offspring.
+* **Genome Inheritance**: Transmits parent genome to offspring.
+* **Lineage Propagation**: Populates `LineageMetadata` with `parent_id` (parent stable ID) and `generation` (parent generation + 1).
+* **Density Cap Enforcement**: Enforces `agent_density_cap` as an emergency population safety guard.
+* **Persistence Compatibility**: Verified that world snapshots deserialize and reconstruct variable agent counts and lineages.
+* **Phenotype Status Explicit Note**: Phenotype currently exists, is inherited, and is reconstructed after load. Phenotype intentionally does NOT yet influence:
+  * movement
+  * metabolism
+  * survival pressure
+  This behavior is deferred to Milestone 20 and must not be treated as a bug.
 
 ## Completed in Milestone 17: Resource Consumption (Eating & Drinking)
 

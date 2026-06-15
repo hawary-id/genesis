@@ -2,7 +2,7 @@
 
 ## Status
 * **Status:** Active Specification
-* **Implementation Status:** Implemented and Verified through Milestone 16 (Genetics & Phenotype Mapping)
+* **Implementation Status:** Implemented and Verified through Milestone 18 (Reproduction, Inheritance & Lineage)
 * **Phase:** Phase 3 — Evolution
 * **Author:** Senior Rust ECS Architect
 * **Date:** 2026-06-15

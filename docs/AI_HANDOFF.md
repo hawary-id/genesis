@@ -7,22 +7,31 @@ This document serves as the immediate handoff instructions for any AI model resu
 ## Current Repository State
 
 * **Branch:** `main`
-* **Status:** Clean. All Phase 3 Evolution Milestone 17 modules compile under standard profiles, and formatting (`cargo fmt`) and Clippy checks pass successfully.
-* **Test Outcome:** `131 passed, 0 failed, 1 ignored` (standard); `1 passed, 0 failed` (`--ignored` stability test).
+* **Status:** Clean. All Phase 3 Evolution Milestone 18 modules compile under standard profiles, and formatting (`cargo fmt`) and Clippy checks pass successfully.
+* **Test Outcome:** `137 passed, 0 failed, 1 ignored` (standard); `1 passed, 0 failed` (`--ignored` stability test).
 
 ---
 
 ## Current Phase & Milestone
 
 * **Current Phase:** Phase 3 — Evolution (Active)
-* **Current Milestone:** Milestone 18 — Reproduction, Inheritance & Lineage (Active)
-* **Last Completed Milestone:** Milestone 17 — Resource Consumption (Eating & Drinking)
-* **Phase Progress:** Milestone 17 completed, verified, and locked. Milestone 18 is active.
+* **Current Milestone:** Milestone 19 — Mutation Engine & Genetic Drift (Active)
+* **Last Completed Milestone:** Milestone 18 — Reproduction, Inheritance & Lineage
+* **Phase Progress:** Milestone 18 completed, verified, and locked. Milestone 19 is active.
 
 ---
 
 ## Recent Major Changes
 
+* **Milestone 18 Completed:** Implemented reproduction, inheritance & lineage.
+  - Implemented the `process_agent_reproduction` system executing asexual split.
+  - Divided agent metabolic stock energy 50/50 between parent and offspring.
+  - Propagated genome from parent to offspring.
+  - Populated `LineageMetadata` with parent stable ID and generation depth + 1.
+  - Queried adjacent coordinates cardinally (N -> S -> E -> W) checking bounds, slope, and water limits.
+  - Enforced `agent_density_cap` as an emergency safety guard limit.
+  - Sorted parents by stable ID ascending before spawning to guarantee determinism.
+  - Verified snapshot v3 deserializes and reconstructs lineage metadata and genomes.
 * **Milestone 17 Completed:** Implemented resource consumption.
   - Implemented the `process_agent_consumption` system to harvest cell nutrients and fresh water resources.
   - Subtracted harvested quantities from chunk resource cells and replenished agent `MetabolicStock` energy (clamped at `agent_energy_max`).
@@ -38,6 +47,26 @@ This document serves as the immediate handoff instructions for any AI model resu
   - Updated tests and validation systems to allow running on restored worlds at tick $>0$ without initial spawner constraints failing.
   - Added genome mapping mapping, serialization round-trip, and phenotype reconstruction unit tests.
 * **Milestone 15 Completed:** Implemented agent persistence and integration testing.
+
+---
+
+## Completed Milestone 18 Summary
+
+### Completed Work
+* **Deterministic Reproduction**: Implemented the asexual reproduction system `process_agent_reproduction` processing birth requests deterministically.
+* **Stable ID Allocation**: Allocates unique sequence identifiers to offspring via the `StableIdGenerator` resource.
+* **Genome Inheritance**: Transmits parent genome to offspring.
+* **Lineage Propagation**: Populates `LineageMetadata` with `parent_id` (parent stable ID) and `generation` (parent generation + 1).
+* **Density Cap Enforcement**: Enforces `agent_density_cap` as an emergency population safety guard.
+* **Persistence Compatibility**: Verified that world snapshots deserialize and reconstruct variable agent counts and lineages.
+
+### Files Modified
+* `engine/src/agent/systems.rs`
+* `engine/src/testing/fixtures.rs`
+
+### Test Results & Determinism Status
+* All 137 standard tests and clippy checks pass.
+* Ignored stability test `test_long_run_stability_512` passes, proving save/load determinism holds bit-perfectly over 1 simulation year with genetics, consumption, and reproduction enabled.
 
 ---
 
@@ -78,6 +107,20 @@ This document serves as the immediate handoff instructions for any AI model resu
 
 ---
 
+## Intentional Deferrals
+
+The following behaviors are intentionally deferred to Milestone 20:
+* **Phenotype-driven metabolism**
+* **Phenotype-driven movement**
+* **Natural selection pressure**
+
+> [!WARNING]
+> **Important Roadmap Deferral**
+> Do NOT treat the absence of phenotype influence on movement, metabolism, or survival as a defect/bug.
+> This is an intentional roadmap decision and will be implemented during Milestone 20 (Natural Selection & Adaptation).
+
+---
+
 ## Known Risks & Design Constraints
 
 * **Phenotype Influences & Selection Penalties Pending:**
@@ -97,13 +140,12 @@ This document serves as the immediate handoff instructions for any AI model resu
 
 ## Current Development Target
 
-Begin Milestone 18 — Reproduction, Inheritance & Lineage.
+Begin Milestone 19 — Mutation Engine & Genetic Drift.
 
 ## Recommended Next Actions
 
 *   Confirm that standard tests and clippy compile cleanly: `cargo test` and `cargo clippy --all-targets --all-features -- -D warnings`.
-*   Formulate the implementation strategy for Milestone 18.
-*   Tag the repository with release marker `v0.3.0-phase3-m17` or similar.
+*   Formulate the implementation strategy for Milestone 19.
 
 ---
 

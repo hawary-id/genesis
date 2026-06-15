@@ -2,24 +2,24 @@
 
 This registry tracks the status and deliverables of all milestones in the Genesis roadmap.
 
-* **Overall Progress Estimate:** Phase 1 Complete; Phase 2 Complete; Phase 3 Active (Milestones 16 & 17 Completed)
+* **Overall Progress Estimate:** Phase 1 Complete; Phase 2 Complete; Phase 3 Active (Milestones 16, 17, & 18 Completed)
 * **Current Phase:** Phase 3 — Evolution
-* **Current Milestone:** Milestone 18 — Reproduction, Inheritance & Lineage
+* **Current Milestone:** Milestone 19 — Mutation Engine & Genetic Drift
 
 ---
 
 ## Current Active Work
 
 * **Active Phase:** Phase 3 — Evolution
-* **Current Milestone:** Milestone 18 — Reproduction, Inheritance & Lineage (Active)
+* **Current Milestone:** Milestone 19 — Mutation Engine & Genetic Drift (Active)
 
 ## Current Focus
 
-* Implementing asexual reproduction (energy splitting 50/50), genetic inheritance, parent stable ID lineage tracking, and adjacent coordinate spawning sequence.
+* Implementing Gaussian gene mutation during reproduction and deriving mutation seeds deterministically using parent metadata and current ticks.
 
 ## Next Milestone
 
-* **Next Milestone:** Milestone 18: Reproduction, Inheritance & Lineage (Phase 3, Milestone 18)
+* **Next Milestone:** Milestone 19: Mutation Engine & Genetic Drift (Phase 3, Milestone 19)
 
 ---
 
@@ -254,6 +254,50 @@ This registry tracks the status and deliverables of all milestones in the Genesi
   - [app/mod.rs](https://github.com/hawary-id/genesis/blob/main/engine/src/app/mod.rs) — Schedule ordering integration.
   - [config/world_config.rs](https://github.com/hawary-id/genesis/blob/main/engine/src/config/world_config.rs) — Configuration parameters.
   - [testing/fixtures.rs](https://github.com/hawary-id/genesis/blob/main/engine/src/testing/fixtures.rs) — Test configuration initializers.
+
+### Milestone 18: Reproduction, Inheritance, and Lineage
+* **Status:** Completed
+* **Summary:** Enabled population continuity via deterministic asexual reproduction and lineage tracking.
+* **Dependencies:** Milestone 17.
+* **Related Documents:**
+  - [PHASE3_EVOLUTION_TECH_SPEC.md](https://github.com/hawary-id/genesis/blob/main/docs/PHASE3_EVOLUTION_TECH_SPEC.md) — Evolution spec.
+* **Related Source Code:**
+  - [agent/systems.rs](https://github.com/hawary-id/genesis/blob/main/engine/src/agent/systems.rs#L221-L368) — `process_agent_reproduction` system.
+* **Major Deliverables:**
+  - `process_agent_reproduction` implemented
+  - Deterministic parent ordering by stable ID ascending before spawning
+  - Cardinal spawn coordinate search (N -> S -> E -> W) with elevation/slope boundaries check
+  - Energy split 50/50 between parent and offspring
+  - Genome inheritance from parent to offspring
+  - Lineage propagation (attaches parent stable ID and increments generation)
+  - Emergency density cap enforcement during spawning
+  - Persistence compatibility verified with snapshot v3
+* **Verification Summary:**
+  - `cargo fmt` PASS
+  - `cargo clippy --all-targets --all-features -- -D warnings` PASS
+  - `cargo test` PASS (including parent energy halving, order-independent reproduction, cancellation when trapped, lineage tracking, and StableIdGenerator realism tests)
+  - `cargo test -- --ignored` PASS (stability test equivalence check over 8,640 ticks / 1 simulation year with genetics, consumption, and reproduction enabled)
+  - determinism & snapshot validation PASS
+
+### Milestone 19: Mutation and Deterministic Drift
+* **Status:** Active
+* **Summary:** Introduce genetic diversity through seeded mutations.
+* **Dependencies:** Milestone 18.
+* **Related Documents:**
+  - [PHASE3_EVOLUTION_TECH_SPEC.md](https://github.com/hawary-id/genesis/blob/main/docs/PHASE3_EVOLUTION_TECH_SPEC.md) — Evolution spec.
+* **Major Deliverables:**
+  - Gaussian gene mutation during reproduction
+  - Deterministic mutation seeds derived from parent metadata and current ticks
+
+### Milestone 20: Natural Selection and Adaptation
+* **Status:** Planned
+* **Summary:** Validate adaptation to environmental gradients by integrating phenotypes into metabolic decay, movement costs, and navigation barriers.
+* **Dependencies:** Milestone 19.
+
+### Milestone 21: Evolution Diagnostics and Validation
+* **Status:** Planned
+* **Summary:** Implement telemetry monitoring and diagnostics (PopulationStats), and fix snapshot validation bugs.
+* **Dependencies:** Milestone 20.
 
 ---
 

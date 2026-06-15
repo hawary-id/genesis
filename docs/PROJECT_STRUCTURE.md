@@ -1,6 +1,6 @@
 # Genesis Project Structure
 
-This document catalogs the directory layout and modular architecture of Project Genesis during Phase 3 (as of Milestone 16 completion). It details the purpose, responsibilities, key files, and dependencies of each submodule.
+This document catalogs the directory layout and modular architecture of Project Genesis during Phase 3 (as of Milestone 18 completion). It details the purpose, responsibilities, key files, and dependencies of each submodule.
 
 ---
 
@@ -42,13 +42,13 @@ All simulation logic resides under [engine/src/](https://github.com/hawary-id/ge
 The crate is structured into the following submodules:
 
 ### agent/
-* **Purpose:** Biological agent entities structure, metadata, ID generation, spawning, environmental sensing, and genetics/phenotype mapping.
-* **Responsibilities:** Defines agent metadata with stable sequence identifiers, spatial positions, metabolic stocks, action requests, `Genome` vectors, cached `Phenotype` traits, and `LineageMetadata`. Spawns the initial agent population deterministically, derives agent phenotypes on spawn, provides query utilities to sense resources in neighborhood cells, updates agent metabolism and age, and handles death. Manages the `StableIdGenerator` and `GenomeConfig` resources.
+* **Purpose:** Biological agent entities structure, metadata, ID generation, spawning, environmental sensing, genetics/phenotype mapping, resource consumption, and asexual reproduction.
+* **Responsibilities:** Defines agent metadata with stable sequence identifiers, spatial positions, metabolic stocks, action requests, `Genome` vectors, cached `Phenotype` traits, and `LineageMetadata`. Spawns the initial agent population deterministically, derives agent phenotypes on spawn, provides query utilities to sense resources in neighborhood cells, processes resource consumption and energy stock replenishment, executes deterministic asexual reproduction with parent sorting and cardinal direction coordinate search, enforces population density caps, updates agent metabolism and age, and handles death. Manages the `StableIdGenerator` and `GenomeConfig` resources.
 * **Key Files:**
   - [components.rs](https://github.com/hawary-id/genesis/blob/main/engine/src/agent/components.rs) — Agent data structures (`AgentMetadata`, `AgentPosition`, `MetabolicStock`, `ActionRequest`, `Genome`, `Phenotype`, `LineageMetadata`).
   - [resources.rs](https://github.com/hawary-id/genesis/blob/main/engine/src/agent/resources.rs) — Resources (`StableIdGenerator` counter state and `GenomeConfig` traits bounds).
   - [sensing.rs](https://github.com/hawary-id/genesis/blob/main/engine/src/agent/sensing.rs) — Environmental sensing query API (`query_cell`, `query_neighborhood`, and `SensedResource`).
-  - [systems.rs](https://github.com/hawary-id/genesis/blob/main/engine/src/agent/systems.rs) — Spawning, phenotype derivation (`derive_phenotype_on_spawn`), metabolic decay update, age progression, and death processing systems.
+  - [systems.rs](https://github.com/hawary-id/genesis/blob/main/engine/src/agent/systems.rs) — Spawning, phenotype derivation (`derive_phenotype_on_spawn`), resource consumption (`process_agent_consumption`), asexual reproduction (`process_agent_reproduction`), metabolic decay update, age progression, and death processing systems.
   - [mod.rs](https://github.com/hawary-id/genesis/blob/main/engine/src/agent/mod.rs) — Submodule interface re-exports.
 * **Dependencies:** `bevy_ecs`, `config`, `rng`, `world::coord`, `world::resource`.
 

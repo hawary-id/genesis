@@ -57,7 +57,7 @@ Based on the architecture constraints of Genesis, the implementation is partitio
 
 ---
 
-### Milestone 18: Reproduction, Inheritance, and Lineage [ACTIVE]
+### Milestone 18: Reproduction, Inheritance, and Lineage [COMPLETE]
 *   **Goal:** Enable population continuity via deterministic asexual reproduction and lineage tracking.
 *   **Scope:**
     *   Check birth requirements (energy threshold and maturity age bounds).
@@ -80,7 +80,7 @@ Based on the architecture constraints of Genesis, the implementation is partitio
 
 ---
 
-### Milestone 19: Mutation and Deterministic Drift
+### Milestone 19: Mutation and Deterministic Drift [ACTIVE]
 *   **Goal:** Introduce genetic diversity through seeded mutations.
 *   **Scope:**
     *   Implement Gaussian gene mutation during reproduction.

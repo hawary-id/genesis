@@ -80,19 +80,19 @@ Based on the architecture constraints of Genesis, the implementation is partitio
 
 ---
 
-### Milestone 19: Mutation and Deterministic Drift [ACTIVE]
+### Milestone 19: Mutation and Deterministic Drift [COMPLETE]
 *   **Goal:** Introduce genetic diversity through seeded mutations.
 *   **Scope:**
     *   Implement Gaussian gene mutation during reproduction.
     *   Derive mutation seeds deterministically using parent metadata (stable ID, coordinates) and current ticks, satisfying ADR-002.
+    *   **Drift Emergence:** Genetic drift is a completely emergent phenomenon resulting from mutation and spatial carrying capacity pressures. No dedicated drift subsystem or drift-related systems are implemented.
 *   **New Components:** None.
-*   **New Resources:**
-    *   `MutationConfig` (mutation rates and standard deviations).
-*   **New Systems:** None (integrated as a helper function in reproduction system).
+*   **New Resources:** None (`mutation_rate` and `mutation_step_size` belong to `WorldConfig` to consolidate global simulation parameters and avoid introducing redundant resources in compliance with ADR-001).
+*   **New Systems:** None (integrated as pure helper functions inside the reproduction system in `systems.rs`).
 *   **Snapshot Changes:** None.
 *   **Tests Required:**
     *   Unit tests confirming mutation determinism given a fixed seed.
-    *   Unit tests verifying mutation limits (genes clamped exactly within `[0.0, 1.0]`).
+    *   Unit tests verifying mutation limits (genes are finite and clamped exactly within `[0.0, 1.0]`).
     *   Save/load equivalence integration tests confirming that mutation-induced drift does not break A+B=N determinism.
 *   **Exit Criteria:** Offspring exhibit mutation drift, and split run equivalence holds bit-perfectly.
 

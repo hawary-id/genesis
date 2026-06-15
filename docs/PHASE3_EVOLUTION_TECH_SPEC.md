@@ -2,7 +2,7 @@
 
 ## Status
 * **Status:** Active Specification
-* **Implementation Status:** Implemented and Verified through Milestone 18 (Reproduction, Inheritance & Lineage)
+* **Implementation Status:** Implemented and Verified through Milestone 19 (Mutation Engine & Genetic Drift)
 * **Phase:** Phase 3 — Evolution
 * **Author:** Senior Rust ECS Architect
 * **Date:** 2026-06-15
@@ -54,6 +54,7 @@ pub struct Genome {
 When new genes are added in future phases, the `GENOME_SIZE` constant is incremented, and new mapping entries are added to the trait registry. Backward snapshot compatibility is preserved on load as follows:
 * **Shorter Loaded Vector:** If the loaded `genes` vector is shorter than the compile-time `GENOME_SIZE`, the missing genes are appended and padded with trait-specific default values (configured in `WorldConfig`).
 * **Longer Loaded Vector:** If the loaded `genes` vector is longer, the extra genes are kept or truncated depending on version flags, ensuring zero compile-time or panic failures.
+* **Dynamic Mutation Loop:** Mutation logic does not iterate over a hardcoded compile-time `GENOME_SIZE`. Instead, it processes the active genes vector length (`parent_genome.genes.len()`), ensuring future trait additions automatically undergo inheritance drift without requiring modifications to the reproduction pipeline. Runtime systems must remain compatible with extensible genomes by avoiding strict equality assumptions on genome length.
 
 ### 3.1b Lineage Tracking Component
 To trace agent lineages and provide foundations for kin selection, cooperative tribes, and evolution analytics, each agent entity carries a `LineageMetadata` component.
@@ -202,6 +203,12 @@ pub fn derive_mutation_seed(parent_id: u64, tick: u32, coord: WorldCoord, root_s
 }
 ```
 
+#### Coordinate Salt Rationale
+Seeding incorporates parent coordinates to act as a deterministic spatial salt. This is not a biological selection pressure or environmental mutation; rather, it ensures that concurrent births across different grid locations derive distinct mutation seeds (preventing duplicate parallel RNG streams) even if they occur at the exact same simulation tick.
+
+#### Stateless Mutation Persistence
+The local random number generator (`ChaCha8Rng`) initialized per reproduction event is transient and stateless; its state is not persisted or serialized. Instead, the resulting mutated child genomes are fully captured and saved. Because the seed derivation is entirely deterministic and relies on immutable snapshot fields (world seed, tick, coordinates, parent ID), save/load equivalence remains bit-perfect and execution is completely reproducible.
+
 #### Mutation Dynamics
 For each gene index:
 1. Roll a random float $r \in [0.0, 1.0]$.
@@ -282,6 +289,7 @@ pub struct AgentSnapshot {
 ## 6. Verification & Validation Plan
 
 ### Invariant Checks (`PostTickValidation`)
+* **Genome Validations:** Every agent genome must be non-empty, and all gene values must be explicitly verified to be finite (rejecting NaN, +infinity, and -infinity) and strictly bounded within `[0.0, 1.0]`.
 * **Phenotype-Genome Parity:** Every agent's `Phenotype` must match the mathematical derivation of its `Genome`.
 * **Resource Mass Conservation:** Total resources in chunks + total resources consumed by agents must equal initial substrate resource bounds plus daily replenishment, verifying that consumption does not leak or create energy.
 * **Stable ID Monotonicity:** Live agent IDs must be less than the `StableIdGenerator` next ID value.

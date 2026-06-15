@@ -12,9 +12,62 @@ use crate::agent::components::{
 use crate::agent::resources::{GenomeConfig, StableIdGenerator};
 use crate::config::{WorldBounds, WorldConfig};
 use crate::rng::{derive_agent_seed, WorldSeed};
+use crate::time::SimulationClock;
 use crate::world::climate::ClimateChunk;
 use crate::world::coord::{ChunkCoord, WorldCoord};
 use crate::world::terrain::TerrainChunk;
+
+/// Deterministic 64-bit integer mixer (SplitMix64 finalizer)
+pub fn deterministic_mix_64(val: u64) -> u64 {
+    let mut x = val;
+    x ^= x >> 30;
+    x = x.wrapping_mul(0xbf58476d1ce4e5b9);
+    x ^= x >> 27;
+    x = x.wrapping_mul(0x94d049bb133111eb);
+    x ^= x >> 31;
+    x
+}
+
+/// Derives a stable, platform-independent mutation seed for ChaCha8Rng.
+pub fn derive_mutation_seed(parent_id: u64, tick: u32, coord: WorldCoord, root_seed: u64) -> u64 {
+    let mut mix = root_seed;
+    mix = deterministic_mix_64(mix.wrapping_add(parent_id));
+    mix = deterministic_mix_64(mix.wrapping_add(tick as u64));
+    mix = deterministic_mix_64(mix.wrapping_add(coord.x as u64));
+    mix = deterministic_mix_64(mix.wrapping_add(coord.y as u64));
+    mix
+}
+
+/// Pure helper function to apply deterministic Gaussian mutation to a genome.
+pub fn mutate_genome(
+    parent_genome: &Genome,
+    mutation_rate: f32,
+    mutation_step_size: f32,
+    seed: u64,
+) -> Genome {
+    let mut rng = ChaCha8Rng::seed_from_u64(seed);
+    let mut mutated_genes = parent_genome.genes.clone();
+
+    for gene in &mut mutated_genes {
+        let r: f32 = rng.gen(); // Uniformly distributed in [0.0, 1.0)
+        if r < mutation_rate {
+            // Apply Gaussian displacement using Box-Muller transform
+            let mut u1: f32 = rng.gen();
+            while u1 == 0.0 {
+                u1 = rng.gen();
+            }
+            let u2: f32 = rng.gen();
+
+            let z0 = (-2.0 * u1.ln()).sqrt() * (2.0 * std::f32::consts::PI * u2).cos();
+            let d = z0 * mutation_step_size;
+            *gene = (*gene + d).clamp(0.0, 1.0);
+        }
+    }
+
+    Genome {
+        genes: mutated_genes,
+    }
+}
 
 /// Spawns the initial population of agents deterministically at startup.
 pub fn spawn_initial_agents(
@@ -386,10 +439,13 @@ pub fn process_agent_movement(
 
 /// Processes asexual reproduction for biological agents, validating energy/age constraints,
 /// performing cardinal adjacent cell search, dividing energy, and setting up generational lineage.
+#[allow(clippy::too_many_arguments)]
 pub fn process_agent_reproduction(
     mut commands: Commands,
     config: Res<WorldConfig>,
     bounds: Res<WorldBounds>,
+    seed: Res<WorldSeed>,
+    clock: Res<SimulationClock>,
     mut id_gen: ResMut<StableIdGenerator>,
     terrain_chunks: Query<(&ChunkCoord, &TerrainChunk)>,
     mut agents: Query<(
@@ -492,12 +548,25 @@ pub fn process_agent_reproduction(
                 parent_stock.energy *= 0.5;
 
                 let offspring_id = id_gen.next_id();
+                let mutation_seed = derive_mutation_seed(
+                    parent_id,
+                    clock.total_ticks,
+                    parent_coord,
+                    seed.root_seed,
+                );
+                let mutated_genome = mutate_genome(
+                    &parent_genome,
+                    config.mutation_rate,
+                    config.mutation_step_size,
+                    mutation_seed,
+                );
+
                 commands.spawn((
                     AgentMetadata::new(offspring_id),
                     AgentPosition::new(target_coord),
                     MetabolicStock::new(offspring_energy, 0),
                     ActionRequest::new(ActionIntent::None),
-                    parent_genome, // inherited genome (no mutation)
+                    mutated_genome,
                     LineageMetadata::new(Some(parent_id), parent_lineage.generation + 1),
                 ));
 
@@ -1735,6 +1804,8 @@ mod tests {
         let bounds = WorldBounds::from_config(&config);
         world.insert_resource(config.clone());
         world.insert_resource(bounds);
+        world.insert_resource(WorldSeed::default());
+        world.insert_resource(SimulationClock::default());
 
         let mut id_gen = StableIdGenerator::new();
         for _ in 0..10 {
@@ -1795,6 +1866,8 @@ mod tests {
         let bounds = WorldBounds::from_config(&config);
         world.insert_resource(config.clone());
         world.insert_resource(bounds);
+        world.insert_resource(WorldSeed::default());
+        world.insert_resource(SimulationClock::default());
 
         let mut id_gen = StableIdGenerator::new();
         for _ in 0..42 {
@@ -1855,6 +1928,8 @@ mod tests {
         let bounds = WorldBounds::from_config(&config);
         world.insert_resource(config.clone());
         world.insert_resource(bounds);
+        world.insert_resource(WorldSeed::default());
+        world.insert_resource(SimulationClock::default());
 
         let mut id_gen = StableIdGenerator::new();
         for _ in 0..10 {
@@ -1916,6 +1991,8 @@ mod tests {
         let bounds = WorldBounds::from_config(&config);
         world.insert_resource(config.clone());
         world.insert_resource(bounds);
+        world.insert_resource(WorldSeed::default());
+        world.insert_resource(SimulationClock::default());
 
         let mut id_gen = StableIdGenerator::new();
         for _ in 0..10 {
@@ -1978,6 +2055,8 @@ mod tests {
         let bounds = WorldBounds::from_config(&config);
         world.insert_resource(config.clone());
         world.insert_resource(bounds);
+        world.insert_resource(WorldSeed::default());
+        world.insert_resource(SimulationClock::default());
 
         let mut id_gen = StableIdGenerator::new();
         for _ in 0..20 {
@@ -2042,6 +2121,8 @@ mod tests {
         let bounds = WorldBounds::from_config(&config);
         world1.insert_resource(config.clone());
         world1.insert_resource(bounds.clone());
+        world1.insert_resource(WorldSeed::default());
+        world1.insert_resource(SimulationClock::default());
 
         let mut id_gen1 = StableIdGenerator::new();
         for _ in 0..20 {
@@ -2089,6 +2170,8 @@ mod tests {
         let mut world2 = World::new();
         world2.insert_resource(config);
         world2.insert_resource(bounds);
+        world2.insert_resource(WorldSeed::default());
+        world2.insert_resource(SimulationClock::default());
 
         let mut id_gen2 = StableIdGenerator::new();
         for _ in 0..20 {
@@ -2144,5 +2227,77 @@ mod tests {
         agents2.sort_by_key(|a| a.0);
 
         assert_eq!(agents1, agents2);
+    }
+
+    #[test]
+    fn test_deterministic_mutation() {
+        let parent = Genome::new(vec![0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8]);
+        let rate = 0.5;
+        let step = 0.1;
+        let seed = 123456789;
+
+        let child1 = mutate_genome(&parent, rate, step, seed);
+        let child2 = mutate_genome(&parent, rate, step, seed);
+
+        assert_eq!(child1, child2);
+    }
+
+    #[test]
+    fn test_gene_bound_clamping() {
+        let parent = Genome::new(vec![0.0, 1.0, 0.05, 0.95]);
+        let rate = 1.0;
+        let step = 10.0;
+        let seed = 42;
+
+        let child = mutate_genome(&parent, rate, step, seed);
+        for &gene in &child.genes {
+            assert!(gene >= 0.0 && gene <= 1.0, "Gene out of bounds: {}", gene);
+            assert!(gene.is_finite(), "Gene is not finite");
+        }
+    }
+
+    #[test]
+    fn test_parent_immutability() {
+        let parent = Genome::new(vec![0.5; 8]);
+        let rate = 1.0;
+        let step = 0.2;
+        let seed = 999;
+
+        let child = mutate_genome(&parent, rate, step, seed);
+        assert_ne!(child.genes, parent.genes);
+        assert_eq!(parent.genes, vec![0.5; 8]);
+    }
+
+    #[test]
+    fn test_mutation_step_distribution() {
+        let parent = Genome::new(vec![0.5]);
+        let rate = 1.0;
+        let step = 0.1;
+
+        let mut sum_diff = 0.0;
+        let mut sum_diff_sq = 0.0;
+        let count = 2000;
+
+        for seed in 0..count {
+            let child = mutate_genome(&parent, rate, step, seed as u64);
+            let diff = child.genes[0] - parent.genes[0];
+            sum_diff += diff;
+            sum_diff_sq += diff * diff;
+        }
+
+        let mean = sum_diff / count as f32;
+        let variance = sum_diff_sq / count as f32 - mean * mean;
+        let std_dev = variance.sqrt();
+
+        assert!(
+            mean.abs() < 0.02,
+            "Mean of mutations too far from 0: {}",
+            mean
+        );
+        assert!(
+            (std_dev - 0.1).abs() < 0.02,
+            "Std dev of mutations too far from 0.1: {}",
+            std_dev
+        );
     }
 }

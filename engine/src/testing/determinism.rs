@@ -273,3 +273,171 @@ fn test_long_run_stability_512() {
     // Assert absolute equivalence between continuous and loaded worlds at tick 8,641
     assert_worlds_equivalent(app_continuous.world_mut(), app_loaded.world_mut());
 }
+
+#[test]
+fn test_reproduction_with_mutation_integration() {
+    let mut config = create_test_config();
+    config.initial_agent_count = 0;
+    config.agent_density_cap = 5;
+    config.mutation_rate = 1.0;
+    config.mutation_step_size = 0.1;
+
+    let seed = create_test_seed();
+    let mut app = App::new(config, seed);
+    app.run_startup();
+
+    let parent_coord = crate::world::coord::WorldCoord::new(1, 1);
+    let chunk_size = 32;
+    app.world_mut().spawn((
+        ChunkCoord::new(0, 0),
+        TerrainChunk {
+            elevation: vec![0.0; (chunk_size * chunk_size) as usize],
+            slope: vec![0.0; (chunk_size * chunk_size) as usize],
+            water_depth: vec![0.0; (chunk_size * chunk_size) as usize],
+            soil_depth: vec![0.0; (chunk_size * chunk_size) as usize],
+            soil_fertility: vec![0.0; (chunk_size * chunk_size) as usize],
+        },
+    ));
+
+    app.world_mut().spawn((
+        crate::agent::AgentMetadata::new(10),
+        crate::agent::AgentPosition::new(parent_coord),
+        crate::agent::MetabolicStock::new(300.0, 20),
+        crate::agent::Genome::new(vec![0.5, 0.5, 0.5, 0.5, 0.5, 0.0, 0.0, 0.5]),
+        crate::agent::LineageMetadata::new(None, 0),
+    ));
+
+    app.world_mut().run_schedule(FixedSimulationTick);
+    app.world_mut().run_schedule(PostTickValidation);
+    app.world_mut().run_schedule(PersistenceBoundary);
+
+    let mut query = app.world_mut().query::<(
+        bevy_ecs::entity::Entity,
+        &crate::agent::AgentMetadata,
+        &crate::agent::Genome,
+        &crate::agent::LineageMetadata,
+    )>();
+    let agents: Vec<_> = query.iter(app.world()).collect();
+
+    assert_eq!(
+        agents.len(),
+        2,
+        "Expected exactly 2 agents (parent and offspring)"
+    );
+
+    let parent_idx = if agents[0].3.parent_id.is_none() {
+        0
+    } else {
+        1
+    };
+    let offspring_idx = 1 - parent_idx;
+
+    let parent_data = &agents[parent_idx];
+    let offspring_data = &agents[offspring_idx];
+
+    assert_eq!(offspring_data.3.parent_id, Some(parent_data.1.id));
+    assert_eq!(offspring_data.3.generation, 1);
+
+    assert_ne!(
+        offspring_data.2.genes, parent_data.2.genes,
+        "Offspring genome did not drift"
+    );
+
+    for &gene in &offspring_data.2.genes {
+        assert!(gene >= 0.0 && gene <= 1.0, "Gene out of bounds: {}", gene);
+        assert!(gene.is_finite(), "Gene is not finite");
+    }
+}
+
+#[test]
+fn test_save_load_equivalence_with_mutation_integration() {
+    let mut config = create_test_config();
+    config.initial_agent_count = 5;
+    config.agent_density_cap = 20;
+    config.initial_agent_energy = 300.0;
+    config.mutation_rate = 0.5;
+    config.mutation_step_size = 0.05;
+
+    let seed = create_test_seed();
+
+    let mut app_continuous = App::new(config.clone(), seed);
+    app_continuous.run_startup();
+
+    for _ in 0..30 {
+        app_continuous.world_mut().run_schedule(FixedSimulationTick);
+        app_continuous.world_mut().run_schedule(PostTickValidation);
+        app_continuous.world_mut().run_schedule(PersistenceBoundary);
+    }
+
+    let mut app_split = App::new(config.clone(), seed);
+    app_split.run_startup();
+
+    for _ in 0..30 {
+        app_split.world_mut().run_schedule(FixedSimulationTick);
+        app_split.world_mut().run_schedule(PostTickValidation);
+        app_split.world_mut().run_schedule(PersistenceBoundary);
+    }
+
+    let world_split = app_split.world_mut();
+    let mut query = world_split.query::<(
+        &ChunkCoord,
+        &TerrainChunk,
+        &ClimateChunk,
+        &ResourceChunk,
+        &EnergyAvailabilityChunk,
+    )>();
+    let chunks: Vec<_> = query
+        .iter(world_split)
+        .map(|(c, t, cl, r, e)| (*c, t.clone(), cl.clone(), r.clone(), e.clone()))
+        .collect();
+
+    let clock = world_split.resource::<SimulationClock>().clone();
+    assert_eq!(clock.total_ticks, 30);
+
+    let id_generator = *world_split.resource::<crate::agent::StableIdGenerator>();
+    let mut agent_query = world_split.query::<(
+        &crate::agent::AgentMetadata,
+        &crate::agent::AgentPosition,
+        &crate::agent::MetabolicStock,
+        &crate::agent::Genome,
+        &crate::agent::LineageMetadata,
+    )>();
+    let agents: Vec<_> = agent_query
+        .iter(world_split)
+        .map(|(m, p, s, g, l)| crate::persistence::AgentSnapshot {
+            metadata: *m,
+            position: *p,
+            stock: *s,
+            genome: g.clone(),
+            lineage: *l,
+        })
+        .collect();
+
+    let snapshot = build_world_snapshot(
+        &config,
+        &seed,
+        &clock,
+        SNAPSHOT_SCHEMA_VERSION,
+        &chunks,
+        &id_generator,
+        &agents,
+    );
+
+    let json = serde_json::to_string(&snapshot).expect("serialize failed");
+    let deserialized = serde_json::from_str(&json).expect("deserialize failed");
+
+    let mut app_loaded = App::new(config.clone(), seed);
+    reconstruct_world_from_snapshot(app_loaded.world_mut(), deserialized);
+
+    for _ in 0..20 {
+        app_continuous.world_mut().run_schedule(FixedSimulationTick);
+        app_continuous.world_mut().run_schedule(PostTickValidation);
+        app_continuous.world_mut().run_schedule(PersistenceBoundary);
+
+        app_loaded.world_mut().run_schedule(FixedSimulationTick);
+        app_loaded.world_mut().run_schedule(PostTickValidation);
+        app_loaded.world_mut().run_schedule(PersistenceBoundary);
+    }
+
+    assert_worlds_equivalent(app_continuous.world_mut(), app_loaded.world_mut());
+}

@@ -2,24 +2,24 @@
 
 This registry tracks the status and deliverables of all milestones in the Genesis roadmap.
 
-* **Overall Progress Estimate:** Phase 1 Complete; Phase 2 Complete; Phase 3 Active (Milestones 16, 17, & 18 Completed)
+* **Overall Progress Estimate:** Phase 1 Complete; Phase 2 Complete; Phase 3 Active (Milestones 16, 17, 18, & 19 Completed)
 * **Current Phase:** Phase 3 — Evolution
-* **Current Milestone:** Milestone 19 — Mutation Engine & Genetic Drift
+* **Current Milestone:** Milestone 20 — Natural Selection & Adaptation
 
 ---
 
 ## Current Active Work
 
 * **Active Phase:** Phase 3 — Evolution
-* **Current Milestone:** Milestone 19 — Mutation Engine & Genetic Drift (Active)
+* **Current Milestone:** Milestone 20 — Natural Selection & Adaptation (Next)
 
 ## Current Focus
 
-* Implementing Gaussian gene mutation during reproduction and deriving mutation seeds deterministically using parent metadata and current ticks.
+* Integrating Phenotype trait parameters into metabolic decay rates, movement costs, and navigation boundaries.
 
 ## Next Milestone
 
-* **Next Milestone:** Milestone 19: Mutation Engine & Genetic Drift (Phase 3, Milestone 19)
+* **Next Milestone:** Milestone 20: Natural Selection & Adaptation (Phase 3, Milestone 20)
 
 ---
 
@@ -280,7 +280,7 @@ This registry tracks the status and deliverables of all milestones in the Genesi
   - determinism & snapshot validation PASS
 
 ### Milestone 19: Mutation and Deterministic Drift
-* **Status:** Active
+* **Status:** Completed
 * **Summary:** Introduce genetic diversity through seeded mutations.
 * **Dependencies:** Milestone 18.
 * **Related Documents:**
@@ -288,14 +288,19 @@ This registry tracks the status and deliverables of all milestones in the Genesi
 * **Major Deliverables:**
   - Gaussian gene mutation during reproduction
   - Deterministic mutation seeds derived from parent metadata and current ticks
+* **Verification Summary:**
+  - `cargo fmt` PASS
+  - `cargo clippy --all-targets --all-features -- -D warnings` PASS
+  - `cargo test` PASS (144 passed; including Box-Muller Gaussian mutation, SplitMix64 finalizer seeding, and genome validation invariants check)
+  - Save/load determinism and seed sensitivity validated under mutation and drift.
 
 ### Milestone 20: Natural Selection and Adaptation
-* **Status:** Planned
+* **Status:** Next
 * **Summary:** Validate adaptation to environmental gradients by integrating phenotypes into metabolic decay, movement costs, and navigation barriers.
 * **Dependencies:** Milestone 19.
 
 ### Milestone 21: Evolution Diagnostics and Validation
-* **Status:** Planned
+* **Status:** Pending
 * **Summary:** Implement telemetry monitoring and diagnostics (PopulationStats), and fix snapshot validation bugs.
 * **Dependencies:** Milestone 20.
 

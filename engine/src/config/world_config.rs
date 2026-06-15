@@ -187,6 +187,22 @@ pub struct WorldConfig {
     /// Efficiency factor for converting consumed resource mass to metabolic energy stock.
     /// Represents digestion/assimilation efficiency in range [0.0, 1.0].
     pub consumption_efficiency: f32,
+
+    /// Probability of mutation per gene index during asexual reproduction.
+    #[serde(default = "default_mutation_rate")]
+    pub mutation_rate: f32,
+
+    /// Standard deviation of Gaussian mutation displacement offsets.
+    #[serde(default = "default_mutation_step_size")]
+    pub mutation_step_size: f32,
+}
+
+fn default_mutation_rate() -> f32 {
+    0.05
+}
+
+fn default_mutation_step_size() -> f32 {
+    0.05
 }
 
 impl Default for WorldConfig {
@@ -249,6 +265,8 @@ impl Default for WorldConfig {
             agent_movement_cost: 1.0,
             max_harvest_rate: 10.0,
             consumption_efficiency: 0.8,
+            mutation_rate: 0.05,
+            mutation_step_size: 0.05,
         }
     }
 }
@@ -270,6 +288,8 @@ mod tests {
         assert_eq!(config.seasons_per_year, 4);
 
         assert_eq!(config.generation_version, 1);
+        assert_eq!(config.mutation_rate, 0.05);
+        assert_eq!(config.mutation_step_size, 0.05);
     }
 
     #[test]

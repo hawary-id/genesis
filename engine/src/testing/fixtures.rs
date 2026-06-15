@@ -66,6 +66,8 @@ pub fn create_test_config() -> WorldConfig {
         agent_movement_cost: 1.0,
         max_harvest_rate: 10.0,
         consumption_efficiency: 0.8,
+        mutation_rate: 0.05,
+        mutation_step_size: 0.05,
     }
 }
 

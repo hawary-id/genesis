@@ -56,8 +56,8 @@ Milestones:
 - [x] M16 Genetics & Phenotype Mapping
 - [x] M17 Resource Consumption
 - [x] M18 Reproduction & Inheritance
-- [/] M19 Mutation & Drift
-- [ ] M20 Natural Selection & Adaptation
+- [x] M19 Mutation & Drift
+- [/] M20 Natural Selection & Adaptation
 - [ ] M21 Diagnostics & Validation
 
 Success:

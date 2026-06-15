@@ -11,13 +11,18 @@
 * Milestone 16 — Genetics & Phenotype Mapping
 * Milestone 17 — Resource Consumption
 * Milestone 18 — Reproduction, Inheritance & Lineage
+* Milestone 19 — Mutation Engine & Genetic Drift
 
 ### Current Active Milestone
 
-* Milestone 19 — Mutation Engine & Genetic Drift
+* Milestone 20 — Natural Selection & Adaptation
 
 ### Newly Added Systems
 
+* Deterministic Gaussian mutation integrated into reproduction using Box-Muller transform
+* Deterministic mutation seed derivation via SplitMix64 finalizer (`deterministic_mix_64` function)
+* Transient stateless `ChaCha8Rng` for reproductive mutation trials
+* Explicit validation checks for non-empty and finite genomes (`is_finite` check)
 * Asexual reproduction (`process_agent_reproduction` system)
 * Lineage propagation and stable ID generation during reproduction
 * Emergency density cap enforcement during reproduction
@@ -33,15 +38,25 @@
 ### Verification & Testing Status
 
 * **Branch:** main
-* **Status:** Milestone 18 is fully completed, verified, clippy-compliant, and passes determinism and snapshot validation.
+* **Status:** Milestone 19 is fully completed, verified, clippy-compliant, and passes determinism and snapshot validation.
 * **Test Counts:**
-  - `cargo test`: 137 passed, 0 failed, 1 ignored
+  - `cargo test`: 144 passed, 0 failed, 1 ignored
   - `cargo test -- --ignored`: 1 passed (test_long_run_stability_512 checks A+B=N save/load equivalence over 8,640 ticks / 1 simulation year with genetics, consumption, and reproduction enabled)
   - `cargo clippy --all-targets --all-features -- -D warnings`: PASS
   - `cargo fmt`: PASS
-* **Last Updated:** 2026-06-15T14:15:51+07:00
+* **Last Updated:** 2026-06-15T16:51:30+07:00
 
 ---
+
+## Completed in Milestone 19: Mutation Engine & Genetic Drift
+
+* **Deterministic Mutation**: Implemented Gaussian gene mutation during asexual reproduction, utilizing a local, transient `ChaCha8Rng` instance seeded deterministically per reproduction event.
+* **Seeding & Seed Derivation**: Derived platform-invariant mutation seeds using a SplitMix64 finalizer hash (`deterministic_mix_64`) mixing world seed, parent ID, tick, and parent coordinate (which acts as spatial salt).
+* **Configuration Parameters**: Added `mutation_rate` and `mutation_step_size` config parameters to the centralized `WorldConfig` resource.
+* **Dynamic Mutation Loop**: Mutation loops process the active genes vector length (`parent_genome.genes.len()`) to support dynamic genome size expansion in future phases.
+* **Genetics Validation Invariants**: Added explicit validation checks in `validate_world_on_startup` and `validate_world_on_tick` verifying that genomes are non-empty, and all gene values are finite (`is_finite()`) and clamped to `[0.0, 1.0]`.
+* **Save/Load Equivalence Integration**: Verified that stateless mutation RNGs do not break save/load determinism, successfully maintaining bit-perfect A+B=N run equivalence.
+* **Emergent Genetic Drift**: Validated that genetic drift emerges purely as a consequence of spatial carrying capacity and environmental selection pressures over generations.
 
 ## Completed in Milestone 18: Reproduction, Inheritance & Lineage
 

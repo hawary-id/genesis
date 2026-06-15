@@ -17,13 +17,13 @@ The engine is engineered in Rust using data-oriented ECS (Entity Component Syste
 ## Current State
 
 * **Current Phase:** Phase 3 — Evolution (Active)
-* **Current Milestone:** Milestone 19 — Mutation Engine & Genetic Drift
-* **Last Completed Milestone:** Milestone 18 — Reproduction, Inheritance & Lineage
+* **Current Milestone:** Milestone 20 — Natural Selection & Adaptation
+* **Last Completed Milestone:** Milestone 19 — Mutation Engine & Genetic Drift
 * **Repository Status:** Clean
 * **Build Status:** PASS (Compares cleanly with zero warnings under Clippy)
 * **Test Status:** PASS
 * **Test Counts:**
-  - Standard Test Suite: `137 passed; 0 failed; 1 ignored`
+  - Standard Test Suite: `144 passed; 0 failed; 1 ignored`
   - Ignored Test Suite (`cargo test -- --ignored`): `1 passed` (stability check of 8,640 ticks / 1 simulation year completes successfully in 309.04s)
 
 ---
@@ -70,12 +70,13 @@ With Phase 2 (Life) completed and verified, Phase 3 (Evolution) has begun:
 * Implementing genetic representations, phenotype mapping cache, generation tracking, and version 3 snapshots (Milestone 16 - Completed).
 * Implementing environmental resource harvesting, neighborhood sensing of nutrient/fresh water chunks, and agent energy stock replenishment (Milestone 17 - Completed).
 * Enabling population continuity via deterministic asexual reproduction, stable ID allocation, energy splitting, genome inheritance, and lineage propagation (Milestone 18 - Completed).
+* Implementing deterministic Gaussian gene mutation during reproduction using Box-Muller transform, deterministic seed derivation (SplitMix64), and gene validity checks (Milestone 19 - Completed).
 
 ---
 
 ## Next Recommended Objectives
 
-1. **Milestone 19: Mutation and Deterministic Drift:** Introduce genetic diversity through seeded mutations.
+1. **Milestone 20: Natural Selection and Adaptation:** Validate adaptation to environmental gradients by integrating phenotypes into metabolic decay, movement costs, and navigation barriers.
 
 ---
 
@@ -119,8 +120,8 @@ To load repository context quickly and efficiently while minimizing repository s
 
 ## Last Updated State
 
-* **Timestamp:** 2026-06-15T14:20:10+07:00
-* **Repository State:** Phase 3 Milestone 18 complete, verified, and active development on Milestone 19.
+* **Timestamp:** 2026-06-15T16:51:30+07:00
+* **Repository State:** Phase 3 Milestone 19 complete, verified, and active development on Milestone 20.
 
 ## Repository State
 

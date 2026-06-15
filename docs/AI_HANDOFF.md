@@ -7,22 +7,28 @@ This document serves as the immediate handoff instructions for any AI model resu
 ## Current Repository State
 
 * **Branch:** `main`
-* **Status:** Clean. All Phase 3 Evolution Milestone 18 modules compile under standard profiles, and formatting (`cargo fmt`) and Clippy checks pass successfully.
-* **Test Outcome:** `137 passed, 0 failed, 1 ignored` (standard); `1 passed, 0 failed` (`--ignored` stability test).
+* **Status:** Clean. All Phase 3 Evolution Milestone 19 modules compile under standard profiles, and formatting (`cargo fmt`) and Clippy checks pass successfully.
+* **Test Outcome:** `144 passed, 0 failed, 1 ignored` (standard); `1 passed, 0 failed` (`--ignored` stability test).
 
 ---
 
 ## Current Phase & Milestone
 
 * **Current Phase:** Phase 3 — Evolution (Active)
-* **Current Milestone:** Milestone 19 — Mutation Engine & Genetic Drift (Active)
-* **Last Completed Milestone:** Milestone 18 — Reproduction, Inheritance & Lineage
-* **Phase Progress:** Milestone 18 completed, verified, and locked. Milestone 19 is active.
+* **Current Milestone:** Milestone 20 — Natural Selection & Adaptation (Next)
+* **Last Completed Milestone:** Milestone 19 — Mutation Engine & Genetic Drift
+* **Phase Progress:** Milestone 19 completed, verified, and locked. Milestone 20 is active.
 
 ---
 
 ## Recent Major Changes
 
+* **Milestone 19 Completed:** Implemented mutation engine & deterministic drift.
+  - Implemented deterministic Gaussian mutation offsets using the Box-Muller transform.
+  - Housed configuration parameters `mutation_rate` and `mutation_step_size` within `WorldConfig`.
+  - Derived platform-independent mutation seeds using parent metadata, tick, coordinate salt, and a SplitMix64 finalizer hash.
+  - Instantiated a stateless `ChaCha8Rng` for mutation trials, avoiding snapshot serialization.
+  - Added explicit validation checks enforcing that all genes are finite (`is_finite()`) and clamped to `[0.0, 1.0]`.
 * **Milestone 18 Completed:** Implemented reproduction, inheritance & lineage.
   - Implemented the `process_agent_reproduction` system executing asexual split.
   - Divided agent metabolic stock energy 50/50 between parent and offspring.
@@ -47,6 +53,28 @@ This document serves as the immediate handoff instructions for any AI model resu
   - Updated tests and validation systems to allow running on restored worlds at tick $>0$ without initial spawner constraints failing.
   - Added genome mapping mapping, serialization round-trip, and phenotype reconstruction unit tests.
 * **Milestone 15 Completed:** Implemented agent persistence and integration testing.
+
+---
+
+## Completed Milestone 19 Summary
+
+### Features Delivered
+* Gaussian gene mutation based on Box-Muller transform.
+* `mutation_rate` and `mutation_step_size` configuration parameters housed within `WorldConfig`.
+* Deterministic mutation seed derivation utilizing parent metadata, tick, coordinate salt, and a SplitMix64 finalizer hash.
+* Transient, stateless `ChaCha8Rng` instantiation avoiding serialization requirements.
+* Strict validation rules enforcing finite (`is_finite()`) and clamped gene values.
+
+### Files Modified
+* `engine/src/agent/systems.rs`
+* `engine/src/config/world_config.rs`
+* `engine/src/validation/systems.rs`
+* `engine/src/testing/fixtures.rs`
+* `engine/src/testing/determinism.rs`
+
+### Test Results & Determinism Status
+* All 144 standard tests and clippy checks pass.
+* Save/load determinism and seed sensitivity tests pass successfully under mutation and drift.
 
 ---
 
@@ -139,13 +167,13 @@ The following behaviors are intentionally deferred to Milestone 20:
 ---
 
 ## Current Development Target
-
-Begin Milestone 19 — Mutation Engine & Genetic Drift.
-
+ 
+Begin Milestone 20 — Natural Selection & Adaptation.
+ 
 ## Recommended Next Actions
-
+ 
 *   Confirm that standard tests and clippy compile cleanly: `cargo test` and `cargo clippy --all-targets --all-features -- -D warnings`.
-*   Formulate the implementation strategy for Milestone 19.
+*   Formulate the implementation strategy for Milestone 20.
 
 ---
 

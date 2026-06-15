@@ -2,10 +2,10 @@
 
 ## 1. Project Status
 
-Genesis is currently in Phase 2 (Life).
+Genesis is currently in Phase 3 (Evolution).
 
-- **Milestone 1-10 (Phase 1):** Complete and Locked ✅
-- **Milestone 11:** Agent Data Foundation & Spawning. (Implemented and Verified ✅)
+- **Milestones 1-15 (Phase 1 & Phase 2):** Complete and Locked ✅
+- **Milestones 16-19 (Phase 3 Genetics, Consumption, Reproduction, Mutation):** Implemented and Verified ✅
 
 ---
 

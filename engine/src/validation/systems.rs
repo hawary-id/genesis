@@ -158,6 +158,13 @@ pub fn validate_world_on_startup(
             return;
         }
         for &gene in &genome.genes {
+            if !gene.is_finite() {
+                handle_validation_error(ValidationError::AgentGenomeInvalid {
+                    agent_id: meta.id,
+                    detail: "Gene value is not finite (NaN or infinity)",
+                });
+                return;
+            }
             if !(0.0..=1.0).contains(&gene) {
                 handle_validation_error(ValidationError::AgentGenomeInvalid {
                     agent_id: meta.id,
@@ -302,6 +309,13 @@ pub fn validate_world_on_tick(
             return;
         }
         for &gene in &genome.genes {
+            if !gene.is_finite() {
+                handle_validation_error(ValidationError::AgentGenomeInvalid {
+                    agent_id: meta.id,
+                    detail: "Gene value is not finite (NaN or infinity)",
+                });
+                return;
+            }
             if !(0.0..=1.0).contains(&gene) {
                 handle_validation_error(ValidationError::AgentGenomeInvalid {
                     agent_id: meta.id,
@@ -701,6 +715,24 @@ mod tests {
             AgentPosition::new(crate::world::coord::WorldCoord::new(0, 0)),
             MetabolicStock::new(100.0, limit + 1),
             Genome::new(vec![0.5; 8]),
+            LineageMetadata::new(None, 0),
+        ));
+
+        world.run_schedule(crate::app::PostTickValidation);
+    }
+
+    #[test]
+    #[should_panic(expected = "AgentGenomeInvalid")]
+    fn test_validation_catches_non_finite_genome() {
+        let mut world = test_world();
+        world.run_schedule(crate::app::StartupGeneration);
+
+        // Spawn agent with NaN in genome
+        world.spawn((
+            AgentMetadata::new(1),
+            AgentPosition::new(crate::world::coord::WorldCoord::new(0, 0)),
+            MetabolicStock::new(100.0, 0),
+            Genome::new(vec![0.5, 0.5, 0.5, f32::NAN, 0.5, 0.5, 0.5, 0.5]),
             LineageMetadata::new(None, 0),
         ));
 

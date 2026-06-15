@@ -384,6 +384,129 @@ pub fn process_agent_movement(
     }
 }
 
+/// Processes asexual reproduction for biological agents, validating energy/age constraints,
+/// performing cardinal adjacent cell search, dividing energy, and setting up generational lineage.
+pub fn process_agent_reproduction(
+    mut commands: Commands,
+    config: Res<WorldConfig>,
+    bounds: Res<WorldBounds>,
+    mut id_gen: ResMut<StableIdGenerator>,
+    terrain_chunks: Query<(&ChunkCoord, &TerrainChunk)>,
+    mut agents: Query<(
+        Entity,
+        &AgentMetadata,
+        &AgentPosition,
+        &mut MetabolicStock,
+        &Genome,
+        &LineageMetadata,
+        &Phenotype,
+    )>,
+) {
+    let initial_population = agents.iter().count();
+    let mut current_population = initial_population;
+    let chunk_size = bounds.chunk_size;
+
+    // 1. Collect all eligible parents (energy >= threshold AND age >= maturity_age)
+    let mut parents = Vec::new();
+    for (entity, metadata, position, stock, genome, lineage, phenotype) in &agents {
+        if stock.energy >= phenotype.reproduction_threshold && stock.age >= phenotype.maturity_age {
+            parents.push((
+                metadata.id,
+                entity,
+                position.coord,
+                stock.energy,
+                genome.clone(),
+                *lineage,
+                *phenotype,
+            ));
+        }
+    }
+
+    // 2. Sort by stable parent ID ascending to ensure determinism
+    parents.sort_by_key(|p| p.0);
+
+    // 3. Process reproduction sequentially
+    for parent in parents {
+        // Enforce population density cap check first
+        if current_population >= config.agent_density_cap as usize {
+            break;
+        }
+
+        let parent_id = parent.0;
+        let parent_entity = parent.1;
+        let parent_coord = parent.2;
+        let parent_genome = parent.4;
+        let parent_lineage = parent.5;
+        let parent_pheno = parent.6;
+
+        let max_slope = parent_pheno.max_slope;
+        let max_water = parent_pheno.max_water_depth;
+
+        // Sequence: North (y - 1), South (y + 1), East (x + 1), West (x - 1)
+        let directions = [
+            (Some(parent_coord.x), parent_coord.y.checked_sub(1)), // North
+            (Some(parent_coord.x), Some(parent_coord.y.saturating_add(1))), // South
+            (Some(parent_coord.x.saturating_add(1)), Some(parent_coord.y)), // East
+            (parent_coord.x.checked_sub(1), Some(parent_coord.y)), // West
+        ];
+
+        let mut chosen_coord = None;
+        for &(cx_opt, cy_opt) in &directions {
+            let (Some(cx), Some(cy)) = (cx_opt, cy_opt) else {
+                continue;
+            };
+            let candidate = WorldCoord::new(cx, cy);
+
+            if !bounds.contains_world_coord(candidate) {
+                continue;
+            }
+
+            // Translate candidate cell coordinate to chunk index
+            let target_chunk = crate::world::coord::world_to_chunk(candidate, chunk_size);
+            let local_coord = crate::world::coord::world_to_local(candidate, chunk_size);
+            let index = (local_coord.y * chunk_size + local_coord.x) as usize;
+
+            // Retrieve local cell terrain
+            let mut local_terrain = None;
+            for (chunk_coord, chunk) in &terrain_chunks {
+                if *chunk_coord == target_chunk {
+                    if index < chunk.slope.len() && index < chunk.water_depth.len() {
+                        local_terrain = Some((chunk.slope[index], chunk.water_depth[index]));
+                    }
+                    break;
+                }
+            }
+
+            if let Some((slope, water_depth)) = local_terrain {
+                if slope <= max_slope && water_depth <= max_water {
+                    chosen_coord = Some(candidate);
+                    break;
+                }
+            }
+        }
+
+        // If a valid location was found, perform energy split, stable ID generation, and spawn offspring
+        if let Some(target_coord) = chosen_coord {
+            if let Ok((_, _, _, mut parent_stock, _, _, _)) = agents.get_mut(parent_entity) {
+                let offspring_energy = parent_stock.energy * 0.5;
+                parent_stock.energy *= 0.5;
+
+                let offspring_id = id_gen.next_id();
+                commands.spawn((
+                    AgentMetadata::new(offspring_id),
+                    AgentPosition::new(target_coord),
+                    MetabolicStock::new(offspring_energy, 0),
+                    ActionRequest::new(ActionIntent::None),
+                    parent_genome, // inherited genome (no mutation)
+                    LineageMetadata::new(Some(parent_id), parent_lineage.generation + 1),
+                ));
+
+                current_population += 1;
+            }
+        }
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -1600,5 +1723,426 @@ mod tests {
 
         assert_eq!(stock_a1.energy, 18.0);
         assert_eq!(stock_a2.energy, 10.0);
+    }
+
+    #[test]
+    fn test_reproduction_energy_split() {
+        let mut world = World::new();
+        let config = WorldConfig {
+            agent_density_cap: 10,
+            ..WorldConfig::default()
+        };
+        let bounds = WorldBounds::from_config(&config);
+        world.insert_resource(config.clone());
+        world.insert_resource(bounds);
+
+        let mut id_gen = StableIdGenerator::new();
+        for _ in 0..10 {
+            id_gen.next_id();
+        }
+        world.insert_resource(id_gen);
+
+        let chunk_size = 32;
+        world.spawn((
+            ChunkCoord::new(0, 0),
+            TerrainChunk {
+                elevation: vec![0.0; (chunk_size * chunk_size) as usize],
+                slope: vec![0.0; (chunk_size * chunk_size) as usize],
+                water_depth: vec![0.0; (chunk_size * chunk_size) as usize],
+                soil_depth: vec![0.0; (chunk_size * chunk_size) as usize],
+                soil_fertility: vec![0.0; (chunk_size * chunk_size) as usize],
+            },
+        ));
+
+        let pheno = Phenotype::new(0.5, 0.5, 0.4, 0.3, 1, 200.0, 50, 1.0, 1.0, 1.0);
+        let parent = world
+            .spawn((
+                AgentMetadata::new(10),
+                AgentPosition::new(WorldCoord::new(1, 1)),
+                MetabolicStock::new(300.0, 50),
+                Genome::new(vec![0.5; 8]),
+                LineageMetadata::new(None, 0),
+                pheno,
+            ))
+            .id();
+
+        let mut schedule = Schedule::new(crate::app::FixedSimulationTick);
+        schedule.add_systems(process_agent_reproduction);
+        world.add_schedule(schedule);
+
+        world.run_schedule(crate::app::FixedSimulationTick);
+
+        let parent_stock = world.entity(parent).get::<MetabolicStock>().unwrap();
+        assert_eq!(parent_stock.energy, 150.0);
+
+        let mut query = world.query::<(&AgentMetadata, &MetabolicStock)>();
+        let mut agents: Vec<_> = query.iter(&world).collect();
+        agents.sort_by_key(|a| a.0.id);
+
+        assert_eq!(agents.len(), 2);
+        assert_eq!(agents[0].0.id, 10); // parent
+        assert_eq!(agents[1].0.id, 11); // offspring ID allocated sequentially starting at 11
+        assert_eq!(agents[1].1.energy, 150.0);
+    }
+
+    #[test]
+    fn test_reproduction_lineage_assignment() {
+        let mut world = World::new();
+        let config = WorldConfig {
+            agent_density_cap: 10,
+            ..WorldConfig::default()
+        };
+        let bounds = WorldBounds::from_config(&config);
+        world.insert_resource(config.clone());
+        world.insert_resource(bounds);
+
+        let mut id_gen = StableIdGenerator::new();
+        for _ in 0..42 {
+            id_gen.next_id();
+        }
+        world.insert_resource(id_gen);
+
+        let chunk_size = 32;
+        world.spawn((
+            ChunkCoord::new(0, 0),
+            TerrainChunk {
+                elevation: vec![0.0; (chunk_size * chunk_size) as usize],
+                slope: vec![0.0; (chunk_size * chunk_size) as usize],
+                water_depth: vec![0.0; (chunk_size * chunk_size) as usize],
+                soil_depth: vec![0.0; (chunk_size * chunk_size) as usize],
+                soil_fertility: vec![0.0; (chunk_size * chunk_size) as usize],
+            },
+        ));
+
+        let pheno = Phenotype::new(0.5, 0.5, 0.4, 0.3, 1, 200.0, 50, 1.0, 1.0, 1.0);
+        world.spawn((
+            AgentMetadata::new(42),
+            AgentPosition::new(WorldCoord::new(1, 1)),
+            MetabolicStock::new(300.0, 50),
+            Genome::new(vec![0.5; 8]),
+            LineageMetadata::new(Some(10), 2),
+            pheno,
+        ));
+
+        let mut schedule = Schedule::new(crate::app::FixedSimulationTick);
+        schedule.add_systems(process_agent_reproduction);
+        world.add_schedule(schedule);
+
+        world.run_schedule(crate::app::FixedSimulationTick);
+
+        let mut query = world.query::<(&AgentMetadata, &LineageMetadata)>();
+        let mut agents: Vec<_> = query.iter(&world).collect();
+        agents.sort_by_key(|a| a.0.id);
+
+        assert_eq!(agents.len(), 2);
+        // Parent ID is 42
+        assert_eq!(agents[0].0.id, 42);
+        assert_eq!(agents[0].1.parent_id, Some(10));
+        assert_eq!(agents[0].1.generation, 2);
+        // Offspring ID is 43
+        assert_eq!(agents[1].0.id, 43);
+        assert_eq!(agents[1].1.parent_id, Some(42));
+        assert_eq!(agents[1].1.generation, 3);
+    }
+
+    #[test]
+    fn test_reproduction_cardinal_precedence() {
+        let mut world = World::new();
+        let config = WorldConfig {
+            agent_density_cap: 10,
+            ..WorldConfig::default()
+        };
+        let bounds = WorldBounds::from_config(&config);
+        world.insert_resource(config.clone());
+        world.insert_resource(bounds);
+
+        let mut id_gen = StableIdGenerator::new();
+        for _ in 0..10 {
+            id_gen.next_id();
+        }
+        world.insert_resource(id_gen);
+
+        let chunk_size = 32;
+        let mut slope = vec![0.0; (chunk_size * chunk_size) as usize];
+        // Block North cell (1, 0)
+        slope[1] = 0.5;
+
+        world.spawn((
+            ChunkCoord::new(0, 0),
+            TerrainChunk {
+                elevation: vec![0.0; (chunk_size * chunk_size) as usize],
+                slope,
+                water_depth: vec![0.0; (chunk_size * chunk_size) as usize],
+                soil_depth: vec![0.0; (chunk_size * chunk_size) as usize],
+                soil_fertility: vec![0.0; (chunk_size * chunk_size) as usize],
+            },
+        ));
+
+        let pheno = Phenotype::new(0.5, 0.5, 0.4, 0.3, 1, 200.0, 50, 1.0, 1.0, 1.0);
+        world.spawn((
+            AgentMetadata::new(10),
+            AgentPosition::new(WorldCoord::new(1, 1)),
+            MetabolicStock::new(300.0, 50),
+            Genome::new(vec![0.5; 8]),
+            LineageMetadata::new(None, 0),
+            pheno,
+        ));
+
+        let mut schedule = Schedule::new(crate::app::FixedSimulationTick);
+        schedule.add_systems(process_agent_reproduction);
+        world.add_schedule(schedule);
+
+        world.run_schedule(crate::app::FixedSimulationTick);
+
+        let mut query = world.query::<(&AgentMetadata, &AgentPosition)>();
+        let mut agents: Vec<_> = query.iter(&world).collect();
+        agents.sort_by_key(|a| a.0.id);
+
+        assert_eq!(agents.len(), 2);
+        // Parent ID is 10
+        assert_eq!(agents[0].0.id, 10);
+        // Offspring ID is 11. North is blocked. Precedence: North (fail) -> South (success). South is cell (1, 2)
+        assert_eq!(agents[1].0.id, 11);
+        assert_eq!(agents[1].1.coord, WorldCoord::new(1, 2));
+    }
+
+    #[test]
+    fn test_reproduction_cancellation() {
+        let mut world = World::new();
+        let config = WorldConfig {
+            agent_density_cap: 10,
+            ..WorldConfig::default()
+        };
+        let bounds = WorldBounds::from_config(&config);
+        world.insert_resource(config.clone());
+        world.insert_resource(bounds);
+
+        let mut id_gen = StableIdGenerator::new();
+        for _ in 0..10 {
+            id_gen.next_id();
+        }
+        world.insert_resource(id_gen);
+
+        let chunk_size = 32;
+        let mut slope = vec![0.0; (chunk_size * chunk_size) as usize];
+        let mut water_depth = vec![0.0; (chunk_size * chunk_size) as usize];
+        // Block South (0, 1) with slope
+        slope[chunk_size as usize] = 0.5;
+        // Block East (1, 0) with water depth
+        water_depth[1] = 0.4;
+
+        world.spawn((
+            ChunkCoord::new(0, 0),
+            TerrainChunk {
+                elevation: vec![0.0; (chunk_size * chunk_size) as usize],
+                slope,
+                water_depth,
+                soil_depth: vec![0.0; (chunk_size * chunk_size) as usize],
+                soil_fertility: vec![0.0; (chunk_size * chunk_size) as usize],
+            },
+        ));
+
+        let pheno = Phenotype::new(0.5, 0.5, 0.4, 0.3, 1, 200.0, 50, 1.0, 1.0, 1.0);
+        let parent = world
+            .spawn((
+                AgentMetadata::new(10),
+                AgentPosition::new(WorldCoord::new(0, 0)),
+                MetabolicStock::new(300.0, 50),
+                Genome::new(vec![0.5; 8]),
+                LineageMetadata::new(None, 0),
+                pheno,
+            ))
+            .id();
+
+        let mut schedule = Schedule::new(crate::app::FixedSimulationTick);
+        schedule.add_systems(process_agent_reproduction);
+        world.add_schedule(schedule);
+
+        world.run_schedule(crate::app::FixedSimulationTick);
+
+        // Reproduction cancelled: agent count remains 1, parent energy remains 300.0
+        let count = world.query::<&AgentMetadata>().iter(&world).count();
+        assert_eq!(count, 1);
+
+        let parent_stock = world.entity(parent).get::<MetabolicStock>().unwrap();
+        assert_eq!(parent_stock.energy, 300.0);
+    }
+
+    #[test]
+    fn test_reproduction_density_cap() {
+        let mut world = World::new();
+        let config = WorldConfig {
+            agent_density_cap: 3, // very low cap
+            ..WorldConfig::default()
+        };
+        let bounds = WorldBounds::from_config(&config);
+        world.insert_resource(config.clone());
+        world.insert_resource(bounds);
+
+        let mut id_gen = StableIdGenerator::new();
+        for _ in 0..20 {
+            id_gen.next_id();
+        }
+        world.insert_resource(id_gen);
+
+        let chunk_size = 32;
+        world.spawn((
+            ChunkCoord::new(0, 0),
+            TerrainChunk {
+                elevation: vec![0.0; (chunk_size * chunk_size) as usize],
+                slope: vec![0.0; (chunk_size * chunk_size) as usize],
+                water_depth: vec![0.0; (chunk_size * chunk_size) as usize],
+                soil_depth: vec![0.0; (chunk_size * chunk_size) as usize],
+                soil_fertility: vec![0.0; (chunk_size * chunk_size) as usize],
+            },
+        ));
+
+        let pheno = Phenotype::new(0.5, 0.5, 0.4, 0.3, 1, 200.0, 50, 1.0, 1.0, 1.0);
+        // Spawn 2 agents (both eligible to reproduce)
+        world.spawn((
+            AgentMetadata::new(10),
+            AgentPosition::new(WorldCoord::new(1, 1)),
+            MetabolicStock::new(300.0, 50),
+            Genome::new(vec![0.5; 8]),
+            LineageMetadata::new(None, 0),
+            pheno,
+        ));
+        world.spawn((
+            AgentMetadata::new(20),
+            AgentPosition::new(WorldCoord::new(5, 5)),
+            MetabolicStock::new(300.0, 50),
+            Genome::new(vec![0.5; 8]),
+            LineageMetadata::new(None, 0),
+            pheno,
+        ));
+
+        let mut schedule = Schedule::new(crate::app::FixedSimulationTick);
+        schedule.add_systems(process_agent_reproduction);
+        world.add_schedule(schedule);
+
+        world.run_schedule(crate::app::FixedSimulationTick);
+
+        // Initial pop is 2. Cap is 3. Only 1 offspring should be spawned.
+        let count = world.query::<&AgentMetadata>().iter(&world).count();
+        assert_eq!(count, 3);
+
+        let mut query = world.query::<&AgentMetadata>();
+        let mut ids: Vec<_> = query.iter(&world).map(|m| m.id).collect();
+        ids.sort();
+        assert_eq!(ids, vec![10, 20, 21]); // ID 21 allocated sequentially
+    }
+
+    #[test]
+    fn test_reproduction_determinism_sorting() {
+        let mut world1 = World::new();
+        let config = WorldConfig {
+            agent_density_cap: 10,
+            ..WorldConfig::default()
+        };
+        let bounds = WorldBounds::from_config(&config);
+        world1.insert_resource(config.clone());
+        world1.insert_resource(bounds.clone());
+
+        let mut id_gen1 = StableIdGenerator::new();
+        for _ in 0..20 {
+            id_gen1.next_id();
+        }
+        world1.insert_resource(id_gen1);
+
+        let chunk_size = 32;
+        world1.spawn((
+            ChunkCoord::new(0, 0),
+            TerrainChunk {
+                elevation: vec![0.0; (chunk_size * chunk_size) as usize],
+                slope: vec![0.0; (chunk_size * chunk_size) as usize],
+                water_depth: vec![0.0; (chunk_size * chunk_size) as usize],
+                soil_depth: vec![0.0; (chunk_size * chunk_size) as usize],
+                soil_fertility: vec![0.0; (chunk_size * chunk_size) as usize],
+            },
+        ));
+
+        let pheno = Phenotype::new(0.5, 0.5, 0.4, 0.3, 1, 200.0, 50, 1.0, 1.0, 1.0);
+        // Spawn parents with specific ID orders
+        world1.spawn((
+            AgentMetadata::new(10),
+            AgentPosition::new(WorldCoord::new(1, 1)),
+            MetabolicStock::new(300.0, 50),
+            Genome::new(vec![0.5; 8]),
+            LineageMetadata::new(None, 0),
+            pheno,
+        ));
+        world1.spawn((
+            AgentMetadata::new(20),
+            AgentPosition::new(WorldCoord::new(1, 1)), // same cell
+            MetabolicStock::new(300.0, 50),
+            Genome::new(vec![0.5; 8]),
+            LineageMetadata::new(None, 0),
+            pheno,
+        ));
+
+        let mut schedule1 = Schedule::new(crate::app::FixedSimulationTick);
+        schedule1.add_systems(process_agent_reproduction);
+        world1.add_schedule(schedule1);
+        world1.run_schedule(crate::app::FixedSimulationTick);
+
+        // World 2: Spawn in reverse order
+        let mut world2 = World::new();
+        world2.insert_resource(config);
+        world2.insert_resource(bounds);
+
+        let mut id_gen2 = StableIdGenerator::new();
+        for _ in 0..20 {
+            id_gen2.next_id();
+        }
+        world2.insert_resource(id_gen2);
+
+        world2.spawn((
+            ChunkCoord::new(0, 0),
+            TerrainChunk {
+                elevation: vec![0.0; (chunk_size * chunk_size) as usize],
+                slope: vec![0.0; (chunk_size * chunk_size) as usize],
+                water_depth: vec![0.0; (chunk_size * chunk_size) as usize],
+                soil_depth: vec![0.0; (chunk_size * chunk_size) as usize],
+                soil_fertility: vec![0.0; (chunk_size * chunk_size) as usize],
+            },
+        ));
+
+        world2.spawn((
+            AgentMetadata::new(20),
+            AgentPosition::new(WorldCoord::new(1, 1)),
+            MetabolicStock::new(300.0, 50),
+            Genome::new(vec![0.5; 8]),
+            LineageMetadata::new(None, 0),
+            pheno,
+        ));
+        world2.spawn((
+            AgentMetadata::new(10),
+            AgentPosition::new(WorldCoord::new(1, 1)),
+            MetabolicStock::new(300.0, 50),
+            Genome::new(vec![0.5; 8]),
+            LineageMetadata::new(None, 0),
+            pheno,
+        ));
+
+        let mut schedule2 = Schedule::new(crate::app::FixedSimulationTick);
+        schedule2.add_systems(process_agent_reproduction);
+        world2.add_schedule(schedule2);
+        world2.run_schedule(crate::app::FixedSimulationTick);
+
+        let mut query1 = world1.query::<(&AgentMetadata, &AgentPosition)>();
+        let mut agents1: Vec<_> = query1
+            .iter(&world1)
+            .map(|(m, p)| (m.id, p.coord.x, p.coord.y))
+            .collect();
+        agents1.sort_by_key(|a| a.0);
+
+        let mut query2 = world2.query::<(&AgentMetadata, &AgentPosition)>();
+        let mut agents2: Vec<_> = query2
+            .iter(&world2)
+            .map(|(m, p)| (m.id, p.coord.x, p.coord.y))
+            .collect();
+        agents2.sort_by_key(|a| a.0);
+
+        assert_eq!(agents1, agents2);
     }
 }

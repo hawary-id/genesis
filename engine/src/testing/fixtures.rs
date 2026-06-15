@@ -357,10 +357,12 @@ pub fn assert_worlds_equivalent(world_a: &mut World, world_b: &mut World) {
         &crate::agent::AgentMetadata,
         &crate::agent::AgentPosition,
         &crate::agent::MetabolicStock,
+        &crate::agent::Genome,
+        &crate::agent::LineageMetadata,
     )>();
     let mut agents_a: Vec<_> = agent_query_a
         .iter(world_a)
-        .map(|(m, p, s)| (*m, *p, *s))
+        .map(|(m, p, s, g, l)| (*m, *p, *s, g.clone(), *l))
         .collect();
     agents_a.sort_by_key(|a| a.0.id);
 
@@ -368,10 +370,12 @@ pub fn assert_worlds_equivalent(world_a: &mut World, world_b: &mut World) {
         &crate::agent::AgentMetadata,
         &crate::agent::AgentPosition,
         &crate::agent::MetabolicStock,
+        &crate::agent::Genome,
+        &crate::agent::LineageMetadata,
     )>();
     let mut agents_b: Vec<_> = agent_query_b
         .iter(world_b)
-        .map(|(m, p, s)| (*m, *p, *s))
+        .map(|(m, p, s, g, l)| (*m, *p, *s, g.clone(), *l))
         .collect();
     agents_b.sort_by_key(|a| a.0.id);
 
@@ -381,5 +385,7 @@ pub fn assert_worlds_equivalent(world_a: &mut World, world_b: &mut World) {
         assert_eq!(agent_a.0, agent_b.0, "agent metadata mismatch");
         assert_eq!(agent_a.1, agent_b.1, "agent position mismatch");
         assert_eq!(agent_a.2, agent_b.2, "agent metabolic stock mismatch");
+        assert_eq!(agent_a.3, agent_b.3, "agent genome mismatch");
+        assert_eq!(agent_a.4, agent_b.4, "agent lineage metadata mismatch");
     }
 }

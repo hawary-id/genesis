@@ -61,7 +61,10 @@ impl App {
                     .before(crate::agent::process_agent_movement),
                 crate::agent::process_agent_movement.after(crate::agent::derive_phenotype_on_spawn),
                 crate::agent::update_agent_metabolism.after(crate::agent::process_agent_movement),
-                crate::agent::process_agent_deaths.after(crate::agent::update_agent_metabolism),
+                crate::agent::process_agent_reproduction
+                    .after(crate::agent::update_agent_metabolism)
+                    .before(crate::agent::process_agent_deaths),
+                crate::agent::process_agent_deaths.after(crate::agent::process_agent_reproduction),
             ));
         }
 

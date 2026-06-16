@@ -278,12 +278,17 @@ This registry tracks the status and deliverables of all milestones in the Genesi
   - Save/load determinism and seed sensitivity validated under mutation and drift.
 
 ### Milestone 20: Natural Selection and Adaptation
-* **Status:** Next
+* **Status:** Completed
 * **Summary:** Validate adaptation to environmental gradients by integrating phenotypes into metabolic decay, movement costs, and navigation barriers.
+* **Major Deliverables:**
+  - Integrated `Phenotype` into metabolic decay rates.
+  - Integrated `Phenotype` into movement energy costs.
+  - Enforced `Phenotype` slope and water depth boundaries on movement.
+  - Verified selection pressure determinism via `test_climate_adaptation` and `test_terrain_specialization`.
 * **Dependencies:** Milestone 19.
 
 ### Milestone 21: Evolution Diagnostics and Validation
-* **Status:** Pending
+* **Status:** Active
 * **Summary:** Implement telemetry monitoring and diagnostics (PopulationStats), and fix snapshot validation bugs.
 * **Dependencies:** Milestone 20.
 

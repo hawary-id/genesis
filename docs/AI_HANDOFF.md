@@ -7,7 +7,7 @@ This document serves as the immediate tactical handoff instructions for any AI m
 
 ## Active Milestone
 
-M21 — (Pending Definition)
+M21 — Evolution Diagnostics and Validation
 
 (Source of Truth: CURRENT_STATE.md)
 

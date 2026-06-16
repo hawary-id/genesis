@@ -23,7 +23,7 @@ Key Outcomes:
 
 ### Current Active Milestone
 
-* Milestone 21 — (Pending Definition)
+* Milestone 21 — Evolution Diagnostics and Validation
 
 ### Newly Added Systems
 

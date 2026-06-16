@@ -8,21 +8,22 @@
 
 ### Last Completed Milestone
 
-Milestone 19 — Mutation Engine & Genetic Drift
+Milestone 20 — Natural Selection & Adaptation
 
 Key Outcomes:
-* Mutation Engine implemented
-* Genetic Drift support added
-* Deterministic mutation pipeline verified
-* Genome inheritance validation completed
+* Metabolic adaptation implemented (decay rate derived from Phenotype)
+* Movement adaptation implemented (movement cost and limits derived from Phenotype)
+* Terrain specialization test added
+* Climate adaptation test added
+* Selection pressure is now deterministic and observable
 
 ### Current Focus
 
-* Integrating Phenotype trait parameters into metabolic decay rates, movement costs, and navigation boundaries.
+* Verification of Natural Selection & Adaptation implementation and preparing for Milestone 21.
 
 ### Current Active Milestone
 
-* Milestone 20 — Natural Selection & Adaptation
+* Milestone 21 — (Pending Definition)
 
 ### Newly Added Systems
 
@@ -41,17 +42,20 @@ Key Outcomes:
 * Genetics foundation (`Genome`, `Phenotype`, `LineageMetadata`, `GenomeConfig`)
 * Phenotype derivation on spawn/load (`derive_phenotype_on_spawn`)
 * Snapshot v3 persistence (`Genome` & `LineageMetadata` serialized, `Phenotype` re-derived)
+* Metabolic adaptation linking Phenotype base decay to survival
+* Movement adaptation linking Phenotype movement cost and slope/water_depth limits to navigation
+* Climate adaptation and terrain specialization deterministic integration tests
 
 ### Verification & Testing Status
 
 * **Branch:** main
-* **Status:** Milestone 19 is fully completed, verified, clippy-compliant, and passes determinism and snapshot validation.
+* **Status:** Milestone 20 is fully completed, verified, clippy-compliant, and passes determinism and snapshot validation.
 * **Test Counts:**
-  - `cargo test`: 144 passed, 0 failed, 1 ignored
+  - `cargo test`: 124 passed, 0 failed, 1 ignored
   - `cargo test -- --ignored`: 1 passed (test_long_run_stability_512 checks A+B=N save/load equivalence over 8,640 ticks / 1 simulation year with genetics, consumption, and reproduction enabled)
   - `cargo clippy --all-targets --all-features -- -D warnings`: PASS
   - `cargo fmt`: PASS
-* **Last Updated:** 2026-06-15T16:51:30+07:00
+* **Last Updated:** 2026-06-16T08:00:00+00:00
 
 ---
 

@@ -3,11 +3,11 @@
 This document serves as the immediate tactical handoff instructions for any AI model resuming development on Project Genesis.
 
 ## Current Objective
-* Finalize Milestone 20 and prepare for Milestone 21.
+* Prepare for Milestone 21.
 
 ## Active Milestone
 
-M20 — Natural Selection & Adaptation
+M21 — (Pending Definition)
 
 (Source of Truth: CURRENT_STATE.md)
 

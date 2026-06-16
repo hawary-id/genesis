@@ -229,7 +229,7 @@ pub fn update_agent_metabolism(
         // Verify bounds
         if !bounds.contains_world_coord(coord) {
             // Apply fallback base decay if coordinate is somehow out of bounds
-            let decay = config.agent_base_decay_rate;
+            let decay = phenotype.derived_base_decay;
             stock.energy = (stock.energy - decay).max(0.0);
             stock.age = stock.age.saturating_add(1);
             continue;
@@ -255,7 +255,7 @@ pub fn update_agent_metabolism(
         // Apply approved decay formula (M20 Linear Penalty)
         let delta_t = (temp - phenotype.thermal_optimum).abs();
         let penalty = config.thermal_penalty_multiplier * delta_t;
-        let decay = config.agent_base_decay_rate + penalty;
+        let decay = phenotype.derived_base_decay + penalty;
 
         stock.energy = (stock.energy - decay).max(0.0);
         stock.age = stock.age.saturating_add(1);
@@ -355,14 +355,18 @@ pub fn process_agent_consumption(
 
 /// Processes agent movement requests, validating destinations against boundaries and terrain barriers.
 pub fn process_agent_movement(
-    config: Res<WorldConfig>,
     bounds: Res<WorldBounds>,
     terrain_chunks: Query<(&ChunkCoord, &TerrainChunk)>,
-    mut agents: Query<(&mut AgentPosition, &mut MetabolicStock, &mut ActionRequest)>,
+    mut agents: Query<(
+        &mut AgentPosition,
+        &mut MetabolicStock,
+        &mut ActionRequest,
+        &Phenotype,
+    )>,
 ) {
     let chunk_size = bounds.chunk_size;
 
-    for (mut pos, mut stock, mut req) in &mut agents {
+    for (mut pos, mut stock, mut req, phenotype) in &mut agents {
         let intent = req.intent;
         if intent == ActionIntent::None {
             continue;
@@ -425,16 +429,14 @@ pub fn process_agent_movement(
         };
 
         // Validate slope and water constraints
-        if slope > config.agent_movement_max_slope
-            || water_depth > config.agent_movement_max_water_depth
-        {
+        if slope > phenotype.max_slope || water_depth > phenotype.max_water_depth {
             req.intent = ActionIntent::None;
             continue;
         }
 
         // Apply successful movement and deduct energy cost
         pos.coord = target_coord;
-        stock.energy = (stock.energy - config.agent_movement_cost).max(0.0);
+        stock.energy = (stock.energy - phenotype.derived_movement_cost).max(0.0);
         req.intent = ActionIntent::None;
     }
 }
@@ -1078,5 +1080,188 @@ mod tests {
             "Std dev of mutations too far from 0.1: {}",
             std_dev
         );
+    }
+
+    #[test]
+    fn test_climate_adaptation() {
+        let mut world = World::new();
+        let config = WorldConfig {
+            agent_base_decay_rate: 1.0,
+            thermal_penalty_multiplier: 10.0,
+            ..WorldConfig::default()
+        };
+        let bounds = WorldBounds::from_config(&config);
+        world.insert_resource(config);
+        world.insert_resource(bounds.clone());
+        let mut spatial_map =
+            crate::world::spatial::SpatialMap::new(bounds.chunks_x, bounds.chunks_y);
+
+        // Cold environment
+        let temp = vec![-10.0f32; 1024];
+        let e = world
+            .spawn((
+                ChunkCoord::new(0, 0),
+                ClimateChunk {
+                    temperature: temp,
+                    moisture: vec![0.0; 1024],
+                    rainfall: vec![0.0; 1024],
+                    sunlight_factor: vec![0.0; 1024],
+                },
+            ))
+            .id();
+        spatial_map.set(ChunkCoord::new(0, 0), e);
+        world.insert_resource(spatial_map);
+
+        // Cold-adapted agent (low thermal optimum)
+        let adapted = world
+            .spawn((
+                AgentPosition::new(WorldCoord::new(0, 0)),
+                MetabolicStock::new(100.0, 0),
+                Phenotype {
+                    thermal_optimum: -10.0,
+                    diet_preference: 0.0,
+                    max_slope: 0.0,
+                    max_water_depth: 0.0,
+                    sensing_radius: 1,
+                    reproduction_threshold: 0.0,
+                    maturity_age: 0,
+                    physical_size: 1.0,
+                    derived_base_decay: 1.0,
+                    derived_movement_cost: 1.0,
+                },
+            ))
+            .id();
+
+        // Unadapted agent (high thermal optimum)
+        let unadapted = world
+            .spawn((
+                AgentPosition::new(WorldCoord::new(0, 0)),
+                MetabolicStock::new(100.0, 0),
+                Phenotype {
+                    thermal_optimum: 20.0,
+                    diet_preference: 0.0,
+                    max_slope: 0.0,
+                    max_water_depth: 0.0,
+                    sensing_radius: 1,
+                    reproduction_threshold: 0.0,
+                    maturity_age: 0,
+                    physical_size: 1.0,
+                    derived_base_decay: 1.0,
+                    derived_movement_cost: 1.0,
+                },
+            ))
+            .id();
+
+        let mut schedule = Schedule::new(crate::app::FixedSimulationTick);
+        schedule.add_systems(update_agent_metabolism);
+        world.add_schedule(schedule);
+
+        world.run_schedule(crate::app::FixedSimulationTick);
+
+        let stock_adapted = world.get::<MetabolicStock>(adapted).unwrap().energy;
+        let stock_unadapted = world.get::<MetabolicStock>(unadapted).unwrap().energy;
+
+        // Adapted agent only suffers base decay
+        assert_eq!(stock_adapted, 99.0);
+        // Unadapted agent suffers massive thermal penalty
+        assert!(stock_unadapted < stock_adapted);
+    }
+
+    #[test]
+    fn test_terrain_specialization() {
+        let mut world = World::new();
+        let config = WorldConfig {
+            ..WorldConfig::default()
+        };
+        let bounds = WorldBounds::from_config(&config);
+        world.insert_resource(config);
+        world.insert_resource(bounds.clone());
+
+        // Steep terrain in cell (0, 1) (South of origin)
+        let mut slope = vec![0.0f32; 1024];
+        let chunk_size = bounds.chunk_size;
+        let target_index = chunk_size as usize;
+        slope[target_index] = 0.5; // Very steep
+
+        world.spawn((
+            ChunkCoord::new(0, 0),
+            TerrainChunk {
+                elevation: vec![0.0; 1024],
+                slope,
+                water_depth: vec![0.0; 1024],
+                soil_fertility: vec![0.0; 1024],
+                soil_depth: vec![0.0; 1024],
+            },
+        ));
+
+        // Specialized agent (high slope tolerance)
+        let specialized = world
+            .spawn((
+                AgentPosition::new(WorldCoord::new(0, 0)),
+                MetabolicStock::new(100.0, 0),
+                ActionRequest {
+                    intent: ActionIntent::MoveSouth,
+                },
+                Phenotype {
+                    thermal_optimum: 0.0,
+                    diet_preference: 0.0,
+                    max_slope: 0.6,
+                    max_water_depth: 0.0,
+                    sensing_radius: 1,
+                    reproduction_threshold: 0.0,
+                    maturity_age: 0,
+                    physical_size: 1.0,
+                    derived_base_decay: 1.0,
+                    derived_movement_cost: 2.0,
+                },
+            ))
+            .id();
+
+        // Unadapted agent (low slope tolerance)
+        let unadapted = world
+            .spawn((
+                AgentPosition::new(WorldCoord::new(0, 0)),
+                MetabolicStock::new(100.0, 0),
+                ActionRequest {
+                    intent: ActionIntent::MoveSouth,
+                },
+                Phenotype {
+                    thermal_optimum: 0.0,
+                    diet_preference: 0.0,
+                    max_slope: 0.2,
+                    max_water_depth: 0.0,
+                    sensing_radius: 1,
+                    reproduction_threshold: 0.0,
+                    maturity_age: 0,
+                    physical_size: 1.0,
+                    derived_base_decay: 1.0,
+                    derived_movement_cost: 1.0,
+                },
+            ))
+            .id();
+
+        let mut schedule = Schedule::new(crate::app::FixedSimulationTick);
+        schedule.add_systems(process_agent_movement);
+        world.add_schedule(schedule);
+
+        world.run_schedule(crate::app::FixedSimulationTick);
+
+        let pos_spec = world.get::<AgentPosition>(specialized).unwrap().coord;
+        let stock_spec = world.get::<MetabolicStock>(specialized).unwrap().energy;
+        let req_spec = world.get::<ActionRequest>(specialized).unwrap().intent;
+
+        let pos_unad = world.get::<AgentPosition>(unadapted).unwrap().coord;
+        let stock_unad = world.get::<MetabolicStock>(unadapted).unwrap().energy;
+        let req_unad = world.get::<ActionRequest>(unadapted).unwrap().intent;
+
+        // Specialized agent successfully moved south
+        assert_eq!(pos_spec, WorldCoord::new(0, 1));
+        assert_eq!(stock_spec, 98.0); // 100 - 2.0 cost
+        assert_eq!(req_spec, ActionIntent::None);
+
+        // Unadapted agent failed to move
+        assert_eq!(pos_unad, WorldCoord::new(0, 0));
+        assert_eq!(stock_unad, 100.0); // no cost deducted
+        assert_eq!(req_unad, ActionIntent::None);
     }
 }

@@ -8,22 +8,25 @@
 
 ### Last Completed Milestone
 
-Milestone 20 — Natural Selection & Adaptation
+Milestone 21 — Evolution Diagnostics and Validation
 
 Key Outcomes:
-* Metabolic adaptation implemented (decay rate derived from Phenotype)
-* Movement adaptation implemented (movement cost and limits derived from Phenotype)
-* Terrain specialization test added
-* Climate adaptation test added
-* Selection pressure is now deterministic and observable
+* `PopulationStatistics` runtime telemetry resource added (fully reconstructable from ECS state; not persisted)
+* `compute_population_statistics` system registered in `ObservationBoundary` schedule
+* Bidirectional lineage invariant enforced in both startup and post-tick validation:
+  - `generation == 0 ⟹ parent_id == None`
+  - `generation > 0 ⟹ parent_id == Some(...)`
+* Genome padding on snapshot restore: undersized genomes are padded to `GENOME_SIZE` on load
+* `GENOME_SIZE` extracted as a `pub const` in `agent/components.rs` (no more magic numbers)
+* All validation invariants verified with bidirectional test coverage
 
 ### Current Focus
 
-* Verification of Natural Selection & Adaptation implementation and preparing for Milestone 21.
+* Phase 3 evolution diagnostics and validation complete. Ready for next milestone.
 
 ### Current Active Milestone
 
-* Milestone 21 — Evolution Diagnostics and Validation
+* Milestone 21 — Evolution Diagnostics and Validation (COMPLETE)
 
 ### Newly Added Systems
 
@@ -45,17 +48,20 @@ Key Outcomes:
 * Metabolic adaptation linking Phenotype base decay to survival
 * Movement adaptation linking Phenotype movement cost and slope/water_depth limits to navigation
 * Climate adaptation and terrain specialization deterministic integration tests
+* `PopulationStatistics` resource and `compute_population_statistics` telemetry system (M21)
+* Bidirectional lineage invariants in validation (M21)
+* Genome reconstruction padding on snapshot restore (M21)
 
 ### Verification & Testing Status
 
 * **Branch:** main
-* **Status:** Milestone 20 is fully completed, verified, clippy-compliant, and passes determinism and snapshot validation.
+* **Status:** Milestone 21 is fully completed, verified, clippy-compliant, and passes all determinism and snapshot validation tests.
 * **Test Counts:**
-  - `cargo test`: 124 passed, 0 failed, 1 ignored
-  - `cargo test -- --ignored`: 1 passed (test_long_run_stability_512 checks A+B=N save/load equivalence over 8,640 ticks / 1 simulation year with genetics, consumption, and reproduction enabled)
-  - `cargo clippy --all-targets --all-features -- -D warnings`: PASS
+  - `cargo test`: 131 passed, 0 failed, 1 ignored
+  - `cargo test -- --ignored`: 1 passed (test_long_run_stability_512 checks A+B=N save/load equivalence over 8,640 ticks / 1 simulation year with full Phase 3 evolution stack active)
+  - `cargo clippy -- -D warnings`: PASS
   - `cargo fmt`: PASS
-* **Last Updated:** 2026-06-16T08:00:00+00:00
+* **Last Updated:** 2026-06-16T08:37:00+00:00
 
 ---
 

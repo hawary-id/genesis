@@ -289,17 +289,28 @@ This registry tracks the status and deliverables of all milestones in the Genesi
 
 ### Milestone 21: Evolution Diagnostics and Validation
 * **Status:** Completed
-* **Summary:** Implemented `PopulationStatistics` telemetry monitoring and diagnostics in the `ObservationBoundary`. Fixed snapshot validation to dynamically pad undersized genomes to `GENOME_SIZE` on load. Implemented strict bidirectional lineage generation and `parent_id` invariant checks. Verified integration load and invariant bounds.
+* **Summary:** Implemented `PopulationStatistics` runtime telemetry resource and `compute_population_statistics` system in the `ObservationBoundary`. Fixed snapshot reconstruction to dynamically pad undersized genomes to `GENOME_SIZE` on load. Enforced bidirectional lineage invariants (`generation == 0 ⟹ parent_id == None` and `generation > 0 ⟹ parent_id == Some(...)`) in both startup and post-tick validation. Extracted `GENOME_SIZE` as a canonical `pub const`. All invariants verified with bidirectional test coverage.
 * **Dependencies:** Milestone 20.
 * **Major Deliverables:**
-  - `PopulationStatistics` resource and calculation system
-  - Integration of `compute_population_statistics` into `ObservationBoundary`
-  - Dynamic `GENOME_SIZE` padding on snapshot restore
-  - Bidirectional lineage invariant validation logic
+  - `PopulationStatistics` resource (runtime-only telemetry; not persisted in snapshots)
+  - `compute_population_statistics` system registered in `ObservationBoundary`
+  - Bidirectional lineage invariant validation in `validate_world_on_startup` and `validate_world_on_tick`
+  - Dynamic `GENOME_SIZE` padding on snapshot restore (neutral `0.5` fill; never truncates)
+  - `pub const GENOME_SIZE` extracted to `agent/components.rs` and re-exported via `agent/mod.rs`
 * **Verification Summary:**
   - `cargo fmt` PASS
-  - `cargo clippy` PASS
-  - `cargo test` PASS
+  - `cargo clippy -- -D warnings` PASS
+  - `cargo test` PASS (131 passed, 0 failed, 1 ignored)
+  - `cargo test -- --ignored` PASS (test_long_run_stability_512: A+B=N save/load equivalence over 8,640 ticks / 1 simulation year)
+  - Lineage invariant tests PASS (both bidirectional invalid states covered)
+  - Genome reconstruction padding tests PASS
+  - Population diagnostics tests PASS
+* **Related Source Code:**
+  - [agent/diagnostics.rs](https://github.com/hawary-id/genesis/blob/main/engine/src/agent/diagnostics.rs) — `PopulationStatistics` resource and `compute_population_statistics` system.
+  - [agent/components.rs](https://github.com/hawary-id/genesis/blob/main/engine/src/agent/components.rs) — `pub const GENOME_SIZE` definition.
+  - [agent/mod.rs](https://github.com/hawary-id/genesis/blob/main/engine/src/agent/mod.rs) — `diagnostics` module and `GENOME_SIZE` re-export.
+  - [validation/systems.rs](https://github.com/hawary-id/genesis/blob/main/engine/src/validation/systems.rs) — Bidirectional lineage invariant checks.
+  - [persistence/io.rs](https://github.com/hawary-id/genesis/blob/main/engine/src/persistence/io.rs) — Genome padding on snapshot restore.
 
 ---
 
@@ -310,3 +321,4 @@ This registry tracks the status and deliverables of all milestones in the Genesi
 * **Dependencies:** Phase 3.
 * **Related Documents:**
   - [ROADMAP.md](https://github.com/hawary-id/genesis/blob/main/docs/ROADMAP.md#L58-L184) — Long-term phases descriptions.
+

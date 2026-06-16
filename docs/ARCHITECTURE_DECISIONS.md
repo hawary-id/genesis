@@ -66,3 +66,16 @@ This document summarizes the Architectural Decision Records (ADRs) that govern t
 * **Related Files:**
   - [ADR-005-world-generation-strategy.md](https://github.com/hawary-id/genesis/blob/main/docs/adr/ADR-005-world-generation-strategy.md) — The generation strategy.
   - [engine/src/world/generation.rs](https://github.com/hawary-id/genesis/blob/main/engine/src/world/generation.rs) — Sequenced generators registration.
+
+---
+
+## ADR-006: Runtime-Only Telemetry Resources
+
+* **Decision:** Population-level diagnostic metrics (e.g. `PopulationStatistics`) must be implemented as runtime-only ECS resources. They must not be persisted in snapshot files and must be fully reconstructable from current ECS world state at any tick.
+* **Status:** Accepted
+* **Stability Level:** STABLE
+* **Reason:** Serializing derived telemetry into snapshots would couple persistence format to observability concerns, create redundant state, and risk introducing sources of non-determinism on load. Telemetry is always fresh from ECS data; serializing it offers no correctness benefit.
+* **Consequences:** Diagnostic resources are initialized to default values on startup/load and recomputed each tick in the `ObservationBoundary` schedule. No migration logic is needed when diagnostic fields are added or changed. Historical trend data (e.g., time-series metrics) is out of scope for the core engine and belongs in an external observer layer.
+* **Related Files:**
+  - [engine/src/agent/diagnostics.rs](https://github.com/hawary-id/genesis/blob/main/engine/src/agent/diagnostics.rs) — `PopulationStatistics` resource and `compute_population_statistics` system.
+  - [engine/src/app/mod.rs](https://github.com/hawary-id/genesis/blob/main/engine/src/app/mod.rs) — `ObservationBoundary` schedule registration.

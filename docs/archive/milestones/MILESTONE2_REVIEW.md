@@ -2,7 +2,7 @@
 
 **Date:** 2026-06-13
 **Status:** Complete
-**Authoritative specification:** `docs/MILESTONE2_ARCHITECTURE.md`
+**Authoritative specification:** `docs/archive/milestones/MILESTONE2_ARCHITECTURE.md`
 
 ---
 

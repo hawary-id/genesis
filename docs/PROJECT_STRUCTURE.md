@@ -19,9 +19,9 @@ The root workspace contains the following top-level directories:
   - [MILESTONE_STATUS.md](https://github.com/hawary-id/genesis/blob/main/docs/MILESTONE_STATUS.md) — Milestone tracking registry.
   - [ROADMAP.md](https://github.com/hawary-id/genesis/blob/main/docs/ROADMAP.md) — Long-term project roadmap.
   - [ARCHITECTURE_BASELINE.md](https://github.com/hawary-id/genesis/blob/main/docs/ARCHITECTURE_BASELINE.md) — Architectural layout baseline.
-  - [PHASE1_WORLD_TECH_SPEC.md](https://github.com/hawary-id/genesis/blob/main/docs/PHASE1_WORLD_TECH_SPEC.md) — Environmental substrate specification.
-  - [PHASE1_COMPLETION_REPORT.md](https://github.com/hawary-id/genesis/blob/main/docs/PHASE1_COMPLETION_REPORT.md) — Verification and audit metrics report.
-  - [PHASE1_REPOSITORY_STRUCTURE.md](https://github.com/hawary-id/genesis/blob/main/docs/PHASE1_REPOSITORY_STRUCTURE.md) — Repository structure map.
+  - [PHASE1_WORLD_TECH_SPEC.md](https://github.com/hawary-id/genesis/blob/main/docs/archive/phases/PHASE1_WORLD_TECH_SPEC.md) — Environmental substrate specification.
+  - [PHASE1_COMPLETION_REPORT.md](https://github.com/hawary-id/genesis/blob/main/docs/archive/phases/PHASE1_COMPLETION_REPORT.md) — Verification and audit metrics report.
+  - [PHASE1_REPOSITORY_STRUCTURE.md](https://github.com/hawary-id/genesis/blob/main/docs/archive/phases/PHASE1_REPOSITORY_STRUCTURE.md) — Repository structure map.
 * **Dependencies:** None.
 
 ### engine/

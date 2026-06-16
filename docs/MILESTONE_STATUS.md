@@ -2,25 +2,6 @@
 
 This registry tracks the status and deliverables of all milestones in the Genesis roadmap.
 
-* **Overall Progress Estimate:** Phase 1 Complete; Phase 2 Complete; Phase 3 Active (Milestones 16, 17, 18, & 19 Completed)
-* **Current Phase:** Phase 3 — Evolution
-* **Current Milestone:** Milestone 20 — Natural Selection & Adaptation
-
----
-
-## Current Active Work
-
-* **Active Phase:** Phase 3 — Evolution
-* **Current Milestone:** Milestone 20 — Natural Selection & Adaptation (Next)
-
-## Current Focus
-
-* Integrating Phenotype trait parameters into metabolic decay rates, movement costs, and navigation boundaries.
-
-## Next Milestone
-
-* **Next Milestone:** Milestone 20: Natural Selection & Adaptation (Phase 3, Milestone 20)
-
 ---
 
 ## Phase 1 — World (Completed)
@@ -40,7 +21,7 @@ This registry tracks the status and deliverables of all milestones in the Genesi
 * **Summary:** Defined the `App` container wrapper, declared the five primary schedules, and registered them within Bevy.
 * **Dependencies:** Milestone 1.
 * **Related Documents:**
-  - [MILESTONE2_ARCHITECTURE.md](https://github.com/hawary-id/genesis/blob/main/docs/MILESTONE2_ARCHITECTURE.md) — Milestone 2 architecture guidelines.
+  - [MILESTONE2_ARCHITECTURE.md](https://github.com/hawary-id/genesis/blob/main/docs/archive/milestones/MILESTONE2_ARCHITECTURE.md) — Milestone 2 architecture guidelines.
 * **Related Source Code:**
   - [app/schedules.rs](https://github.com/hawary-id/genesis/blob/main/engine/src/app/schedules.rs) — Schedule labels declaration.
   - [app/mod.rs](https://github.com/hawary-id/genesis/blob/main/engine/src/app/mod.rs) — App wrapper and schedulers registrations.
@@ -50,7 +31,7 @@ This registry tracks the status and deliverables of all milestones in the Genesi
 * **Summary:** Implemented spatial coordinates, dense elevation, slope, and soil components, and coordinate-salted bilinear value noise generator.
 * **Dependencies:** Milestone 2.
 * **Related Documents:**
-  - [MILESTONE3_ARCHITECTURE.md](https://github.com/hawary-id/genesis/blob/main/docs/MILESTONE3_ARCHITECTURE.md) — Terrain layer specs.
+  - [MILESTONE3_ARCHITECTURE.md](https://github.com/hawary-id/genesis/blob/main/docs/archive/milestones/MILESTONE3_ARCHITECTURE.md) — Terrain layer specs.
 * **Related Source Code:**
   - [world/terrain.rs](https://github.com/hawary-id/genesis/blob/main/engine/src/world/terrain.rs) — Terrain vectors and generator.
   - [world/coord.rs](https://github.com/hawary-id/genesis/blob/main/engine/src/world/coord.rs) — Coordinates translating helper logic.
@@ -60,7 +41,7 @@ This registry tracks the status and deliverables of all milestones in the Genesi
 * **Summary:** Added latitude sunlight factor, lapse-rate temperature, moisture, and rainfall cycles, advancing daily.
 * **Dependencies:** Milestone 3.
 * **Related Documents:**
-  - [MILESTONE4_ARCHITECTURE.md](https://github.com/hawary-id/genesis/blob/main/docs/MILESTONE4_ARCHITECTURE.md) — Climate layer specs.
+  - [MILESTONE4_ARCHITECTURE.md](https://github.com/hawary-id/genesis/blob/main/docs/archive/milestones/MILESTONE4_ARCHITECTURE.md) — Climate layer specs.
 * **Related Source Code:**
   - [world/climate.rs](https://github.com/hawary-id/genesis/blob/main/engine/src/world/climate.rs) — Climate chunk fields and update system.
 
@@ -69,7 +50,7 @@ This registry tracks the status and deliverables of all milestones in the Genesi
 * **Summary:** Modeled environmental resources depletion and replenishment cycles (minerals, fresh water, and nutrients).
 * **Dependencies:** Milestone 4.
 * **Related Documents:**
-  - [MILESTONE5_ARCHITECTURE.md](https://github.com/hawary-id/genesis/blob/main/docs/MILESTONE5_ARCHITECTURE.md) — Resource layer specs.
+  - [MILESTONE5_ARCHITECTURE.md](https://github.com/hawary-id/genesis/blob/main/docs/archive/milestones/MILESTONE5_ARCHITECTURE.md) — Resource layer specs.
 * **Related Source Code:**
   - [world/resource.rs](https://github.com/hawary-id/genesis/blob/main/engine/src/world/resource.rs) — Resources components and daily update logic.
 
@@ -78,7 +59,7 @@ This registry tracks the status and deliverables of all milestones in the Genesi
 * **Summary:** Computed environmental solar potential and energy availability across slopes and climate zones.
 * **Dependencies:** Milestone 5.
 * **Related Documents:**
-  - [MILESTONE6_ARCHITECTURE.md](https://github.com/hawary-id/genesis/blob/main/docs/MILESTONE6_ARCHITECTURE.md) — Energy specs.
+  - [MILESTONE6_ARCHITECTURE.md](https://github.com/hawary-id/genesis/blob/main/docs/archive/milestones/MILESTONE6_ARCHITECTURE.md) — Energy specs.
 * **Related Source Code:**
   - [world/energy.rs](https://github.com/hawary-id/genesis/blob/main/engine/src/world/energy.rs) — Energy chunk components and calculations.
 
@@ -87,7 +68,7 @@ This registry tracks the status and deliverables of all milestones in the Genesi
 * **Summary:** Established simulation tick cycles, physical clocks, and transitional season modifier calculations.
 * **Dependencies:** Milestone 6.
 * **Related Documents:**
-  - [MILESTONE7_ARCHITECTURE.md](https://github.com/hawary-id/genesis/blob/main/docs/MILESTONE7_ARCHITECTURE.md) — Clock specs.
+  - [MILESTONE7_ARCHITECTURE.md](https://github.com/hawary-id/genesis/blob/main/docs/archive/milestones/MILESTONE7_ARCHITECTURE.md) — Clock specs.
 * **Related Source Code:**
   - [time/simulation_clock.rs](https://github.com/hawary-id/genesis/blob/main/engine/src/time/simulation_clock.rs) — Chronological ticking.
   - [time/season_state.rs](https://github.com/hawary-id/genesis/blob/main/engine/src/time/season_state.rs) — Seasons modifiers calculation.
@@ -97,7 +78,7 @@ This registry tracks the status and deliverables of all milestones in the Genesi
 * **Summary:** Added post-generation and post-tick runtime invariants bounds and clock monotonicity checks.
 * **Dependencies:** Milestone 7.
 * **Related Documents:**
-  - [MILESTONE8_ARCHITECTURE.md](https://github.com/hawary-id/genesis/blob/main/docs/MILESTONE8_ARCHITECTURE.md) — validation specs.
+  - [MILESTONE8_ARCHITECTURE.md](https://github.com/hawary-id/genesis/blob/main/docs/archive/milestones/MILESTONE8_ARCHITECTURE.md) — validation specs.
 * **Related Source Code:**
   - [validation/systems.rs](https://github.com/hawary-id/genesis/blob/main/engine/src/validation/systems.rs) — validation checks systems.
 
@@ -106,7 +87,7 @@ This registry tracks the status and deliverables of all milestones in the Genesi
 * **Summary:** Developed JSON snapshot serialization and save/load world reconstruction routines.
 * **Dependencies:** Milestone 8.
 * **Related Documents:**
-  - [MILESTONE9_ARCHITECTURE.md](https://github.com/hawary-id/genesis/blob/main/docs/MILESTONE9_ARCHITECTURE.md) — Snapshot specs.
+  - [MILESTONE9_ARCHITECTURE.md](https://github.com/hawary-id/genesis/blob/main/docs/archive/milestones/MILESTONE9_ARCHITECTURE.md) — Snapshot specs.
 * **Related Source Code:**
   - [persistence/io.rs](https://github.com/hawary-id/genesis/blob/main/engine/src/persistence/io.rs) — Stable chunk sort serialization.
   - [persistence/snapshot.rs](https://github.com/hawary-id/genesis/blob/main/engine/src/persistence/snapshot.rs) — File data models.
@@ -116,8 +97,8 @@ This registry tracks the status and deliverables of all milestones in the Genesi
 * **Summary:** Hardened determinism integration tests, verifying seed sensitivity, ticking determinism, save/load equivalence, and 1 simulation year stability.
 * **Dependencies:** Milestone 9.
 * **Related Documents:**
-  - [MILESTONE10_ARCHITECTURE.md](https://github.com/hawary-id/genesis/blob/main/docs/MILESTONE10_ARCHITECTURE.md) — Determinism verification specs.
-  - [PHASE1_COMPLETION_REPORT.md](https://github.com/hawary-id/genesis/blob/main/docs/PHASE1_COMPLETION_REPORT.md) — Audit completion numbers.
+  - [MILESTONE10_ARCHITECTURE.md](https://github.com/hawary-id/genesis/blob/main/docs/archive/milestones/MILESTONE10_ARCHITECTURE.md) — Determinism verification specs.
+  - [PHASE1_COMPLETION_REPORT.md](https://github.com/hawary-id/genesis/blob/main/docs/archive/phases/PHASE1_COMPLETION_REPORT.md) — Audit completion numbers.
 * **Related Source Code:**
   - [testing/determinism.rs](https://github.com/hawary-id/genesis/blob/main/engine/src/testing/determinism.rs) — Integration verification suite.
   - [testing/fixtures.rs](https://github.com/hawary-id/genesis/blob/main/engine/src/testing/fixtures.rs) — Equivalence check asserts.
@@ -127,16 +108,16 @@ This registry tracks the status and deliverables of all milestones in the Genesi
 ## Phase 2 — Life (Completed)
 
 * **Related Documents:**
-  - [PHASE2_LIFE_TECH_SPEC.md](https://github.com/hawary-id/genesis/blob/main/docs/PHASE2_LIFE_TECH_SPEC.md) — Technical Specification.
-  - [PHASE2_IMPLEMENTATION_PLAN.md](https://github.com/hawary-id/genesis/blob/main/docs/PHASE2_IMPLEMENTATION_PLAN.md) — Implementation Plan.
+  - [PHASE2_LIFE_TECH_SPEC.md](https://github.com/hawary-id/genesis/blob/main/docs/archive/phases/PHASE2_LIFE_TECH_SPEC.md) — Technical Specification.
+  - [PHASE2_IMPLEMENTATION_PLAN.md](https://github.com/hawary-id/genesis/blob/main/docs/archive/phases/PHASE2_IMPLEMENTATION_PLAN.md) — Implementation Plan.
 
 ### Milestone 11: Agent Data Foundation & Spawning
 * **Status:** Completed
 * **Summary:** Implemented foundational agent ECS components (`AgentMetadata`, `AgentPosition`, `MetabolicStock`, `ActionRequest`), deterministic seed derivation, stable identifier sequence generators, and spawner logic running on StartupGeneration. Extended validation framework to enforce ID uniqueness, count caps, coordinate boundary validity, and metabolic ranges.
 * **Dependencies:** Milestone 10.
 * **Related Documents:**
-  - [PHASE2_LIFE_TECH_SPEC.md](https://github.com/hawary-id/genesis/blob/main/docs/PHASE2_LIFE_TECH_SPEC.md#data-ownership--functional-responsibilities) — Data layout guidelines.
-  - [PHASE2_IMPLEMENTATION_PLAN.md](https://github.com/hawary-id/genesis/blob/main/docs/PHASE2_IMPLEMENTATION_PLAN.md#milestone-11-agent-data-foundation--spawning) — Milestone roadmap.
+  - [PHASE2_LIFE_TECH_SPEC.md](https://github.com/hawary-id/genesis/blob/main/docs/archive/phases/PHASE2_LIFE_TECH_SPEC.md#data-ownership--functional-responsibilities) — Data layout guidelines.
+  - [PHASE2_IMPLEMENTATION_PLAN.md](https://github.com/hawary-id/genesis/blob/main/docs/archive/phases/PHASE2_IMPLEMENTATION_PLAN.md#milestone-11-agent-data-foundation--spawning) — Milestone roadmap.
 * **Related Source Code:**
   - [agent/components.rs](https://github.com/hawary-id/genesis/blob/main/engine/src/agent/components.rs) — ECS structures.
   - [agent/resources.rs](https://github.com/hawary-id/genesis/blob/main/engine/src/agent/resources.rs) — Stable sequence counter.
@@ -148,8 +129,8 @@ This registry tracks the status and deliverables of all milestones in the Genesi
 * **Summary:** Implemented the environmental sensing query API providing coordinates translation and read-only cell and neighborhood resource queries (nutrients and fresh water) from chunk entities. All tests are passing, ready for tag phase2-milestone-12.
 * **Dependencies:** Milestone 11.
 * **Related Documents:**
-  - [PHASE2_LIFE_TECH_SPEC.md](https://github.com/hawary-id/genesis/blob/main/docs/PHASE2_LIFE_TECH_SPEC.md#coordinate-mapping) — Sensing specifications.
-  - [PHASE2_IMPLEMENTATION_PLAN.md](https://github.com/hawary-id/genesis/blob/main/docs/PHASE2_IMPLEMENTATION_PLAN.md#milestone-12-environmental-sensing-query-api) — Milestone roadmap.
+  - [PHASE2_LIFE_TECH_SPEC.md](https://github.com/hawary-id/genesis/blob/main/docs/archive/phases/PHASE2_LIFE_TECH_SPEC.md#coordinate-mapping) — Sensing specifications.
+  - [PHASE2_IMPLEMENTATION_PLAN.md](https://github.com/hawary-id/genesis/blob/main/docs/archive/phases/PHASE2_IMPLEMENTATION_PLAN.md#milestone-12-environmental-sensing-query-api) — Milestone roadmap.
 * **Related Source Code:**
   - [agent/sensing.rs](https://github.com/hawary-id/genesis/blob/main/engine/src/agent/sensing.rs) — Sensing APIs (`query_cell`, `query_neighborhood`, and `SensedResource`) and unit tests.
   - [agent/mod.rs](https://github.com/hawary-id/genesis/blob/main/engine/src/agent/mod.rs) — Expose sensing components.
@@ -159,8 +140,8 @@ This registry tracks the status and deliverables of all milestones in the Genesi
 * **Summary:** Implemented metabolic decay updates using the approved absolute difference penalty formula, chronological agent aging (using `saturating_add(1)`), and agent removal on tick boundaries when energy <= 0.0 or age > agent_age_limit. Registered systems in FixedSimulationTick schedule (metabolism sequentially after climate/resource/energy updates; death processing sequentially after metabolism).
 * **Dependencies:** Milestone 12.
 * **Related Documents:**
-  - [PHASE2_LIFE_TECH_SPEC.md](https://github.com/hawary-id/genesis/blob/main/docs/PHASE2_LIFE_TECH_SPEC.md#4-metabolism-energy-decay) — Metabolic guidelines.
-  - [PHASE2_IMPLEMENTATION_PLAN.md](https://github.com/hawary-id/genesis/blob/main/docs/PHASE2_IMPLEMENTATION_PLAN.md#milestone-13-metabolic-tick-systems) — Milestone roadmap.
+  - [PHASE2_LIFE_TECH_SPEC.md](https://github.com/hawary-id/genesis/blob/main/docs/archive/phases/PHASE2_LIFE_TECH_SPEC.md#4-metabolism-energy-decay) — Metabolic guidelines.
+  - [PHASE2_IMPLEMENTATION_PLAN.md](https://github.com/hawary-id/genesis/blob/main/docs/archive/phases/PHASE2_IMPLEMENTATION_PLAN.md#milestone-13-metabolic-tick-systems) — Milestone roadmap.
 * **Related Source Code:**
   - [config/world_config.rs](https://github.com/hawary-id/genesis/blob/main/engine/src/config/world_config.rs) — Metabolic decay configurations.
   - [testing/fixtures.rs](https://github.com/hawary-id/genesis/blob/main/engine/src/testing/fixtures.rs) — Test configurations setup.
@@ -174,8 +155,8 @@ This registry tracks the status and deliverables of all milestones in the Genesi
 * **[WARNING: Known Technical Debt]:** Implemented using O(N*M) spatial linear scan for chunk lookups. Must be refactored to O(1) SpatialIndex before populations exceed ~10,000 agents.
 * **Dependencies:** Milestone 13.
 * **Related Documents:**
-  - [PHASE2_LIFE_TECH_SPEC.md](https://github.com/hawary-id/genesis/blob/main/docs/PHASE2_LIFE_TECH_SPEC.md#2-movement-model) — Movement rules.
-  - [PHASE2_IMPLEMENTATION_PLAN.md](https://github.com/hawary-id/genesis/blob/main/docs/PHASE2_IMPLEMENTATION_PLAN.md#milestone-14-spatial-movement-execution) — Milestone roadmap.
+  - [PHASE2_LIFE_TECH_SPEC.md](https://github.com/hawary-id/genesis/blob/main/docs/archive/phases/PHASE2_LIFE_TECH_SPEC.md#2-movement-model) — Movement rules.
+  - [PHASE2_IMPLEMENTATION_PLAN.md](https://github.com/hawary-id/genesis/blob/main/docs/archive/phases/PHASE2_IMPLEMENTATION_PLAN.md#milestone-14-spatial-movement-execution) — Milestone roadmap.
 * **Related Source Code:**
   - [config/world_config.rs](https://github.com/hawary-id/genesis/blob/main/engine/src/config/world_config.rs) — Movement thresholds parameters.
   - [testing/fixtures.rs](https://github.com/hawary-id/genesis/blob/main/engine/src/testing/fixtures.rs) — Fixtures updates.
@@ -188,8 +169,8 @@ This registry tracks the status and deliverables of all milestones in the Genesi
 * **Summary:** Extended snapshot serialization to save sorted agent states, and verified execution determinism under A+B=N save/load equivalence integration tests.
 * **Dependencies:** Milestone 14.
 * **Related Documents:**
-  - [PHASE2_LIFE_TECH_SPEC.md](https://github.com/hawary-id/genesis/blob/main/docs/PHASE2_LIFE_TECH_SPEC.md#determinism-requirements) — Determinism rules.
-  - [PHASE2_IMPLEMENTATION_PLAN.md](https://github.com/hawary-id/genesis/blob/main/docs/PHASE2_IMPLEMENTATION_PLAN.md#milestone-15-persistence--integration-testing) — Milestone roadmap.
+  - [PHASE2_LIFE_TECH_SPEC.md](https://github.com/hawary-id/genesis/blob/main/docs/archive/phases/PHASE2_LIFE_TECH_SPEC.md#determinism-requirements) — Determinism rules.
+  - [PHASE2_IMPLEMENTATION_PLAN.md](https://github.com/hawary-id/genesis/blob/main/docs/archive/phases/PHASE2_IMPLEMENTATION_PLAN.md#milestone-15-persistence--integration-testing) — Milestone roadmap.
 * **Related Source Code:**
   - [persistence/snapshot.rs](https://github.com/hawary-id/genesis/blob/main/engine/src/persistence/snapshot.rs) — AgentSnapshot structure and schema version 2 upgrade.
   - [persistence/io.rs](https://github.com/hawary-id/genesis/blob/main/engine/src/persistence/io.rs) — build_world_snapshot and reconstruct_world_from_snapshot.
@@ -202,8 +183,8 @@ This registry tracks the status and deliverables of all milestones in the Genesi
 ## Phase 3 — Evolution (Active)
 
 * **Related Documents:**
-  - [PHASE3_EVOLUTION_TECH_SPEC.md](https://github.com/hawary-id/genesis/blob/main/docs/PHASE3_EVOLUTION_TECH_SPEC.md) — Technical Specification.
-  - [PHASE3_IMPLEMENTATION_PLAN.md](https://github.com/hawary-id/genesis/blob/main/docs/PHASE3_IMPLEMENTATION_PLAN.md) — Implementation Plan.
+  - [PHASE3_EVOLUTION_TECH_SPEC.md](https://github.com/hawary-id/genesis/blob/main/docs/archive/phases/PHASE3_EVOLUTION_TECH_SPEC.md) — Technical Specification.
+  - [PHASE3_IMPLEMENTATION_PLAN.md](https://github.com/hawary-id/genesis/blob/main/docs/archive/phases/PHASE3_IMPLEMENTATION_PLAN.md) — Implementation Plan.
 
 ### Milestone 16: Genetics and Phenotype Mapping
 * **Status:** Completed
@@ -262,7 +243,7 @@ This registry tracks the status and deliverables of all milestones in the Genesi
 * **Summary:** Enabled population continuity via deterministic asexual reproduction and lineage tracking.
 * **Dependencies:** Milestone 17.
 * **Related Documents:**
-  - [PHASE3_EVOLUTION_TECH_SPEC.md](https://github.com/hawary-id/genesis/blob/main/docs/PHASE3_EVOLUTION_TECH_SPEC.md) — Evolution spec.
+  - [PHASE3_EVOLUTION_TECH_SPEC.md](https://github.com/hawary-id/genesis/blob/main/docs/archive/phases/PHASE3_EVOLUTION_TECH_SPEC.md) — Evolution spec.
 * **Related Source Code:**
   - [agent/systems.rs](https://github.com/hawary-id/genesis/blob/main/engine/src/agent/systems.rs#L221-L368) — `process_agent_reproduction` system.
 * **Major Deliverables:**
@@ -286,7 +267,7 @@ This registry tracks the status and deliverables of all milestones in the Genesi
 * **Summary:** Introduce genetic diversity through seeded mutations.
 * **Dependencies:** Milestone 18.
 * **Related Documents:**
-  - [PHASE3_EVOLUTION_TECH_SPEC.md](https://github.com/hawary-id/genesis/blob/main/docs/PHASE3_EVOLUTION_TECH_SPEC.md) — Evolution spec.
+  - [PHASE3_EVOLUTION_TECH_SPEC.md](https://github.com/hawary-id/genesis/blob/main/docs/archive/phases/PHASE3_EVOLUTION_TECH_SPEC.md) — Evolution spec.
 * **Major Deliverables:**
   - Gaussian gene mutation during reproduction
   - Deterministic mutation seeds derived from parent metadata and current ticks

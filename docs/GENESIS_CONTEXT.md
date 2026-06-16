@@ -16,15 +16,7 @@ The engine is engineered in Rust using data-oriented ECS (Entity Component Syste
 
 ## Current State
 
-* **Current Phase:** Phase 3 — Evolution (Active)
-* **Current Milestone:** Milestone 20 — Natural Selection & Adaptation
-* **Last Completed Milestone:** Milestone 19 — Mutation Engine & Genetic Drift
-* **Repository Status:** Clean
-* **Build Status:** PASS (Compares cleanly with zero warnings under Clippy)
-* **Test Status:** PASS
-* **Test Counts:**
-  - Standard Test Suite: `144 passed; 0 failed; 1 ignored`
-  - Ignored Test Suite (`cargo test -- --ignored`): `1 passed` (stability check of 8,640 ticks / 1 simulation year completes successfully in 309.04s)
+See `CURRENT_STATE.md` for operational project status.
 
 ---
 
@@ -59,34 +51,13 @@ The following architectural rules are locked under ADR guidelines:
 
 ---
 
-## Active Development Focus
-
-With Phase 2 (Life) completed and verified, Phase 3 (Evolution) has begun:
-* Spawning biological agent entities with stable sequence identifiers (Milestone 11 - Completed).
-* Implementing neighborhood sensory queries mapping to Phase 1 environmental chunks (Milestone 12 - Completed).
-* Driving agent lifecycle progression via metabolic decay tick updates (Milestone 13 - Completed).
-* Constraining spatial transitions under grid-cell movement rules (Milestone 14 - Completed).
-* Extending snapshot serialization and verifying execution determinism under save/load equivalence integration tests (Milestone 15 - Completed).
-* Implementing genetic representations, phenotype mapping cache, generation tracking, and version 3 snapshots (Milestone 16 - Completed).
-* Implementing environmental resource harvesting, neighborhood sensing of nutrient/fresh water chunks, and agent energy stock replenishment (Milestone 17 - Completed).
-* Enabling population continuity via deterministic asexual reproduction, stable ID allocation, energy splitting, genome inheritance, and lineage propagation (Milestone 18 - Completed).
-* Implementing deterministic Gaussian gene mutation during reproduction using Box-Muller transform, deterministic seed derivation (SplitMix64), and gene validity checks (Milestone 19 - Completed).
-
----
-
-## Next Recommended Objectives
-
-1. **Milestone 20: Natural Selection and Adaptation:** Validate adaptation to environmental gradients by integrating phenotypes into metabolic decay, movement costs, and navigation barriers.
-
----
-
 ## Important Documents
 
 * **Roadmap:** https://github.com/hawary-id/genesis/blob/main/docs/ROADMAP.md
 * **Architecture Baseline:** https://github.com/hawary-id/genesis/blob/main/docs/ARCHITECTURE_BASELINE.md
-* **World Technical Specification:** https://github.com/hawary-id/genesis/blob/main/docs/PHASE1_WORLD_TECH_SPEC.md
-* **Phase 1 Completion Report:** https://github.com/hawary-id/genesis/blob/main/docs/PHASE1_COMPLETION_REPORT.md
-* **Phase 1 Repository Structure:** https://github.com/hawary-id/genesis/blob/main/docs/PHASE1_REPOSITORY_STRUCTURE.md
+* **World Technical Specification:** https://github.com/hawary-id/genesis/blob/main/docs/archive/phases/PHASE1_WORLD_TECH_SPEC.md
+* **Phase 1 Completion Report:** https://github.com/hawary-id/genesis/blob/main/docs/archive/phases/PHASE1_COMPLETION_REPORT.md
+* **Phase 1 Repository Structure:** https://github.com/hawary-id/genesis/blob/main/docs/archive/phases/PHASE1_REPOSITORY_STRUCTURE.md
 * **ADR Directory:** https://github.com/hawary-id/genesis/blob/main/docs/adr/
 * **Current State:** https://github.com/hawary-id/genesis/blob/main/docs/CURRENT_STATE.md
 * **Milestone Status:** https://github.com/hawary-id/genesis/blob/main/docs/MILESTONE_STATUS.md
@@ -117,11 +88,6 @@ To load repository context quickly and efficiently while minimizing repository s
 * **Integration Testing:** Core determinism tests are compiled in [engine/src/testing/determinism.rs](https://github.com/hawary-id/genesis/blob/main/engine/src/testing/determinism.rs).
 
 ---
-
-## Last Updated State
-
-* **Timestamp:** 2026-06-15T16:51:30+07:00
-* **Repository State:** Phase 3 Milestone 19 complete, verified, and active development on Milestone 20.
 
 ## Repository State
 

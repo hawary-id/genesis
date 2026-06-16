@@ -12,7 +12,7 @@ Genesis adalah proyek jangka panjang untuk mengeksplorasi bagaimana kehidupan, k
 
 - docs/VISION.md
 - docs/ROADMAP.md
-- docs/ARCHITECTURE.md
+- docs/ARCHITECTURE_BASELINE.md
 - docs/RESEARCH.md
 - docs/PRINCIPLES.md
 

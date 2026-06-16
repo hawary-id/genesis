@@ -29,7 +29,7 @@ Genesis/
 │   ├── references/
 │   │   ├── GLOSSARY.md
 │   │   └── RESEARCH.md
-│   ├── ARCHITECTURE.md
+│   ├── ARCHITECTURE_BASELINE.md
 │   ├── ARCHITECTURE_BASELINE.md
 │   ├── CODING_STANDARDS.md
 │   ├── DETERMINISM.md

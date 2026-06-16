@@ -7,7 +7,7 @@ This review is based on the current repository documentation:
 - `docs/VISION.md`
 - `docs/PRINCIPLES.md`
 - `docs/ROADMAP.md`
-- `docs/ARCHITECTURE.md`
+- `docs/ARCHITECTURE_BASELINE.md`
 - `docs/RESEARCH.md`
 - `docs/GLOSSARY.md`
 - `README.md`
@@ -72,7 +72,7 @@ The Phase 1 implementation should therefore prioritize deterministic environment
 - PostgreSQL is listed, but its role in deterministic simulation versus derived observation/history is not clarified.
 - There is no testing strategy yet, despite unit tests being required.
 - There is no documented definition of determinism, tick semantics, save/load semantics, or simulation reproducibility.
-- Documentation contains visible encoding artifacts in `ROADMAP.md` and `ARCHITECTURE.md`, likely from non-UTF-8 rendering or saved box-drawing characters.
+- Documentation contains visible encoding artifacts in `ROADMAP.md` and `ARCHITECTURE_BASELINE.md`, likely from non-UTF-8 rendering or saved box-drawing characters.
 
 ## 2. Missing Documentation
 
@@ -259,7 +259,7 @@ Genesis/
     VISION.md
     PRINCIPLES.md
     ROADMAP.md
-    ARCHITECTURE.md
+    ARCHITECTURE_BASELINE.md
     RESEARCH.md
     GLOSSARY.md
     PHASE_1_WORLD.md
@@ -582,7 +582,7 @@ Recommendation: use Bevy ECS patterns, but keep simulation logic in pure functio
 
 ## Recommended Immediate Next Steps
 
-1. Fix documentation encoding artifacts in `ROADMAP.md` and `ARCHITECTURE.md`.
+1. Fix documentation encoding artifacts in `ROADMAP.md` and `ARCHITECTURE_BASELINE.md`.
 2. Add `docs/PHASE_1_WORLD.md`.
 3. Add `docs/DETERMINISM.md`.
 4. Add `docs/ECS_GUIDELINES.md`.

@@ -8,7 +8,7 @@ Its purpose is to ensure that all code remains aligned with:
 
 - VISION.md
 - PRINCIPLES.md
-- ARCHITECTURE.md
+- ARCHITECTURE_BASELINE.md
 - DETERMINISM.md
 - ECS_GUIDELINES.md
 - PHASE1_WORLD_TECH_SPEC.md
@@ -678,7 +678,7 @@ Every ECS system must document:
 
 Any architectural change must update:
 
-- ARCHITECTURE.md
+- ARCHITECTURE_BASELINE.md
 - TECH_SPEC documents
 - related design documents
 

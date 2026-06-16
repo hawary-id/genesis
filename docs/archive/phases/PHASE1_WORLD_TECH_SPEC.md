@@ -9,7 +9,7 @@ It consolidates decisions from:
 - `VISION.md`
 - `PRINCIPLES.md`
 - `ROADMAP.md`
-- `ARCHITECTURE.md`
+- `ARCHITECTURE_BASELINE.md`
 - `RESEARCH.md`
 - `PHASE_1_WORLD.md`
 - `DETERMINISM.md`

@@ -20,7 +20,7 @@ This milestone is strictly verification-only. No new simulation mechanics, featu
 
 ## 2. Roadmap Requirements
 
-According to [PHASE1_IMPLEMENTATION_PLAN.md](https://github.com/hawary-id/genesis/blob/main/docs/PHASE1_IMPLEMENTATION_PLAN.md#L543-L575), the deliverables for Milestone 10 are:
+According to [PHASE1_IMPLEMENTATION_PLAN.md](https://github.com/hawary-id/genesis/blob/main/docs/archive/phases/PHASE1_IMPLEMENTATION_PLAN.md#L543-L575), the deliverables for Milestone 10 are:
 - Deterministic generation tests.
 - Deterministic ticking tests.
 - Save/load equivalence tests.
@@ -39,7 +39,7 @@ The criteria for success are:
 
 ## 3. Tech Spec Requirements
 
-According to [PHASE1_WORLD_TECH_SPEC.md](https://github.com/hawary-id/genesis/blob/main/docs/PHASE1_WORLD_TECH_SPEC.md#L943-L995), the verification plan must validate:
+According to [PHASE1_WORLD_TECH_SPEC.md](https://github.com/hawary-id/genesis/blob/main/docs/archive/phases/PHASE1_WORLD_TECH_SPEC.md#L943-L995), the verification plan must validate:
 - **Deterministic Generation:** Same seed + config produce identical terrain, climate, resource, and energy availability chunk values. Different seeds produce different chunk values. Stable generation order.
 - **Deterministic Ticking:** Running the same generated world for the same tick count produces identical final states. Clock advances exactly one tick per simulation step. Season state changes only according to config.
 - **Save/Load Equivalence:** Continuous ticking yields identical binary outcomes to a split save/load run. Snapshot preserves all state required for continuation without mutating simulation state.

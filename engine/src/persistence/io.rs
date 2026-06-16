@@ -172,7 +172,11 @@ pub fn reconstruct_world_from_snapshot(world: &mut World, snapshot: WorldSnapsho
     }
 
     let gen_config = crate::agent::GenomeConfig::default();
-    for agent in snapshot.agents {
+    for mut agent in snapshot.agents {
+        // Dynamically pad undersized genomes to ensure forward compatibility
+        if agent.genome.genes.len() < crate::agent::GENOME_SIZE {
+            agent.genome.genes.resize(crate::agent::GENOME_SIZE, 0.5);
+        }
         let phenotype =
             crate::agent::systems::derive_phenotype(&agent.genome, &gen_config, &config);
         world.spawn((
@@ -739,5 +743,117 @@ mod tests {
 
         // 4. Assert equivalence
         crate::testing::assert_worlds_equivalent(world_continuous, app_loaded.world_mut());
+    }
+
+    #[test]
+    fn test_snapshot_startup_validation() {
+        use crate::app::App;
+        use crate::validation::systems::validate_world_on_startup;
+
+        let config = create_test_config();
+        let seed = create_test_seed();
+        let mut app = App::new(config.clone(), seed);
+        app.run_startup();
+
+        let world = app.world_mut();
+        let mut query = world.query::<(
+            &ChunkCoord,
+            &TerrainChunk,
+            &ClimateChunk,
+            &ResourceChunk,
+            &EnergyAvailabilityChunk,
+        )>();
+        let chunks: Vec<_> = query
+            .iter(world)
+            .map(|(c, t, cl, r, e)| (*c, t.clone(), cl.clone(), r.clone(), e.clone()))
+            .collect();
+        let clock = world.resource::<SimulationClock>().clone();
+        let id_generator = *world.resource::<crate::agent::StableIdGenerator>();
+        let mut agent_query = world.query::<(
+            &crate::agent::AgentMetadata,
+            &crate::agent::AgentPosition,
+            &crate::agent::MetabolicStock,
+            &crate::agent::Genome,
+            &crate::agent::LineageMetadata,
+        )>();
+        let agents: Vec<_> = agent_query
+            .iter(world)
+            .map(|(m, p, s, g, l)| crate::persistence::AgentSnapshot {
+                metadata: *m,
+                position: *p,
+                stock: *s,
+                genome: g.clone(),
+                lineage: *l,
+            })
+            .collect();
+
+        let snapshot = build_world_snapshot(
+            &config,
+            &seed,
+            &clock,
+            SNAPSHOT_SCHEMA_VERSION,
+            &chunks,
+            &id_generator,
+            &agents,
+        );
+
+        let mut app_loaded = App::new(config.clone(), seed);
+        reconstruct_world_from_snapshot(app_loaded.world_mut(), snapshot);
+
+        let mut schedule = bevy_ecs::schedule::Schedule::default();
+        schedule.add_systems(validate_world_on_startup);
+        schedule.run(app_loaded.world_mut());
+    }
+
+    #[test]
+    fn test_reconstruct_pads_undersized_genomes() {
+        let config = create_test_config();
+        let seed = create_test_seed();
+        let mut snapshot = make_test_snapshot(0, config.clone(), seed);
+
+        let agent_snap = crate::persistence::AgentSnapshot {
+            metadata: crate::agent::AgentMetadata::new(1),
+            position: crate::agent::AgentPosition::new(crate::world::coord::WorldCoord::new(0, 0)),
+            stock: crate::agent::MetabolicStock::new(100.0, 0),
+            genome: crate::agent::Genome::new(vec![0.1, 0.2]), // Undersized genome
+            lineage: crate::agent::LineageMetadata::new(None, 0),
+        };
+        snapshot.agents.push(agent_snap);
+
+        let mut world = World::new();
+        reconstruct_world_from_snapshot(&mut world, snapshot);
+
+        let mut query = world.query::<&crate::agent::Genome>();
+        let genome = query.iter(&world).next().unwrap();
+
+        assert_eq!(genome.genes.len(), crate::agent::GENOME_SIZE);
+        assert_eq!(genome.genes[0], 0.1);
+        assert_eq!(genome.genes[1], 0.2);
+        assert_eq!(genome.genes[2], 0.5); // padded with 0.5
+    }
+
+    #[test]
+    fn test_reconstruct_preserves_genome_length() {
+        let config = create_test_config();
+        let seed = create_test_seed();
+        let mut snapshot = make_test_snapshot(0, config.clone(), seed);
+
+        let genes = vec![0.5; crate::agent::GENOME_SIZE];
+        let agent_snap = crate::persistence::AgentSnapshot {
+            metadata: crate::agent::AgentMetadata::new(1),
+            position: crate::agent::AgentPosition::new(crate::world::coord::WorldCoord::new(0, 0)),
+            stock: crate::agent::MetabolicStock::new(100.0, 0),
+            genome: crate::agent::Genome::new(genes),
+            lineage: crate::agent::LineageMetadata::new(None, 0),
+        };
+        snapshot.agents.push(agent_snap);
+
+        let mut world = World::new();
+        reconstruct_world_from_snapshot(&mut world, snapshot);
+
+        let mut query = world.query::<&crate::agent::Genome>();
+        let genome = query.iter(&world).next().unwrap();
+
+        assert_eq!(genome.genes.len(), crate::agent::GENOME_SIZE);
     }
 }

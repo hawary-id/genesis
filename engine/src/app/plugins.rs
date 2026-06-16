@@ -66,6 +66,7 @@ pub fn register_initial_resources(world: &mut World, config: WorldConfig, seed: 
     world.insert_resource(SnapshotConfig::default());
     world.insert_resource(StableIdGenerator::new());
     world.insert_resource(crate::agent::GenomeConfig::default());
+    world.insert_resource(crate::agent::diagnostics::PopulationStatistics::default());
 
     // Register events
     world.init_resource::<bevy_ecs::event::Events<WorldGenerationCompleted>>();

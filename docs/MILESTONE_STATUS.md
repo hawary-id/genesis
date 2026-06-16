@@ -288,9 +288,18 @@ This registry tracks the status and deliverables of all milestones in the Genesi
 * **Dependencies:** Milestone 19.
 
 ### Milestone 21: Evolution Diagnostics and Validation
-* **Status:** Active
-* **Summary:** Implement telemetry monitoring and diagnostics (PopulationStats), and fix snapshot validation bugs.
+* **Status:** Completed
+* **Summary:** Implemented `PopulationStatistics` telemetry monitoring and diagnostics in the `ObservationBoundary`. Fixed snapshot validation to dynamically pad undersized genomes to `GENOME_SIZE` on load. Implemented strict bidirectional lineage generation and `parent_id` invariant checks. Verified integration load and invariant bounds.
 * **Dependencies:** Milestone 20.
+* **Major Deliverables:**
+  - `PopulationStatistics` resource and calculation system
+  - Integration of `compute_population_statistics` into `ObservationBoundary`
+  - Dynamic `GENOME_SIZE` padding on snapshot restore
+  - Bidirectional lineage invariant validation logic
+* **Verification Summary:**
+  - `cargo fmt` PASS
+  - `cargo clippy` PASS
+  - `cargo test` PASS
 
 ---
 

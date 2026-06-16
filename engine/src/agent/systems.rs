@@ -93,7 +93,7 @@ pub fn spawn_initial_agents(
             AgentPosition::new(coord),
             MetabolicStock::new(config.initial_agent_energy, 0),
             ActionRequest::new(ActionIntent::None),
-            Genome::new(vec![0.5; 8]),
+            Genome::new(vec![0.5; crate::agent::GENOME_SIZE]),
             LineageMetadata::new(None, 0),
         ));
     }
@@ -1039,7 +1039,7 @@ mod tests {
 
     #[test]
     fn test_parent_immutability() {
-        let parent = Genome::new(vec![0.5; 8]);
+        let parent = Genome::new(vec![0.5; crate::agent::GENOME_SIZE]);
         let rate = 1.0;
         let step = 0.2;
         let seed = 999;

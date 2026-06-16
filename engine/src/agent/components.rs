@@ -77,6 +77,9 @@ impl ActionRequest {
     }
 }
 
+/// Canonical length of the genome vector.
+pub const GENOME_SIZE: usize = 8;
+
 /// Genetic representation of an agent.
 #[derive(Component, Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct Genome {

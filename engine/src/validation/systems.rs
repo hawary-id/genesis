@@ -189,6 +189,13 @@ pub fn validate_world_on_startup(
             });
             return;
         }
+        if lineage.parent_id.is_none() && lineage.generation > 0 {
+            handle_validation_error(ValidationError::AgentLineageInvalid {
+                agent_id: meta.id,
+                detail: "Agent parent_id must be Some if generation > 0",
+            });
+            return;
+        }
     }
 }
 
@@ -337,6 +344,13 @@ pub fn validate_world_on_tick(
             handle_validation_error(ValidationError::AgentLineageInvalid {
                 agent_id: meta.id,
                 detail: "Agent generation must be greater than 0 if parent_id is Some",
+            });
+            return;
+        }
+        if lineage.parent_id.is_none() && lineage.generation > 0 {
+            handle_validation_error(ValidationError::AgentLineageInvalid {
+                agent_id: meta.id,
+                detail: "Agent parent_id must be Some if generation > 0",
             });
             return;
         }
@@ -622,14 +636,14 @@ mod tests {
             AgentMetadata::new(10),
             AgentPosition::new(crate::world::coord::WorldCoord::new(0, 0)),
             MetabolicStock::new(100.0, 0),
-            Genome::new(vec![0.5; 8]),
+            Genome::new(vec![0.5; crate::agent::GENOME_SIZE]),
             LineageMetadata::new(None, 0),
         ));
         world.spawn((
             AgentMetadata::new(10),
             AgentPosition::new(crate::world::coord::WorldCoord::new(1, 1)),
             MetabolicStock::new(100.0, 0),
-            Genome::new(vec![0.5; 8]),
+            Genome::new(vec![0.5; crate::agent::GENOME_SIZE]),
             LineageMetadata::new(None, 0),
         ));
 
@@ -647,7 +661,7 @@ mod tests {
             AgentMetadata::new(1),
             AgentPosition::new(crate::world::coord::WorldCoord::new(100, 0)),
             MetabolicStock::new(100.0, 0),
-            Genome::new(vec![0.5; 8]),
+            Genome::new(vec![0.5; crate::agent::GENOME_SIZE]),
             LineageMetadata::new(None, 0),
         ));
 
@@ -669,14 +683,14 @@ mod tests {
             AgentMetadata::new(1),
             AgentPosition::new(crate::world::coord::WorldCoord::new(0, 0)),
             MetabolicStock::new(100.0, 0),
-            Genome::new(vec![0.5; 8]),
+            Genome::new(vec![0.5; crate::agent::GENOME_SIZE]),
             LineageMetadata::new(None, 0),
         ));
         world.spawn((
             AgentMetadata::new(2),
             AgentPosition::new(crate::world::coord::WorldCoord::new(1, 1)),
             MetabolicStock::new(100.0, 0),
-            Genome::new(vec![0.5; 8]),
+            Genome::new(vec![0.5; crate::agent::GENOME_SIZE]),
             LineageMetadata::new(None, 0),
         ));
 
@@ -695,7 +709,7 @@ mod tests {
             AgentMetadata::new(1),
             AgentPosition::new(crate::world::coord::WorldCoord::new(0, 0)),
             MetabolicStock::new(-5.0, 0),
-            Genome::new(vec![0.5; 8]),
+            Genome::new(vec![0.5; crate::agent::GENOME_SIZE]),
             LineageMetadata::new(None, 0),
         ));
 
@@ -714,7 +728,7 @@ mod tests {
             AgentMetadata::new(1),
             AgentPosition::new(crate::world::coord::WorldCoord::new(0, 0)),
             MetabolicStock::new(100.0, limit + 1),
-            Genome::new(vec![0.5; 8]),
+            Genome::new(vec![0.5; crate::agent::GENOME_SIZE]),
             LineageMetadata::new(None, 0),
         ));
 
@@ -727,13 +741,52 @@ mod tests {
         let mut world = test_world();
         world.run_schedule(crate::app::StartupGeneration);
 
+        let mut genes = vec![0.5; crate::agent::GENOME_SIZE];
+        if !genes.is_empty() {
+            genes[0] = f32::NAN;
+        }
+
         // Spawn agent with NaN in genome
         world.spawn((
             AgentMetadata::new(1),
             AgentPosition::new(crate::world::coord::WorldCoord::new(0, 0)),
             MetabolicStock::new(100.0, 0),
-            Genome::new(vec![0.5, 0.5, 0.5, f32::NAN, 0.5, 0.5, 0.5, 0.5]),
+            Genome::new(genes),
             LineageMetadata::new(None, 0),
+        ));
+
+        world.run_schedule(crate::app::PostTickValidation);
+    }
+
+    #[test]
+    #[should_panic(expected = "AgentLineageInvalid")]
+    fn test_validation_catches_invalid_lineage_generation_zero() {
+        let mut world = test_world();
+        world.run_schedule(crate::app::StartupGeneration);
+
+        world.spawn((
+            AgentMetadata::new(1),
+            AgentPosition::new(crate::world::coord::WorldCoord::new(0, 0)),
+            MetabolicStock::new(100.0, 0),
+            Genome::new(vec![0.5; crate::agent::GENOME_SIZE]),
+            LineageMetadata::new(Some(2), 0),
+        ));
+
+        world.run_schedule(crate::app::PostTickValidation);
+    }
+
+    #[test]
+    #[should_panic(expected = "AgentLineageInvalid")]
+    fn test_validation_catches_invalid_lineage_missing_parent() {
+        let mut world = test_world();
+        world.run_schedule(crate::app::StartupGeneration);
+
+        world.spawn((
+            AgentMetadata::new(1),
+            AgentPosition::new(crate::world::coord::WorldCoord::new(0, 0)),
+            MetabolicStock::new(100.0, 0),
+            Genome::new(vec![0.5; crate::agent::GENOME_SIZE]),
+            LineageMetadata::new(None, 1),
         ));
 
         world.run_schedule(crate::app::PostTickValidation);

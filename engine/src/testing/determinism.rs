@@ -299,11 +299,17 @@ fn test_reproduction_with_mutation_integration() {
         },
     ));
 
+    let mut genes = vec![0.5; crate::agent::GENOME_SIZE];
+    if genes.len() >= 7 {
+        genes[5] = 0.0;
+        genes[6] = 0.0;
+    }
+
     app.world_mut().spawn((
         crate::agent::AgentMetadata::new(10),
         crate::agent::AgentPosition::new(parent_coord),
         crate::agent::MetabolicStock::new(300.0, 20),
-        crate::agent::Genome::new(vec![0.5, 0.5, 0.5, 0.5, 0.5, 0.0, 0.0, 0.5]),
+        crate::agent::Genome::new(genes),
         crate::agent::LineageMetadata::new(None, 0),
     ));
 

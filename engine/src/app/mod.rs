@@ -84,6 +84,11 @@ impl App {
             ));
         }
 
+        // Bind metrics and diagnostics systems to the ObservationBoundary schedule
+        if let Some(schedule) = schedules.get_mut(ObservationBoundary) {
+            schedule.add_systems(crate::agent::diagnostics::compute_population_statistics);
+        }
+
         Self { world }
     }
 

@@ -1,13 +1,14 @@
 //! Agent subcrate module declarations and public API exposures.
 
 pub mod components;
+pub mod diagnostics;
 pub mod resources;
 pub mod sensing;
 pub mod systems;
 
 pub use components::{
     ActionIntent, ActionRequest, AgentMetadata, AgentPosition, Genome, LineageMetadata,
-    MetabolicStock, Phenotype,
+    MetabolicStock, Phenotype, GENOME_SIZE,
 };
 pub use resources::{GenomeConfig, StableIdGenerator};
 pub use sensing::{query_cell, query_neighborhood, SensedResource};

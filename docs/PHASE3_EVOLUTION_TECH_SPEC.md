@@ -175,8 +175,8 @@ When an agent accumulates sufficient energy, it reproduces asexually. To comply 
 
 During reproduction, genes undergo small random alterations.
 
-#### Deterministic Seeding & Cross-Platform Stability (ADR-002)
-To preserve bit-perfect execution determinism across platforms (x86_64, ARM64), operating systems, and Rust compiler versions, standard library hashing (`DefaultHasher`) must **not** be used for simulation-critical seeding, as its algorithm and representation details are subject to compiler-version drift.
+#### Deterministic Seeding & Platform Stability (ADR-002)
+To preserve execution determinism (specifically Local and x86_64 Platform Determinism), standard library hashing (`DefaultHasher`) must **not** be used for simulation-critical seeding, as its algorithm and representation details are subject to compiler-version drift. Note: Universal cross-platform bit-perfect determinism is currently suspended due to prototype pragmatism regarding transcendental math (`f32::cos` in Gaussian mutation).
 
 Instead, a deterministic 64-bit integer mixing finalizer (derived from the **SplitMix64** generator) is used. It offers excellent avalanche properties, has no external dependencies, compiles to simple bitwise instructions, and remains perfectly invariant.
 

@@ -171,6 +171,9 @@ pub struct WorldConfig {
     /// Target temperature at which agent energy decay is minimized.
     pub agent_thermal_optimum: f32,
 
+    /// Multiplier applied to absolute temperature difference (Delta-T) to calculate metabolic penalty.
+    pub thermal_penalty_multiplier: f32,
+
     /// Maximum slope threshold that an agent can traverse.
     pub agent_movement_max_slope: f32,
 
@@ -260,6 +263,7 @@ impl Default for WorldConfig {
             sensing_radius: 1,
             agent_base_decay_rate: 1.0,
             agent_thermal_optimum: 0.5,
+            thermal_penalty_multiplier: 2.0,
             agent_movement_max_slope: 0.40,
             agent_movement_max_water_depth: 0.30,
             agent_movement_cost: 1.0,

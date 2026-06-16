@@ -68,4 +68,4 @@ All changes to Genesis must conform to the decisions recorded in the following A
 - **Fixed Timestep:** Simulation ticks are discrete. Wall-clock timing cannot change outcomes.
 - **Order-Independent Iteration:** Query iterations must be sorted or mathematically coordinate-independent to avoid hardware/compilation schedule differences.
 - **Save/Load Equivalence:** Continual ticking must be binary-identical to loading and resuming.
-- **Floating-Point Limits:** Calculations must rely on simple, predictable arithmetic, avoiding transcendental math (`sin`, `cos`, `pow`) in simulation paths.
+- **Floating-Point Scope:** Genesis currently targets Local and x86_64 Platform Determinism. Universal Bit-Perfect Determinism is suspended for prototypes. Transcendental math (`sin`, `cos`, `pow`) is permitted if necessary (e.g., Gaussian Mutation), but must be documented with `@CROSS-PLATFORM-RISK`.

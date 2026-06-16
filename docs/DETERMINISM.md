@@ -174,13 +174,13 @@ Tradeoffs:
 
 - Floating-point behavior can differ across platforms, compiler settings, or math functions.
 - Exact binary comparison may be too strict for some future calculations.
-- Deterministic replay across every possible platform may require fixed-point arithmetic later.
+- Universal Bit-Perfect Determinism is a long-term goal. For pre-M30 milestones, we pragmatically target Local Save/Load Determinism (A+B=N on the same machine) and x86_64 Platform Determinism.
 
 Future implications:
 
-- Phase 1 should avoid chaotic floating-point formulas where tiny differences explode quickly.
+- Phase 1-3 should avoid chaotic floating-point formulas where tiny differences explode quickly, but known stable formulas like Box-Muller (using `f32::cos`) are accepted as manageable cross-platform risks.
 - Persistence should use stable serialization formats.
-- If cross-platform bitwise determinism becomes required, selected fields may move to fixed-point types.
+- If cross-platform bitwise determinism becomes required, selected fields must move to fixed-point or strict-math libraries.
 
 ## Design Choice: No Wall-Clock Simulation Logic
 

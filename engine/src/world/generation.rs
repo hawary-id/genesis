@@ -58,11 +58,15 @@ pub fn validate_world_config(config: Res<WorldConfig>) {
 ///
 /// Each spawned entity receives a [`ChunkCoord`] component representing its location.
 pub fn spawn_chunk_entities(mut commands: Commands, bounds: Res<WorldBounds>) {
+    let mut spatial_map = crate::world::spatial::SpatialMap::new(bounds.chunks_x, bounds.chunks_y);
     for cy in 0..bounds.chunks_y {
         for cx in 0..bounds.chunks_x {
-            commands.spawn(ChunkCoord::new(cx, cy));
+            let coord = ChunkCoord::new(cx, cy);
+            let entity = commands.spawn(coord).id();
+            spatial_map.set(coord, entity);
         }
     }
+    commands.insert_resource(spatial_map);
 }
 
 /// Generates terrain fields for all spawned chunk entities.

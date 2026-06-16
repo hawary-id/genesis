@@ -171,6 +171,7 @@ This registry tracks the status and deliverables of all milestones in the Genesi
 ### Milestone 14: Spatial Movement Execution
 * **Status:** Completed
 * **Summary:** Implemented spatial movement execution along cardinal directions under Bevy schedules. Validates movement targets against boundaries, elevation slopes, and water zones, applying energy costs and clearing action requests on all execution paths. Deterministic behavior and movement limits were fully verified via unit tests.
+* **[WARNING: Known Technical Debt]:** Implemented using O(N*M) spatial linear scan for chunk lookups. Must be refactored to O(1) SpatialIndex before populations exceed ~10,000 agents.
 * **Dependencies:** Milestone 13.
 * **Related Documents:**
   - [PHASE2_LIFE_TECH_SPEC.md](https://github.com/hawary-id/genesis/blob/main/docs/PHASE2_LIFE_TECH_SPEC.md#2-movement-model) — Movement rules.
@@ -234,6 +235,7 @@ This registry tracks the status and deliverables of all milestones in the Genesi
 ### Milestone 17: Resource Consumption (Eating & Drinking)
 * **Status:** Completed
 * **Summary:** Implemented grid-cell environmental resource consumption. Senses nutrients and fresh water at the agent's coordinate, depletes the chunk resource arrays, and assimilates the raw intake into metabolic stock energy scaled by the agent's dietary preference and efficiency. Ensured execution determinism by sorting agents by unique stable ID before processing.
+* **[WARNING: Known Technical Debt]:** Implemented using O(N*M) spatial linear scan for chunk lookups. Heavily restricts scalability.
 * **Major Deliverables:**
   - `process_agent_consumption` system
   - Nutrient cell harvesting and fresh water cell harvesting

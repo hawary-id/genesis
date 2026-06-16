@@ -148,19 +148,27 @@ pub fn reconstruct_world_from_snapshot(world: &mut World, snapshot: WorldSnapsho
     world.insert_resource(config.clone());
     world.insert_resource(snapshot.seed);
     world.insert_resource(clock);
+    let spatial_map = crate::world::spatial::SpatialMap::new(bounds.chunks_x, bounds.chunks_y);
     world.insert_resource(bounds);
+    world.insert_resource(spatial_map);
     world.insert_resource(season_state);
     world.insert_resource(snapshot.id_generator);
 
     for chunk in snapshot.chunks {
-        world.spawn((
-            chunk.coord,
-            chunk.terrain,
-            chunk.climate,
-            chunk.resources,
-            chunk.energy,
-            Generated,
-        ));
+        let coord = chunk.coord;
+        let e = world
+            .spawn((
+                chunk.coord,
+                chunk.terrain,
+                chunk.climate,
+                chunk.resources,
+                chunk.energy,
+                Generated,
+            ))
+            .id();
+        world
+            .resource_mut::<crate::world::spatial::SpatialMap>()
+            .set(coord, e);
     }
 
     let gen_config = crate::agent::GenomeConfig::default();

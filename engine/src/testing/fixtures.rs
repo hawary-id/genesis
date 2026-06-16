@@ -61,6 +61,7 @@ pub fn create_test_config() -> WorldConfig {
         sensing_radius: 1,
         agent_base_decay_rate: 1.0,
         agent_thermal_optimum: 0.5,
+        thermal_penalty_multiplier: 2.0,
         agent_movement_max_slope: 0.40,
         agent_movement_max_water_depth: 0.30,
         agent_movement_cost: 1.0,

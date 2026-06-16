@@ -7,7 +7,7 @@ use bevy_ecs::prelude::Query;
 use bevy_ecs::query::QueryFilter;
 
 use crate::config::WorldBounds;
-use crate::world::coord::{world_to_chunk, world_to_local, ChunkCoord, WorldCoord};
+use crate::world::coord::{world_to_chunk, world_to_local, WorldCoord};
 use crate::world::resource::ResourceChunk;
 
 /// Environmental resource values sensed at a single grid cell.
@@ -27,15 +27,16 @@ pub struct SensedResource {
 pub fn query_cell<F: QueryFilter>(
     coord: WorldCoord,
     bounds: &WorldBounds,
-    chunks: &Query<(&ChunkCoord, &ResourceChunk), F>,
+    spatial_map: &crate::world::spatial::SpatialMap,
+    chunks: &Query<&ResourceChunk, F>,
 ) -> Option<SensedResource> {
     if !bounds.contains_world_coord(coord) {
         return None;
     }
 
     let target_chunk = world_to_chunk(coord, bounds.chunk_size);
-    for (chunk_coord, resource_chunk) in chunks {
-        if *chunk_coord == target_chunk {
+    if let Some(entity) = spatial_map.get(target_chunk) {
+        if let Ok(resource_chunk) = chunks.get(entity) {
             let local_coord = world_to_local(coord, bounds.chunk_size);
             let index = (local_coord.y * bounds.chunk_size + local_coord.x) as usize;
             return Some(SensedResource {
@@ -56,7 +57,8 @@ pub fn query_neighborhood<F: QueryFilter>(
     center: WorldCoord,
     radius: u32,
     bounds: &WorldBounds,
-    chunks: &Query<(&ChunkCoord, &ResourceChunk), F>,
+    spatial_map: &crate::world::spatial::SpatialMap,
+    chunks: &Query<&ResourceChunk, F>,
 ) -> Vec<(WorldCoord, SensedResource)> {
     let mut results = Vec::new();
 
@@ -75,7 +77,7 @@ pub fn query_neighborhood<F: QueryFilter>(
     for y in min_y..=max_y {
         for x in min_x..=max_x {
             let coord = WorldCoord::new(x, y);
-            if let Some(resource) = query_cell(coord, bounds, chunks) {
+            if let Some(resource) = query_cell(coord, bounds, spatial_map, chunks) {
                 results.push((coord, resource));
             }
         }
@@ -88,6 +90,7 @@ pub fn query_neighborhood<F: QueryFilter>(
 mod tests {
     use super::*;
     use crate::testing::create_test_config;
+    use crate::world::coord::ChunkCoord;
     use bevy_ecs::prelude::*;
 
     #[derive(Resource)]
@@ -101,23 +104,49 @@ mod tests {
     }
 
     fn test_sensing_system(
-        chunks: Query<(&ChunkCoord, &ResourceChunk)>,
+        chunks: Query<&ResourceChunk>,
+        spatial_map: Res<crate::world::spatial::SpatialMap>,
         mut context: ResMut<TestContext>,
     ) {
         // Test single cell lookup inside bounds
-        context.results_cell_00 = query_cell(WorldCoord::new(0, 0), &context.bounds, &chunks);
-        context.results_cell_32 = query_cell(WorldCoord::new(32, 0), &context.bounds, &chunks);
+        context.results_cell_00 = query_cell(
+            WorldCoord::new(0, 0),
+            &context.bounds,
+            &spatial_map,
+            &chunks,
+        );
+        context.results_cell_32 = query_cell(
+            WorldCoord::new(32, 0),
+            &context.bounds,
+            &spatial_map,
+            &chunks,
+        );
 
         // Test single cell lookup out of bounds
-        context.results_oob = query_cell(WorldCoord::new(256, 256), &context.bounds, &chunks);
+        context.results_oob = query_cell(
+            WorldCoord::new(256, 256),
+            &context.bounds,
+            &spatial_map,
+            &chunks,
+        );
 
         // Test neighborhood query (radius 1) centered at (1, 1) -> 9 cells
-        context.results_neighborhood_1 =
-            query_neighborhood(WorldCoord::new(1, 1), 1, &context.bounds, &chunks);
+        context.results_neighborhood_1 = query_neighborhood(
+            WorldCoord::new(1, 1),
+            1,
+            &context.bounds,
+            &spatial_map,
+            &chunks,
+        );
 
         // Test neighborhood query (radius 1) centered at world boundary (0, 0) -> should clamp/contain 4 cells
-        context.results_neighborhood_oob =
-            query_neighborhood(WorldCoord::new(0, 0), 1, &context.bounds, &chunks);
+        context.results_neighborhood_oob = query_neighborhood(
+            WorldCoord::new(0, 0),
+            1,
+            &context.bounds,
+            &spatial_map,
+            &chunks,
+        );
     }
 
     #[test]
@@ -150,8 +179,13 @@ mod tests {
             biomass_potential: vec![0.0; expected_len],
         };
 
-        world.spawn((ChunkCoord::new(0, 0), rc_00));
-        world.spawn((ChunkCoord::new(1, 0), rc_10));
+        let mut spatial_map =
+            crate::world::spatial::SpatialMap::new(bounds.chunks_x, bounds.chunks_y);
+        let e1 = world.spawn((ChunkCoord::new(0, 0), rc_00)).id();
+        let e2 = world.spawn((ChunkCoord::new(1, 0), rc_10)).id();
+        spatial_map.set(ChunkCoord::new(0, 0), e1);
+        spatial_map.set(ChunkCoord::new(1, 0), e2);
+        world.insert_resource(spatial_map);
 
         world.insert_resource(TestContext {
             bounds,
@@ -222,10 +256,14 @@ mod tests {
             biomass_potential: vec![0.0; expected_len],
         };
 
-        world.spawn((ChunkCoord::new(0, 0), rc));
+        let mut spatial_map1 =
+            crate::world::spatial::SpatialMap::new(bounds.chunks_x, bounds.chunks_y);
+        let e1 = world.spawn((ChunkCoord::new(0, 0), rc)).id();
+        spatial_map1.set(ChunkCoord::new(0, 0), e1);
+        world.insert_resource(spatial_map1);
 
         world.insert_resource(TestContext {
-            bounds,
+            bounds: bounds.clone(),
             results_cell_00: None,
             results_cell_32: None,
             results_oob: None,
@@ -248,9 +286,13 @@ mod tests {
             minerals: vec![0.0; expected_len],
             biomass_potential: vec![0.0; expected_len],
         };
-        world_b.spawn((ChunkCoord::new(0, 0), rc_b));
+        let mut spatial_map2 =
+            crate::world::spatial::SpatialMap::new(bounds.chunks_x, bounds.chunks_y);
+        let e2 = world_b.spawn((ChunkCoord::new(0, 0), rc_b)).id();
+        spatial_map2.set(ChunkCoord::new(0, 0), e2);
+        world_b.insert_resource(spatial_map2);
         world_b.insert_resource(TestContext {
-            bounds: WorldBounds::from_config(&config),
+            bounds: bounds.clone(),
             results_cell_00: None,
             results_cell_32: None,
             results_oob: None,
@@ -282,11 +324,13 @@ mod tests {
     }
 
     fn strong_determinism_system(
-        chunks: Query<(&ChunkCoord, &ResourceChunk)>,
+        chunks: Query<&ResourceChunk>,
         bounds: Res<WorldBounds>,
+        spatial_map: Res<crate::world::spatial::SpatialMap>,
         mut context: ResMut<StrongDeterminismContext>,
     ) {
-        context.neighborhood = query_neighborhood(WorldCoord::new(31, 31), 2, &bounds, &chunks);
+        context.neighborhood =
+            query_neighborhood(WorldCoord::new(31, 31), 2, &bounds, &spatial_map, &chunks);
     }
 
     #[test]
@@ -322,14 +366,30 @@ mod tests {
 
         // World A: Spawning chunks in order (0,0), (1,0), (0,1), (1,1)
         let mut world_a = World::new();
-        world_a.insert_resource(WorldBounds::from_config(&config));
+        let bounds_a = WorldBounds::from_config(&config);
+        world_a.insert_resource(bounds_a.clone());
         world_a.insert_resource(StrongDeterminismContext {
             neighborhood: Vec::new(),
         });
-        world_a.spawn((ChunkCoord::new(0, 0), rc_00.clone()));
-        world_a.spawn((ChunkCoord::new(1, 0), rc_10.clone()));
-        world_a.spawn((ChunkCoord::new(0, 1), rc_01.clone()));
-        world_a.spawn((ChunkCoord::new(1, 1), rc_11.clone()));
+        let mut spatial_map_a =
+            crate::world::spatial::SpatialMap::new(bounds_a.chunks_x, bounds_a.chunks_y);
+        spatial_map_a.set(
+            ChunkCoord::new(0, 0),
+            world_a.spawn((ChunkCoord::new(0, 0), rc_00.clone())).id(),
+        );
+        spatial_map_a.set(
+            ChunkCoord::new(1, 0),
+            world_a.spawn((ChunkCoord::new(1, 0), rc_10.clone())).id(),
+        );
+        spatial_map_a.set(
+            ChunkCoord::new(0, 1),
+            world_a.spawn((ChunkCoord::new(0, 1), rc_01.clone())).id(),
+        );
+        spatial_map_a.set(
+            ChunkCoord::new(1, 1),
+            world_a.spawn((ChunkCoord::new(1, 1), rc_11.clone())).id(),
+        );
+        world_a.insert_resource(spatial_map_a);
 
         let mut schedule_a = Schedule::new(crate::app::FixedSimulationTick);
         schedule_a.add_systems(strong_determinism_system);
@@ -342,14 +402,30 @@ mod tests {
 
         // World B: Spawning chunks in order (1,1), (0,1), (1,0), (0,0) (completely reversed)
         let mut world_b = World::new();
-        world_b.insert_resource(WorldBounds::from_config(&config));
+        let bounds_b = WorldBounds::from_config(&config);
+        world_b.insert_resource(bounds_b.clone());
         world_b.insert_resource(StrongDeterminismContext {
             neighborhood: Vec::new(),
         });
-        world_b.spawn((ChunkCoord::new(1, 1), rc_11));
-        world_b.spawn((ChunkCoord::new(0, 1), rc_01));
-        world_b.spawn((ChunkCoord::new(1, 0), rc_10));
-        world_b.spawn((ChunkCoord::new(0, 0), rc_00));
+        let mut spatial_map_b =
+            crate::world::spatial::SpatialMap::new(bounds_b.chunks_x, bounds_b.chunks_y);
+        spatial_map_b.set(
+            ChunkCoord::new(1, 1),
+            world_b.spawn((ChunkCoord::new(1, 1), rc_11)).id(),
+        );
+        spatial_map_b.set(
+            ChunkCoord::new(0, 1),
+            world_b.spawn((ChunkCoord::new(0, 1), rc_01)).id(),
+        );
+        spatial_map_b.set(
+            ChunkCoord::new(1, 0),
+            world_b.spawn((ChunkCoord::new(1, 0), rc_10)).id(),
+        );
+        spatial_map_b.set(
+            ChunkCoord::new(0, 0),
+            world_b.spawn((ChunkCoord::new(0, 0), rc_00)).id(),
+        );
+        world_b.insert_resource(spatial_map_b);
 
         let mut schedule_b = Schedule::new(crate::app::FixedSimulationTick);
         schedule_b.add_systems(strong_determinism_system);

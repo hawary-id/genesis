@@ -34,5 +34,5 @@ To trust emergent behaviors in Genesis, every simulation run must be 100% reprod
 
 # Constraints
 
-- Continuous fields use standard `f32` types but must avoid non-deterministic transcendental functions (like `sin`, `cos`, `pow`) in the critical hot path.
+- Continuous fields use standard `f32` types. Transcendental functions (`sin`, `cos`, `pow`) are permitted for prototype phases (accepting local/x86_64 determinism limits) but must be flagged for cross-platform divergence risks.
 - Snapshot persistence must capture all RNG state required for continuation.

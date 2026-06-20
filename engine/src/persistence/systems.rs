@@ -62,6 +62,7 @@ pub fn detect_snapshot_due(
 ///
 /// On I/O failure, logs the error. Does not panic. Does not mutate simulation state.
 #[allow(clippy::too_many_arguments)] // Flat function parameters represent distinct Bevy resources and queries
+#[allow(clippy::type_complexity)] // Complex ECS queries are standard in Bevy
 pub fn handle_snapshot_requests(
     mut events: EventReader<SnapshotRequested>,
     config: Res<WorldConfig>,
@@ -82,6 +83,7 @@ pub fn handle_snapshot_requests(
         &MetabolicStock,
         &Genome,
         &LineageMetadata,
+        Option<&crate::agent::LocationMemory>,
     )>,
     mut completed: EventWriter<SnapshotCompleted>,
 ) {
@@ -102,12 +104,13 @@ pub fn handle_snapshot_requests(
         let agents: Vec<AgentSnapshot> = agent_query
             .iter()
             .map(
-                |(metadata, position, stock, genome, lineage)| AgentSnapshot {
+                |(metadata, position, stock, genome, lineage, location_memory)| AgentSnapshot {
                     metadata: *metadata,
                     position: *position,
                     stock: *stock,
                     genome: genome.clone(),
                     lineage: *lineage,
+                    location_memory: location_memory.cloned(),
                 },
             )
             .collect();

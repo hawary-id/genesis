@@ -11,6 +11,8 @@ use crate::world::terrain::{validate_terrain_chunk, TerrainChunk};
 use bevy_ecs::prelude::*;
 
 /// Startup validation system. Runs at the end of the `StartupGeneration` schedule.
+/// Returns a list of `ValidationError`s found.
+#[allow(clippy::type_complexity)] // Complex ECS queries are standard in Bevy
 pub fn validate_world_on_startup(
     config: Res<WorldConfig>,
     bounds: Res<WorldBounds>,
@@ -28,6 +30,7 @@ pub fn validate_world_on_startup(
         &MetabolicStock,
         &Genome,
         &LineageMetadata,
+        Option<&crate::agent::LocationMemory>,
     )>,
 ) {
     let expected_chunks = (bounds.chunks_x * bounds.chunks_y) as usize;
@@ -92,11 +95,11 @@ pub fn validate_world_on_startup(
 
     // Sort agents by stable ID to guarantee order-independent verification
     let mut agents: Vec<_> = agents_query.iter().collect();
-    agents.sort_by_key(|(meta, _, _, _, _)| meta.id);
+    agents.sort_by_key(|(meta, _, _, _, _, _)| meta.id);
 
     let mut seen_ids = std::collections::HashSet::new();
 
-    for (meta, pos, stock, genome, lineage) in agents {
+    for (meta, pos, stock, genome, lineage, location_memory) in agents {
         // Unique non-zero IDs
         if meta.id == 0 || !seen_ids.insert(meta.id) {
             handle_validation_error(ValidationError::AgentDuplicateId { agent_id: meta.id });
@@ -196,10 +199,42 @@ pub fn validate_world_on_startup(
             });
             return;
         }
+
+        // Location memory validation
+        if let Some(memory) = location_memory {
+            if memory.nodes.len() > config.max_location_memory_capacity {
+                handle_validation_error(ValidationError::AgentMemoryCapacityExceeded {
+                    agent_id: meta.id,
+                    capacity: config.max_location_memory_capacity,
+                    actual: memory.nodes.len(),
+                });
+                return;
+            }
+
+            for node in &memory.nodes {
+                if !bounds.contains_world_coord(node.coord) {
+                    handle_validation_error(ValidationError::AgentMemoryOutOfBounds {
+                        agent_id: meta.id,
+                        coord: node.coord,
+                    });
+                    return;
+                }
+                if node.last_observed_tick > clock.total_ticks {
+                    handle_validation_error(ValidationError::AgentMemoryFutureTick {
+                        agent_id: meta.id,
+                        tick: node.last_observed_tick,
+                        current_tick: clock.total_ticks,
+                    });
+                    return;
+                }
+            }
+        }
     }
 }
 
 /// Tick validation system. Runs within the `PostTickValidation` schedule.
+/// Returns a list of `ValidationError`s found.
+#[allow(clippy::type_complexity)] // Complex ECS queries are standard in Bevy
 pub fn validate_world_on_tick(
     config: Res<WorldConfig>,
     bounds: Res<WorldBounds>,
@@ -217,6 +252,7 @@ pub fn validate_world_on_tick(
         &MetabolicStock,
         &Genome,
         &LineageMetadata,
+        Option<&crate::agent::LocationMemory>,
     )>,
     mut previous_tick: Local<Option<u32>>,
 ) {
@@ -270,11 +306,11 @@ pub fn validate_world_on_tick(
 
     // Sort agents by stable ID to guarantee order-independent checks
     let mut agents: Vec<_> = agents_query.iter().collect();
-    agents.sort_by_key(|(meta, _, _, _, _)| meta.id);
+    agents.sort_by_key(|(meta, _, _, _, _, _)| meta.id);
 
     let mut seen_ids = std::collections::HashSet::new();
 
-    for (meta, pos, stock, genome, lineage) in agents {
+    for (meta, pos, stock, genome, lineage, location_memory) in agents {
         // Unique non-zero IDs
         if meta.id == 0 || !seen_ids.insert(meta.id) {
             handle_validation_error(ValidationError::AgentDuplicateId { agent_id: meta.id });
@@ -353,6 +389,36 @@ pub fn validate_world_on_tick(
                 detail: "Agent parent_id must be Some if generation > 0",
             });
             return;
+        }
+
+        // Location memory validation
+        if let Some(memory) = location_memory {
+            if memory.nodes.len() > config.max_location_memory_capacity {
+                handle_validation_error(ValidationError::AgentMemoryCapacityExceeded {
+                    agent_id: meta.id,
+                    capacity: config.max_location_memory_capacity,
+                    actual: memory.nodes.len(),
+                });
+                return;
+            }
+
+            for node in &memory.nodes {
+                if !bounds.contains_world_coord(node.coord) {
+                    handle_validation_error(ValidationError::AgentMemoryOutOfBounds {
+                        agent_id: meta.id,
+                        coord: node.coord,
+                    });
+                    return;
+                }
+                if node.last_observed_tick > clock.total_ticks {
+                    handle_validation_error(ValidationError::AgentMemoryFutureTick {
+                        agent_id: meta.id,
+                        tick: node.last_observed_tick,
+                        current_tick: clock.total_ticks,
+                    });
+                    return;
+                }
+            }
         }
     }
 }

@@ -69,6 +69,7 @@ pub fn create_test_config() -> WorldConfig {
         consumption_efficiency: 0.8,
         mutation_rate: 0.05,
         mutation_step_size: 0.05,
+        max_location_memory_capacity: 16,
     }
 }
 
@@ -362,10 +363,11 @@ pub fn assert_worlds_equivalent(world_a: &mut World, world_b: &mut World) {
         &crate::agent::MetabolicStock,
         &crate::agent::Genome,
         &crate::agent::LineageMetadata,
+        Option<&crate::agent::LocationMemory>,
     )>();
     let mut agents_a: Vec<_> = agent_query_a
         .iter(world_a)
-        .map(|(m, p, s, g, l)| (*m, *p, *s, g.clone(), *l))
+        .map(|(m, p, s, g, l, lm)| (*m, *p, *s, g.clone(), *l, lm.cloned()))
         .collect();
     agents_a.sort_by_key(|a| a.0.id);
 
@@ -375,10 +377,11 @@ pub fn assert_worlds_equivalent(world_a: &mut World, world_b: &mut World) {
         &crate::agent::MetabolicStock,
         &crate::agent::Genome,
         &crate::agent::LineageMetadata,
+        Option<&crate::agent::LocationMemory>,
     )>();
     let mut agents_b: Vec<_> = agent_query_b
         .iter(world_b)
-        .map(|(m, p, s, g, l)| (*m, *p, *s, g.clone(), *l))
+        .map(|(m, p, s, g, l, lm)| (*m, *p, *s, g.clone(), *l, lm.cloned()))
         .collect();
     agents_b.sort_by_key(|a| a.0.id);
 
@@ -390,5 +393,6 @@ pub fn assert_worlds_equivalent(world_a: &mut World, world_b: &mut World) {
         assert_eq!(agent_a.2, agent_b.2, "agent metabolic stock mismatch");
         assert_eq!(agent_a.3, agent_b.3, "agent genome mismatch");
         assert_eq!(agent_a.4, agent_b.4, "agent lineage metadata mismatch");
+        assert_eq!(agent_a.5, agent_b.5, "agent location memory mismatch");
     }
 }

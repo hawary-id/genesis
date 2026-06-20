@@ -119,4 +119,32 @@ pub enum ValidationError {
         /// Description of the violation.
         detail: &'static str,
     },
+
+    /// Agent's spatial memory contains more locations than configured capacity allows.
+    AgentMemoryCapacityExceeded {
+        /// Stable identifier of the violating agent.
+        agent_id: u64,
+        /// Maximum allowed capacity.
+        capacity: usize,
+        /// Actual number of stored locations.
+        actual: usize,
+    },
+
+    /// Agent's spatial memory contains a location outside world bounds.
+    AgentMemoryOutOfBounds {
+        /// Stable identifier of the violating agent.
+        agent_id: u64,
+        /// Violating coordinate.
+        coord: crate::world::coord::WorldCoord,
+    },
+
+    /// Agent's spatial memory contains a timestamp from the future.
+    AgentMemoryFutureTick {
+        /// Stable identifier of the violating agent.
+        agent_id: u64,
+        /// Timestamp in memory.
+        tick: u32,
+        /// Current simulation clock.
+        current_tick: u32,
+    },
 }

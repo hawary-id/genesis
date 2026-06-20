@@ -2,18 +2,20 @@
 
 pub mod components;
 pub mod diagnostics;
+pub mod events;
 pub mod resources;
 pub mod sensing;
 pub mod systems;
 
 pub use components::{
     ActionIntent, ActionRequest, AgentMetadata, AgentPosition, Genome, LineageMetadata,
-    MetabolicStock, Phenotype, GENOME_SIZE,
+    LocationCategory, LocationMemory, LocationMemoryNode, MetabolicStock, Phenotype, GENOME_SIZE,
 };
+pub use events::ObservationEvent;
 pub use resources::{GenomeConfig, StableIdGenerator};
 pub use sensing::{query_cell, query_neighborhood, SensedResource};
 pub use systems::{
     derive_phenotype_on_spawn, process_agent_consumption, process_agent_deaths,
-    process_agent_movement, process_agent_reproduction, spawn_initial_agents,
-    update_agent_metabolism,
+    process_agent_movement, process_agent_reproduction, process_agent_sensing,
+    process_memory_consolidation, spawn_initial_agents, update_agent_metabolism,
 };

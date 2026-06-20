@@ -80,6 +80,10 @@ pub struct AgentSnapshot {
 
     /// Generational lineage metadata.
     pub lineage: LineageMetadata,
+
+    /// Subjective spatial memory of notable locations.
+    #[serde(default)]
+    pub location_memory: Option<crate::agent::LocationMemory>,
 }
 
 /// Complete state of one chunk entity at snapshot time.

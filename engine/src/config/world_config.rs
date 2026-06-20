@@ -198,6 +198,10 @@ pub struct WorldConfig {
     /// Standard deviation of Gaussian mutation displacement offsets.
     #[serde(default = "default_mutation_step_size")]
     pub mutation_step_size: f32,
+
+    /// Maximum capacity of the location memory LRU cache per agent.
+    #[serde(default = "default_max_location_memory_capacity")]
+    pub max_location_memory_capacity: usize,
 }
 
 fn default_mutation_rate() -> f32 {
@@ -206,6 +210,10 @@ fn default_mutation_rate() -> f32 {
 
 fn default_mutation_step_size() -> f32 {
     0.05
+}
+
+fn default_max_location_memory_capacity() -> usize {
+    16
 }
 
 impl Default for WorldConfig {
@@ -271,6 +279,7 @@ impl Default for WorldConfig {
             consumption_efficiency: 0.8,
             mutation_rate: 0.05,
             mutation_step_size: 0.05,
+            max_location_memory_capacity: 16,
         }
     }
 }
@@ -294,6 +303,7 @@ mod tests {
         assert_eq!(config.generation_version, 1);
         assert_eq!(config.mutation_rate, 0.05);
         assert_eq!(config.mutation_step_size, 0.05);
+        assert_eq!(config.max_location_memory_capacity, 16);
     }
 
     #[test]

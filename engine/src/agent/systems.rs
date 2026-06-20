@@ -5,10 +5,12 @@ use rand::Rng;
 use rand::SeedableRng;
 use rand_chacha::ChaCha8Rng;
 
+use crate::agent::components::LocationCategory;
 use crate::agent::components::{
     ActionIntent, ActionRequest, AgentMetadata, AgentPosition, Genome, LineageMetadata,
-    MetabolicStock, Phenotype,
+    LocationMemory, MetabolicStock, Phenotype,
 };
+use crate::agent::events::ObservationEvent;
 use crate::agent::resources::{GenomeConfig, StableIdGenerator};
 use crate::config::{WorldBounds, WorldConfig};
 use crate::rng::{derive_agent_seed, WorldSeed};
@@ -16,6 +18,7 @@ use crate::time::SimulationClock;
 use crate::world::climate::ClimateChunk;
 use crate::world::coord::{ChunkCoord, WorldCoord};
 use crate::world::terrain::TerrainChunk;
+use bevy_ecs::event::EventWriter;
 
 /// Deterministic 64-bit integer mixer (SplitMix64 finalizer)
 pub fn deterministic_mix_64(val: u64) -> u64 {
@@ -95,6 +98,7 @@ pub fn spawn_initial_agents(
             ActionRequest::new(ActionIntent::None),
             Genome::new(vec![0.5; crate::agent::GENOME_SIZE]),
             LineageMetadata::new(None, 0),
+            LocationMemory::new(),
         ));
     }
 }
@@ -281,6 +285,7 @@ pub fn process_agent_consumption(
     config: Res<WorldConfig>,
     bounds: Res<WorldBounds>,
     mut chunks: Query<(&ChunkCoord, &mut crate::world::resource::ResourceChunk)>,
+    mut events: EventWriter<ObservationEvent>,
     mut agents: Query<(
         Entity,
         &AgentPosition,
@@ -342,6 +347,21 @@ pub fn process_agent_consumption(
                         intake_nutrient * (1.0 - diet_preference) * config.consumption_efficiency
                             + intake_water * diet_preference * config.consumption_efficiency;
 
+                    if intake_nutrient > 0.0 {
+                        events.send(ObservationEvent::new(
+                            _id,
+                            coord,
+                            LocationCategory::Nutrient,
+                        ));
+                    }
+                    if intake_water > 0.0 {
+                        events.send(ObservationEvent::new(
+                            _id,
+                            coord,
+                            LocationCategory::FreshWater,
+                        ));
+                    }
+
                     // Step 5: Replenish and clamp agent stock energy
                     if let Ok((_, _, _, mut stock, _)) = agents.get_mut(entity) {
                         stock.energy = (stock.energy + energy_gain).min(config.agent_energy_max);
@@ -357,7 +377,10 @@ pub fn process_agent_consumption(
 pub fn process_agent_movement(
     bounds: Res<WorldBounds>,
     terrain_chunks: Query<(&ChunkCoord, &TerrainChunk)>,
+    mut events: EventWriter<ObservationEvent>,
     mut agents: Query<(
+        Entity,
+        &AgentMetadata,
         &mut AgentPosition,
         &mut MetabolicStock,
         &mut ActionRequest,
@@ -366,22 +389,45 @@ pub fn process_agent_movement(
 ) {
     let chunk_size = bounds.chunk_size;
 
-    for (mut pos, mut stock, mut req, phenotype) in &mut agents {
-        let intent = req.intent;
-        if intent == ActionIntent::None {
-            continue;
-        }
+    let to_move: Vec<_> = agents
+        .iter()
+        .filter(|(_, _, _, _, req, _)| req.intent != ActionIntent::None)
+        .map(|(entity, _, _, _, _, _)| entity)
+        .collect();
 
+    for entity in to_move {
+        let (
+            metadata_id,
+            pos,
+            stock,
+            req,
+            phenotype_max_slope,
+            phenotype_max_water_depth,
+            phenotype_derived_movement_cost,
+        ) = {
+            let (_, metadata, pos, stock, req, phenotype) = agents.get(entity).unwrap();
+            (
+                metadata.id,
+                *pos,
+                *stock,
+                *req,
+                phenotype.max_slope,
+                phenotype.max_water_depth,
+                phenotype.derived_movement_cost,
+            )
+        };
+
+        let intent = req.intent;
         let current_coord = pos.coord;
         let mut target_coord = current_coord;
+        let mut valid_move = true;
 
         match intent {
             ActionIntent::MoveNorth => {
                 if current_coord.y > 0 {
                     target_coord.y -= 1;
                 } else {
-                    req.intent = ActionIntent::None;
-                    continue;
+                    valid_move = false;
                 }
             }
             ActionIntent::MoveSouth => {
@@ -394,25 +440,23 @@ pub fn process_agent_movement(
                 if current_coord.x > 0 {
                     target_coord.x -= 1;
                 } else {
-                    req.intent = ActionIntent::None;
-                    continue;
+                    valid_move = false;
                 }
             }
             ActionIntent::None => unreachable!(),
         }
 
-        // Validate boundary constraints
-        if !bounds.contains_world_coord(target_coord) {
-            req.intent = ActionIntent::None;
+        if !valid_move || !bounds.contains_world_coord(target_coord) {
+            if let Ok((_, _, _, _, mut original_req, _)) = agents.get_mut(entity) {
+                original_req.intent = ActionIntent::None;
+            }
             continue;
         }
 
-        // Translate cell coordinate to chunk index
         let target_chunk = crate::world::coord::world_to_chunk(target_coord, chunk_size);
         let local_coord = crate::world::coord::world_to_local(target_coord, chunk_size);
         let index = (local_coord.y * chunk_size + local_coord.x) as usize;
 
-        // Retrieve local cell terrain
         let mut local_terrain = None;
         for (chunk_coord, chunk) in &terrain_chunks {
             if *chunk_coord == target_chunk {
@@ -424,20 +468,76 @@ pub fn process_agent_movement(
         }
 
         let Some((slope, water_depth)) = local_terrain else {
-            req.intent = ActionIntent::None;
+            if let Ok((_, _, _, _, mut original_req, _)) = agents.get_mut(entity) {
+                original_req.intent = ActionIntent::None;
+            }
             continue;
         };
 
-        // Validate slope and water constraints
-        if slope > phenotype.max_slope || water_depth > phenotype.max_water_depth {
-            req.intent = ActionIntent::None;
+        if slope > phenotype_max_slope || water_depth > phenotype_max_water_depth {
+            events.send(ObservationEvent::new(
+                metadata_id,
+                target_coord,
+                LocationCategory::Hazard,
+            ));
+            if let Ok((_, _, _, _, mut original_req, _)) = agents.get_mut(entity) {
+                original_req.intent = ActionIntent::None;
+            }
             continue;
         }
 
-        // Apply successful movement and deduct energy cost
-        pos.coord = target_coord;
-        stock.energy = (stock.energy - phenotype.derived_movement_cost).max(0.0);
-        req.intent = ActionIntent::None;
+        if let Ok((_, _, mut original_pos, mut original_stock, mut original_req, _)) =
+            agents.get_mut(entity)
+        {
+            original_pos.coord = target_coord;
+            original_stock.energy = (stock.energy - phenotype_derived_movement_cost).max(0.0);
+            original_req.intent = ActionIntent::None;
+        }
+    }
+}
+
+/// Allows agents to passively sense their environment and record high-density resources.
+pub fn process_agent_sensing(
+    config: Res<WorldConfig>,
+    bounds: Res<WorldBounds>,
+    spatial_map: Res<crate::world::spatial::SpatialMap>,
+    chunks: Query<&crate::world::resource::ResourceChunk>,
+    mut events: EventWriter<ObservationEvent>,
+    agents: Query<(&AgentMetadata, &AgentPosition, &Phenotype)>,
+) {
+    let threshold_nutrient = config.nutrients_max * 0.8;
+    let threshold_water = config.fresh_water_max * 0.8;
+
+    let mut sorted_agents: Vec<_> = agents
+        .iter()
+        .map(|(metadata, pos, pheno)| (metadata.id, pos.coord, pheno.sensing_radius))
+        .collect();
+    sorted_agents.sort_by_key(|a| a.0);
+
+    for (agent_id, coord, sensing_radius) in sorted_agents {
+        let neighborhood = crate::agent::sensing::query_neighborhood(
+            coord,
+            sensing_radius,
+            &bounds,
+            &spatial_map,
+            &chunks,
+        );
+        for (target_coord, resource) in neighborhood {
+            if resource.nutrients >= threshold_nutrient {
+                events.send(ObservationEvent::new(
+                    agent_id,
+                    target_coord,
+                    LocationCategory::Nutrient,
+                ));
+            }
+            if resource.fresh_water >= threshold_water {
+                events.send(ObservationEvent::new(
+                    agent_id,
+                    target_coord,
+                    LocationCategory::FreshWater,
+                ));
+            }
+        }
     }
 }
 
@@ -466,7 +566,6 @@ pub fn process_agent_reproduction(
     let mut current_population = initial_population;
     let chunk_size = bounds.chunk_size;
 
-    // 1. Collect all eligible parents (energy >= threshold AND age >= maturity_age)
     let mut parents = Vec::new();
     for (entity, metadata, position, stock, genome, lineage, phenotype) in &agents {
         if stock.energy >= phenotype.reproduction_threshold && stock.age >= phenotype.maturity_age {
@@ -482,12 +581,9 @@ pub fn process_agent_reproduction(
         }
     }
 
-    // 2. Sort by stable parent ID ascending to ensure determinism
     parents.sort_by_key(|p| p.0);
 
-    // 3. Process reproduction sequentially
     for parent in parents {
-        // Enforce population density cap check first
         if current_population >= config.agent_density_cap as usize {
             break;
         }
@@ -502,12 +598,11 @@ pub fn process_agent_reproduction(
         let max_slope = parent_pheno.max_slope;
         let max_water = parent_pheno.max_water_depth;
 
-        // Sequence: North (y - 1), South (y + 1), East (x + 1), West (x - 1)
         let directions = [
-            (Some(parent_coord.x), parent_coord.y.checked_sub(1)), // North
-            (Some(parent_coord.x), Some(parent_coord.y.saturating_add(1))), // South
-            (Some(parent_coord.x.saturating_add(1)), Some(parent_coord.y)), // East
-            (parent_coord.x.checked_sub(1), Some(parent_coord.y)), // West
+            (Some(parent_coord.x), parent_coord.y.checked_sub(1)),
+            (Some(parent_coord.x), Some(parent_coord.y.saturating_add(1))),
+            (Some(parent_coord.x.saturating_add(1)), Some(parent_coord.y)),
+            (parent_coord.x.checked_sub(1), Some(parent_coord.y)),
         ];
 
         let mut chosen_coord = None;
@@ -521,12 +616,10 @@ pub fn process_agent_reproduction(
                 continue;
             }
 
-            // Translate candidate cell coordinate to chunk index
             let target_chunk = crate::world::coord::world_to_chunk(candidate, chunk_size);
             let local_coord = crate::world::coord::world_to_local(candidate, chunk_size);
             let index = (local_coord.y * chunk_size + local_coord.x) as usize;
 
-            // Retrieve local cell terrain
             let mut local_terrain = None;
             for (chunk_coord, chunk) in &terrain_chunks {
                 if *chunk_coord == target_chunk {
@@ -545,7 +638,6 @@ pub fn process_agent_reproduction(
             }
         }
 
-        // If a valid location was found, perform energy split, stable ID generation, and spawn offspring
         if let Some(target_coord) = chosen_coord {
             if let Ok((_, _, _, mut parent_stock, _, _, _)) = agents.get_mut(parent_entity) {
                 let offspring_energy = parent_stock.energy * 0.5;
@@ -572,9 +664,80 @@ pub fn process_agent_reproduction(
                     ActionRequest::new(ActionIntent::None),
                     mutated_genome,
                     LineageMetadata::new(Some(parent_id), parent_lineage.generation + 1),
+                    LocationMemory::new(),
                 ));
 
                 current_population += 1;
+            }
+        }
+    }
+}
+
+/// Consolidates ObservationEvents into agents' subjective location memory.
+///
+/// Ensures memory updates are deterministic and cap at `max_location_memory_capacity` using
+/// chronological LRU eviction with coordinate-based tie-breaking.
+pub fn process_memory_consolidation(
+    config: Res<crate::config::WorldConfig>,
+    clock: Res<crate::time::SimulationClock>,
+    mut events: ResMut<Events<ObservationEvent>>,
+    mut agents: Query<(&AgentMetadata, &mut LocationMemory)>,
+) {
+    let mut pending_events: Vec<_> = events.drain().collect();
+    if pending_events.is_empty() {
+        return;
+    }
+
+    // Sort to ensure deterministic processing order
+    pending_events.sort_by(|a, b| {
+        a.agent_id
+            .cmp(&b.agent_id)
+            .then(a.coord.y.cmp(&b.coord.y))
+            .then(a.coord.x.cmp(&b.coord.x))
+    });
+
+    // Group events by agent_id to minimize query lookups
+    let mut grouped_events: std::collections::HashMap<u64, Vec<ObservationEvent>> =
+        std::collections::HashMap::new();
+    for ev in pending_events {
+        grouped_events.entry(ev.agent_id).or_default().push(ev);
+    }
+
+    for (metadata, mut memory) in &mut agents {
+        if let Some(agent_events) = grouped_events.get(&metadata.id) {
+            for event in agent_events {
+                // Check if we already have this coordinate in memory
+                let mut found = false;
+                for node in &mut memory.nodes {
+                    if node.coord == event.coord && node.category == event.category {
+                        node.last_observed_tick = clock.total_ticks;
+                        found = true;
+                        break;
+                    }
+                }
+
+                if !found {
+                    memory
+                        .nodes
+                        .push(crate::agent::components::LocationMemoryNode::new(
+                            event.coord,
+                            event.category,
+                            clock.total_ticks,
+                        ));
+                }
+            }
+
+            // Enforce capacity via deterministic LRU eviction
+            if memory.nodes.len() > config.max_location_memory_capacity {
+                // Sort by last_observed_tick descending (newest first).
+                // Tie breaker: coord.y descending, coord.x descending (so largest coord kept first, smallest coord evicted first)
+                memory.nodes.sort_by(|a, b| {
+                    b.last_observed_tick
+                        .cmp(&a.last_observed_tick)
+                        .then(b.coord.y.cmp(&a.coord.y))
+                        .then(b.coord.x.cmp(&a.coord.x))
+                });
+                memory.nodes.truncate(config.max_location_memory_capacity);
             }
         }
     }
@@ -1176,6 +1339,7 @@ mod tests {
         let bounds = WorldBounds::from_config(&config);
         world.insert_resource(config);
         world.insert_resource(bounds.clone());
+        world.init_resource::<bevy_ecs::event::Events<ObservationEvent>>();
 
         // Steep terrain in cell (0, 1) (South of origin)
         let mut slope = vec![0.0f32; 1024];
@@ -1197,6 +1361,7 @@ mod tests {
         // Specialized agent (high slope tolerance)
         let specialized = world
             .spawn((
+                AgentMetadata::new(1),
                 AgentPosition::new(WorldCoord::new(0, 0)),
                 MetabolicStock::new(100.0, 0),
                 ActionRequest {
@@ -1220,6 +1385,7 @@ mod tests {
         // Unadapted agent (low slope tolerance)
         let unadapted = world
             .spawn((
+                AgentMetadata::new(2),
                 AgentPosition::new(WorldCoord::new(0, 0)),
                 MetabolicStock::new(100.0, 0),
                 ActionRequest {

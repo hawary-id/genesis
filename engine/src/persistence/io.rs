@@ -187,6 +187,7 @@ pub fn reconstruct_world_from_snapshot(world: &mut World, snapshot: WorldSnapsho
             agent.genome,
             agent.lineage,
             phenotype,
+            agent.location_memory.unwrap_or_default(),
         ));
     }
 }
@@ -697,15 +698,17 @@ mod tests {
             &crate::agent::MetabolicStock,
             &crate::agent::Genome,
             &crate::agent::LineageMetadata,
+            Option<&crate::agent::LocationMemory>,
         )>();
         let agents: Vec<_> = agent_query
             .iter(world_split)
-            .map(|(m, p, s, g, l)| crate::persistence::AgentSnapshot {
+            .map(|(m, p, s, g, l, lm)| crate::persistence::AgentSnapshot {
                 metadata: *m,
                 position: *p,
                 stock: *s,
                 genome: g.clone(),
                 lineage: *l,
+                location_memory: lm.cloned(),
             })
             .collect();
         let snapshot = build_world_snapshot(
@@ -775,15 +778,17 @@ mod tests {
             &crate::agent::MetabolicStock,
             &crate::agent::Genome,
             &crate::agent::LineageMetadata,
+            Option<&crate::agent::LocationMemory>,
         )>();
         let agents: Vec<_> = agent_query
             .iter(world)
-            .map(|(m, p, s, g, l)| crate::persistence::AgentSnapshot {
+            .map(|(m, p, s, g, l, lm)| crate::persistence::AgentSnapshot {
                 metadata: *m,
                 position: *p,
                 stock: *s,
                 genome: g.clone(),
                 lineage: *l,
+                location_memory: lm.cloned(),
             })
             .collect();
 
@@ -817,6 +822,7 @@ mod tests {
             stock: crate::agent::MetabolicStock::new(100.0, 0),
             genome: crate::agent::Genome::new(vec![0.1, 0.2]), // Undersized genome
             lineage: crate::agent::LineageMetadata::new(None, 0),
+            location_memory: None,
         };
         snapshot.agents.push(agent_snap);
 
@@ -845,6 +851,7 @@ mod tests {
             stock: crate::agent::MetabolicStock::new(100.0, 0),
             genome: crate::agent::Genome::new(genes),
             lineage: crate::agent::LineageMetadata::new(None, 0),
+            location_memory: None,
         };
         snapshot.agents.push(agent_snap);
 

@@ -167,3 +167,50 @@ impl LineageMetadata {
         }
     }
 }
+
+/// Category of a remembered location.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+pub enum LocationCategory {
+    /// Location with harvestable nutrients.
+    Nutrient,
+    /// Location with harvestable fresh water.
+    FreshWater,
+    /// Location with dangerous conditions.
+    Hazard,
+}
+
+/// A single remembered location with temporal context.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct LocationMemoryNode {
+    /// The spatial coordinate.
+    pub coord: WorldCoord,
+    /// The category of the location.
+    pub category: LocationCategory,
+    /// The chronological timestamp of the observation.
+    pub last_observed_tick: u32,
+}
+
+impl LocationMemoryNode {
+    /// Creates a new `LocationMemoryNode`.
+    pub fn new(coord: WorldCoord, category: LocationCategory, last_observed_tick: u32) -> Self {
+        Self {
+            coord,
+            category,
+            last_observed_tick,
+        }
+    }
+}
+
+/// Component representing an agent's subjective spatial memory.
+#[derive(Component, Debug, Clone, PartialEq, Eq, Serialize, Deserialize, Default)]
+pub struct LocationMemory {
+    /// Fixed-capacity chronological list of remembered locations.
+    pub nodes: Vec<LocationMemoryNode>,
+}
+
+impl LocationMemory {
+    /// Creates a new empty `LocationMemory`.
+    pub fn new() -> Self {
+        Self { nodes: Vec::new() }
+    }
+}

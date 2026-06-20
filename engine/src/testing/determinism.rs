@@ -224,15 +224,17 @@ fn test_long_run_stability_512() {
         &crate::agent::MetabolicStock,
         &crate::agent::Genome,
         &crate::agent::LineageMetadata,
+        Option<&crate::agent::LocationMemory>,
     )>();
     let agents: Vec<_> = agent_query
         .iter(world_split)
-        .map(|(m, p, s, g, l)| crate::persistence::AgentSnapshot {
+        .map(|(m, p, s, g, l, lm)| crate::persistence::AgentSnapshot {
             metadata: *m,
             position: *p,
             stock: *s,
             genome: g.clone(),
             lineage: *l,
+            location_memory: lm.cloned(),
         })
         .collect();
 
@@ -407,15 +409,17 @@ fn test_save_load_equivalence_with_mutation_integration() {
         &crate::agent::MetabolicStock,
         &crate::agent::Genome,
         &crate::agent::LineageMetadata,
+        Option<&crate::agent::LocationMemory>,
     )>();
     let agents: Vec<_> = agent_query
         .iter(world_split)
-        .map(|(m, p, s, g, l)| crate::persistence::AgentSnapshot {
+        .map(|(m, p, s, g, l, lm)| crate::persistence::AgentSnapshot {
             metadata: *m,
             position: *p,
             stock: *s,
             genome: g.clone(),
             lineage: *l,
+            location_memory: lm.cloned(),
         })
         .collect();
 

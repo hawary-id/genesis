@@ -314,9 +314,9 @@ This registry tracks the status and deliverables of all milestones in the Genesi
 
 ---
 
-## Phases 4 through 12 — Memory, Agency, Society, Economy, Civilization
+## Phase 4 — Memory (Completed)
 
-* **Status:** Active (Phase 4 Started)
+* **Status:** Completed
 * **Summary:** Implementation of location memories, goals prioritization, cooperation trust, specialized technologies, and institutional governance.
 * **Dependencies:** Phase 3.
 * **Related Documents:**
@@ -360,3 +360,31 @@ This registry tracks the status and deliverables of all milestones in the Genesi
   - `cargo test` PASS
   - `cargo test -- --ignored` PASS (stability test equivalence check)
   - determinism & snapshot validation PASS
+
+### Milestone 24: Social Memory (Kinship Memory Foundation)
+* **Status:** Completed
+* **Summary:** Introduced subjective social memory for agents, enabling tracking of basic kinship relationships (`Parent` and `Child`) deterministically generated during reproduction.
+* **Dependencies:** Milestone 23.
+* **Major Deliverables:**
+  - `SocialRelationCategory` enum (`Parent`, `Child`)
+  - `SocialMemory` and `SocialMemoryNode` ECS components
+  - `SocialMemoryEvent` generation during reproduction
+  - `process_social_memory_consolidation` system with fixed-capacity chronological eviction (oldest-first, cap 10)
+  - Snapshot schema incremented to v5 with `AgentSnapshot` backwards compatibility
+  - Validation checks for capacity limits, duplicate target prevention, chronologies, and self-reference prevention
+* **Verification Summary:**
+  - `cargo fmt` PASS
+  - `cargo clippy -- -D warnings` PASS
+  - `cargo test` PASS
+  - `cargo test -- --ignored` PASS (stability test equivalence check)
+  - determinism & snapshot validation PASS
+
+---
+
+## Phases 5 through 12 — Agency, Society, Economy, Civilization
+
+* **Status:** Upcoming
+* **Summary:** Implementation of goals prioritization, cooperation trust, specialized technologies, and institutional governance.
+* **Dependencies:** Phase 4.
+* **Related Documents:**
+  - [ROADMAP.md](https://github.com/hawary-id/genesis/blob/main/docs/ROADMAP.md#L58-L184) — Long-term phases descriptions.

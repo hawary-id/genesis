@@ -5,27 +5,27 @@
 * Phase 1: COMPLETE
 * Phase 2: COMPLETE
 * Phase 3: COMPLETE
-* Phase 4: ACTIVE
+* Phase 4: COMPLETE
 
 ### Last Completed Milestone
 
-Milestone 23 — Event Memory
+Milestone 24 — Social Memory (Kinship Memory Foundation)
 
 Key Outcomes:
-* `EventCategory` enum (`ResourceConsumed`, `FailedMovement`, `Reproduced`, `HazardEncountered`)
-* `EventMemoryNode` and `EventMemory` ECS components
-* `EventMemoryEvent` and `EventSequenceCounter` resource for strict deterministic chronological ordering
-* `process_event_memory_consolidation` system with fixed-capacity chronological eviction (oldest entries removed first, MAX_EVENT_MEMORY_CAPACITY = 10)
-* EventMemory persistence added (snapshot schema v4 upgrade) with backwards compatibility
-* Validation checks for capacity bounds and strict chronological properties
+* `SocialRelationCategory` enum (`Parent`, `Child`)
+* `SocialMemoryNode` and `SocialMemory` ECS components
+* Reciprocal `SocialMemoryEvent` generation during reproduction
+* Deterministic consolidation with capacity limit 10 and oldest-first eviction
+* SocialMemory persistence added (snapshot schema v5 upgrade)
+* Validation checks for capacity bounds, duplicate targets, chronologies, and self-reference prevention
 
 ### Current Focus
 
-* Phase 4 (Memory) continues. Milestone 23 (Event Memory) implemented. Next focus is M24 planning.
+* Phase 4 (Memory) is COMPLETE. Next focus is Phase 5 (Agency) planning.
 
 ### Next Planned Milestone
 
-* Milestone 24 — Social Memory
+* Milestone 25 — Goal Formation Foundation
 
 ### Newly Added Systems
 
@@ -53,19 +53,19 @@ Key Outcomes:
 
 ### Verification & Testing Status
 
-* **Branch:** phase4-m23
-* **Snapshot Schema Version:** v4
-* **Status:** Milestone 23 COMPLETE.
-  - Event memory tracking system with distinct event categories.
-  - Strict deterministic chronologial ordering within ticks via sequence counters.
-  - Snapshot persistence v4 upgrade with backward compatibility.
-  - Validation support and determinism verified.
+* **Branch:** phase4-m24
+* **Snapshot Schema Version:** v5
+* **Status:** Milestone 24 COMPLETE. Phase 4 COMPLETE.
+  - Kinship memory tracking (`Parent`/`Child`) during reproduction.
+  - Strict deterministic consolidation and oldest-first eviction.
+  - Snapshot persistence v5 upgrade with backward compatibility.
+  - Comprehensive invariant validation support.
 * **Test Counts:**
   - `cargo test`: PASS
   - `cargo test -- --ignored`: PASS (test_long_run_stability_512 checks A+B=N save/load equivalence over 8,640 ticks / 1 simulation year with full stack active)
   - `cargo clippy -- -D warnings`: PASS
   - `cargo fmt`: PASS
-* **Last Updated:** 2026-06-20T12:00:00+00:00
+* **Last Updated:** 2026-06-20T14:20:00+00:00
 
 ---
 

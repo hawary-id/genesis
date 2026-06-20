@@ -4,16 +4,18 @@ This document serves as the immediate tactical handoff instructions for any AI m
 
 ## Current Status
 
-**Milestone 23 — Event Memory: COMPLETE**
+**Milestone 24 — Social Memory: COMPLETE**
+**Phase 4 (Memory): COMPLETE**
 
-Phase 4 (Memory) is active. M23 is complete. Genesis now supports chronological event memory recording alongside location memory.
+Phase 4 (Memory) is now fully complete. Genesis supports location memory, chronological event memory, and subjective social (kinship) memory.
 
 ## What Exists
 
 * **Location Memory**: Agents track locations (`Nutrient`, `FreshWater`, `Hazard`) with deterministic LRU eviction.
 * **Event Memory**: Agents track distinct life events (`ResourceConsumed`, `FailedMovement`, `Reproduced`, `HazardEncountered`) with chronological ordering.
-* **Persistence Integration**: Seamless save/load functionality using snapshot schema v4, maintaining backwards compatibility with v3 via `#[serde(default)]`.
-* **Validation Integration**: Startup and post-tick bounds checking enforces monotonic sequences and capacity constraints.
+* **Social Memory**: Agents track basic kinship relationships (`Parent`, `Child`) deterministically generated during reproduction.
+* **Persistence Integration**: Seamless save/load functionality using snapshot schema v5, maintaining backwards compatibility with older snapshots via `#[serde(default)]`.
+* **Validation Integration**: Startup and post-tick bounds checking enforces monotonic sequences, capacity constraints, duplicate target prevention, and self-reference prevention.
 * **Determinism Guarantees**: Strict sequence-in-tick counters prevent race conditions during sub-tick event generation, ensuring A+B=N save/load equivalence over long simulation runs.
 
 ## Important Constraints
@@ -25,14 +27,15 @@ Phase 4 (Memory) is active. M23 is complete. Genesis now supports chronological 
 
 ## Next Milestone
 
-* **Milestone 24 — Social Memory**: According to the roadmap for Phase 4, the final remaining feature for the Memory phase is social memory. 
+* **Phase 5 Planning**: Phase 4 is complete. The next focus is starting Phase 5 (Agency).
+* **Milestone 25 — Goal Formation Foundation**: The expected first milestone of Phase 5. With memory in place, agents now have the architectural prerequisites (knowledge of self, environment, history, and relations) to begin forming subjective goals.
 
 ## Next Actions for AI Model
 
-1. **M23 is officially closed**: No M23 implementation work remains. The next architectural focus is M24 planning.
-2. Read `MILESTONE_STATUS.md` to determine the next planned milestone.
-3. Read `docs/ROADMAP.md` for Phase 4 context.
-4. Perform documentation audit, codebase audit, and gap analysis for Milestone 24.
+1. **Phase 4 is officially closed**: All Phase 4 memory implementation work is finished.
+2. Read `MILESTONE_STATUS.md` to confirm current project state.
+3. Read `docs/ROADMAP.md` for Phase 5 (Agency) context.
+4. Do NOT invent M25 implementation details. Focus strictly on architectural planning based on the newly available memory prerequisites.
 5. Produce an implementation plan and await user approval before writing any code.
 
 ## Known Blockers & Technical Debt

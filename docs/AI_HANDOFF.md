@@ -4,60 +4,46 @@ This document serves as the immediate tactical handoff instructions for any AI m
 
 ## Current Status
 
-**Milestone 21 — Evolution Diagnostics and Validation: COMPLETE**
+**Milestone 22 — Location Memory Foundation: COMPLETE**
 
-All Phase 3 (Evolution) milestones through M21 are complete. Phase 3 is complete.
+All Phase 3 (Evolution) milestones are complete. Phase 4 (Memory) has officially started and M22 is complete. Genesis now supports subjective location memory.
 
-## What Was Completed in M21
+## What Was Completed in M22
 
-### PopulationStatistics Resource
-* Added `PopulationStatistics` as a **runtime-only telemetry resource** in `engine/src/agent/diagnostics.rs`.
-* Populated each tick by `compute_population_statistics`, registered in the `ObservationBoundary` schedule.
-* **Not persisted in snapshots.** Fully reconstructable from live ECS world state. This is an intentional architectural constraint — telemetry must not influence determinism.
-* Fields: `total_population`, `mean_thermal_optimum`, `mean_diet_preference`, `mean_max_slope`, `mean_max_water_depth`, `mean_sensing_radius`, `mean_physical_size`, `standard_deviation_thermal_optimum`.
+### Location Memory Architecture
+* Agents now track locations via `LocationMemory` ECS components holding fixed-capacity `LocationMemoryNode` entries.
+* Senses and interactions trigger `ObservationEvent` emissions (`Nutrient`, `FreshWater`, `Hazard`) inside `agent/systems.rs`.
+* Observations are collected by `process_memory_consolidation` running in `FixedSimulationTick` after standard agent action execution.
 
-### Lineage Validation Invariants
-Bidirectional lineage invariants are enforced in both `validate_world_on_startup` and `validate_world_on_tick`:
-* `generation == 0 ⟹ parent_id == None` (founder agents have no parent)
-* `generation > 0 ⟹ parent_id == Some(...)` (descended agents always have a parent)
-* Both invalid states are covered by dedicated `#[should_panic]` tests.
+### Deterministic LRU Eviction
+* Memory uses deterministic chronological eviction sorting. Observations tie-break LRU chronologically via `coord.y` and `coord.x` to preserve save/load and branching identical equivalence.
+* Validation checks bounds and capacity inside `validation/systems.rs`.
 
-### Genome Reconstruction Padding
-* On snapshot restore, genomes shorter than `GENOME_SIZE` are padded with `0.5` (neutral mid-range) to ensure all runtime genome operations remain safe.
-* Loading never truncates valid genomes; it only pads.
-* Two tests verify: `test_reconstruct_pads_undersized_genomes` and `test_reconstruct_preserves_genome_length`.
+### Persistence
+* Snapshot schema updated to persist `LocationMemory` under the `AgentSnapshot` model seamlessly. Includes `#[serde(default)]` compatibility for loading previous v3 architecture saves seamlessly without panicking.
 
-### GENOME_SIZE Constant
-* Extracted `pub const GENOME_SIZE: usize = 8` into `agent/components.rs` and re-exported via `agent/mod.rs`.
-* All test and production code now uses `crate::agent::GENOME_SIZE` instead of hardcoded literals.
+## Key Architectural Decisions Made in M22
 
-### Snapshot Validation Workflow
-* Snapshot load → genome padding → phenotype re-derivation → startup validation (invariants checked).
-* Validation enforces lineage and genome invariants on every startup and post-tick boundary.
+1. **Deterministic Eviction**: Ensuring spatial coordinates dictate deterministic tie-breaking. 
+2. **Backward Compatibility**: Utilizing `serde(default)` protects v3 save branches from panics upon loading newer memory traits.
+3. **Decoupled Perception**: `ObservationEvent` allows sensors to trigger abstract alerts asynchronously without knowing how they are stored or processed.
 
-## Key Architectural Decisions Made in M21
-
-1. **Runtime-only telemetry:** `PopulationStatistics` is never serialized. It violates no determinism contract because it is purely derived from ECS state.
-2. **Genome padding is silent and forward-compatible:** Padding uses `0.5` (neutral), preserving migration from older snapshots without data loss.
-3. **Lineage invariants are bidirectional:** Both directions (generation→parent and parent→generation) are enforced to prevent partial or corrupt lineage states.
-
-## Verified Test Status (M21 Completion)
+## Verified Test Status (M22 Completion)
 
 * `cargo fmt`: PASS
 * `cargo clippy -- -D warnings`: PASS
-* `cargo test`: 131 passed, 0 failed, 1 ignored
+* `cargo test`: PASS
 * `cargo test -- --ignored`: PASS (test_long_run_stability_512, 8,640 ticks / 1 year)
 * Long-run determinism test: PASS
 * Snapshot validation tests: PASS
-* Lineage validation tests: PASS (both bidirectional invalid states)
-* Population diagnostics tests: PASS
 
 ## Next Actions for AI Model
 
-1. Read `MILESTONE_STATUS.md` to determine the next planned milestone after M21.
-2. Read `docs/ROADMAP.md` for Phase 4 context.
-3. Perform documentation audit, codebase audit, and gap analysis for the next milestone.
-4. Produce an implementation plan and await user approval before writing any code.
+1. **M22 is officially closed**: No M22 implementation work remains. Any remaining observations (like isolated unit tests) are optional improvements only. The next architectural focus is M23 planning.
+2. Read `MILESTONE_STATUS.md` to determine the next planned milestone.
+3. Read `docs/ROADMAP.md` for Phase 4 context.
+4. Perform documentation audit, codebase audit, and gap analysis for Milestone 23.
+5. Produce an implementation plan and await user approval before writing any code.
 
 ## Known Blockers & Technical Debt
 

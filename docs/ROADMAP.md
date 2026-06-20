@@ -45,7 +45,7 @@ Life survives.
 
 ---
 
-## Phase 3 — Evolution (Active)
+## Phase 3 — Evolution (Completed)
 
 Goal:
 
@@ -57,8 +57,8 @@ Milestones:
 - [x] M17 Resource Consumption
 - [x] M18 Reproduction & Inheritance
 - [x] M19 Mutation & Drift
-- [/] M20 Natural Selection & Adaptation
-- [ ] M21 Diagnostics & Validation
+- [x] M20 Natural Selection & Adaptation
+- [x] M21 Diagnostics & Validation
 
 Success:
 
@@ -66,13 +66,17 @@ Populations evolve.
 
 ---
 
-## Phase 4 — Memory
+## Phase 4 — Memory (Active)
 
 Features:
 
 - location memory
 - event memory
 - social memory
+
+Milestones:
+
+- [x] M22 Location Memory Foundation
 
 Success:
 

@@ -4,29 +4,28 @@
 
 * Phase 1: COMPLETE
 * Phase 2: COMPLETE
-* Phase 3: ACTIVE
+* Phase 3: COMPLETE
+* Phase 4: ACTIVE
 
 ### Last Completed Milestone
 
-Milestone 21 — Evolution Diagnostics and Validation
+Milestone 22 — Location Memory Foundation
 
 Key Outcomes:
-* `PopulationStatistics` runtime telemetry resource added (fully reconstructable from ECS state; not persisted)
-* `compute_population_statistics` system registered in `ObservationBoundary` schedule
-* Bidirectional lineage invariant enforced in both startup and post-tick validation:
-  - `generation == 0 ⟹ parent_id == None`
-  - `generation > 0 ⟹ parent_id == Some(...)`
-* Genome padding on snapshot restore: undersized genomes are padded to `GENOME_SIZE` on load
-* `GENOME_SIZE` extracted as a `pub const` in `agent/components.rs` (no more magic numbers)
-* All validation invariants verified with bidirectional test coverage
+* `LocationCategory` enum (`Nutrient`, `FreshWater`, `Hazard`)
+* `LocationMemoryNode` and `LocationMemory` ECS components
+* `ObservationEvent` tracking locations
+* `process_memory_consolidation` system with deterministic LRU eviction and tie-breaking
+* LocationMemory persistence added using serde default migration compatibility
+* Added validation checks for capacity bounds and chronological properties
 
 ### Current Focus
 
-* Phase 3 evolution diagnostics and validation complete. Ready for next milestone.
+* Phase 4 (Memory) has started. First milestone (Location Memory) implemented. Next focus is M23 planning.
 
-### Current Active Milestone
+### Next Planned Milestone
 
-* Milestone 21 — Evolution Diagnostics and Validation (COMPLETE)
+* Milestone 23 — Event Memory
 
 ### Newly Added Systems
 
@@ -55,13 +54,17 @@ Key Outcomes:
 ### Verification & Testing Status
 
 * **Branch:** main
-* **Status:** Milestone 21 is fully completed, verified, clippy-compliant, and passes all determinism and snapshot validation tests.
+* **Status:** Milestone 22 COMPLETE.
+  - Subjective location memory with ObservationEvent architecture.
+  - Memory consolidation system with deterministic LRU retention.
+  - Snapshot persistence with backward compatibility.
+  - Validation support and determinism verification verified.
 * **Test Counts:**
-  - `cargo test`: 131 passed, 0 failed, 1 ignored
-  - `cargo test -- --ignored`: 1 passed (test_long_run_stability_512 checks A+B=N save/load equivalence over 8,640 ticks / 1 simulation year with full Phase 3 evolution stack active)
+  - `cargo test`: PASS
+  - `cargo test -- --ignored`: PASS (test_long_run_stability_512 checks A+B=N save/load equivalence over 8,640 ticks / 1 simulation year with full stack active)
   - `cargo clippy -- -D warnings`: PASS
   - `cargo fmt`: PASS
-* **Last Updated:** 2026-06-16T08:37:00+00:00
+* **Last Updated:** 2026-06-20T12:00:00+00:00
 
 ---
 

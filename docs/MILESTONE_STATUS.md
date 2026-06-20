@@ -180,7 +180,7 @@ This registry tracks the status and deliverables of all milestones in the Genesi
 
 ---
 
-## Phase 3 — Evolution (Active)
+## Phase 3 — Evolution (Completed)
 
 * **Related Documents:**
   - [PHASE3_EVOLUTION_TECH_SPEC.md](https://github.com/hawary-id/genesis/blob/main/docs/archive/phases/PHASE3_EVOLUTION_TECH_SPEC.md) — Technical Specification.
@@ -316,9 +316,29 @@ This registry tracks the status and deliverables of all milestones in the Genesi
 
 ## Phases 4 through 12 — Memory, Agency, Society, Economy, Civilization
 
-* **Status:** Planned
+* **Status:** Active (Phase 4 Started)
 * **Summary:** Implementation of location memories, goals prioritization, cooperation trust, specialized technologies, and institutional governance.
 * **Dependencies:** Phase 3.
 * **Related Documents:**
   - [ROADMAP.md](https://github.com/hawary-id/genesis/blob/main/docs/ROADMAP.md#L58-L184) — Long-term phases descriptions.
+
+### Milestone 22: Location Memory Foundation
+* **Status:** Completed
+* **Summary:** Introduced subjective location memory for agents, enabling tracking of nutrients, fresh water, and hazards using a fixed-capacity deterministic LRU eviction mechanism.
+* **Dependencies:** Milestone 21.
+* **Major Deliverables:**
+  - `LocationCategory` enum (`Nutrient`, `FreshWater`, `Hazard`)
+  - `LocationMemory` ECS component holding `LocationMemoryNode` entries
+  - `ObservationEvent` tracking locations
+  - `process_memory_consolidation` system with deterministic LRU eviction and tie-breaking
+  - LocationMemory persistence added using serde default migration compatibility
+  - Validation checks for capacity bounds and chronological properties
+* **Optional Future Enhancements:**
+  - Add isolated unit tests for `process_memory_consolidation`.
+* **Verification Summary:**
+  - `cargo fmt` PASS
+  - `cargo clippy -- -D warnings` PASS
+  - `cargo test` PASS
+  - `cargo test -- --ignored` PASS (stability test equivalence check)
+  - determinism & snapshot validation PASS
 

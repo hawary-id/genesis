@@ -37,4 +37,4 @@ pub use snapshot::{AgentSnapshot, ChunkSnapshot, WorldSnapshot};
 ///
 /// Increment this constant when the snapshot schema changes in a breaking way.
 /// All written snapshots embed this version. Load path rejects mismatches.
-pub const SNAPSHOT_SCHEMA_VERSION: u32 = 4;
+pub const SNAPSHOT_SCHEMA_VERSION: u32 = 5;

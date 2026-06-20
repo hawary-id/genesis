@@ -189,6 +189,7 @@ pub fn reconstruct_world_from_snapshot(world: &mut World, snapshot: WorldSnapsho
             phenotype,
             agent.location_memory.unwrap_or_default(),
             agent.event_memory.unwrap_or_default(),
+            agent.social_memory.unwrap_or_default(),
         ));
     }
 }
@@ -701,11 +702,12 @@ mod tests {
             &crate::agent::LineageMetadata,
             Option<&crate::agent::LocationMemory>,
             Option<&crate::agent::components::EventMemory>,
+            Option<&crate::agent::components::SocialMemory>,
         )>();
         let agents: Vec<_> = agent_query
             .iter(world_split)
             .map(
-                |(m, p, s, g, l, lm, em)| crate::persistence::AgentSnapshot {
+                |(m, p, s, g, l, lm, em, sm)| crate::persistence::AgentSnapshot {
                     metadata: *m,
                     position: *p,
                     stock: *s,
@@ -713,6 +715,7 @@ mod tests {
                     lineage: *l,
                     location_memory: lm.cloned(),
                     event_memory: em.cloned(),
+                    social_memory: sm.cloned(),
                 },
             )
             .collect();
@@ -785,11 +788,12 @@ mod tests {
             &crate::agent::LineageMetadata,
             Option<&crate::agent::LocationMemory>,
             Option<&crate::agent::components::EventMemory>,
+            Option<&crate::agent::components::SocialMemory>,
         )>();
         let agents: Vec<_> = agent_query
             .iter(world)
             .map(
-                |(m, p, s, g, l, lm, em)| crate::persistence::AgentSnapshot {
+                |(m, p, s, g, l, lm, em, sm)| crate::persistence::AgentSnapshot {
                     metadata: *m,
                     position: *p,
                     stock: *s,
@@ -797,6 +801,7 @@ mod tests {
                     lineage: *l,
                     location_memory: lm.cloned(),
                     event_memory: em.cloned(),
+                    social_memory: sm.cloned(),
                 },
             )
             .collect();
@@ -833,6 +838,7 @@ mod tests {
             lineage: crate::agent::LineageMetadata::new(None, 0),
             location_memory: None,
             event_memory: None,
+            social_memory: None,
         };
         snapshot.agents.push(agent_snap);
 
@@ -863,6 +869,7 @@ mod tests {
             lineage: crate::agent::LineageMetadata::new(None, 0),
             location_memory: None,
             event_memory: None,
+            social_memory: None,
         };
         snapshot.agents.push(agent_snap);
 

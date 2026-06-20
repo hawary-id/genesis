@@ -590,6 +590,7 @@ pub fn process_agent_reproduction(
     mut id_gen: ResMut<StableIdGenerator>,
     terrain_chunks: Query<(&ChunkCoord, &TerrainChunk)>,
     mut mem_events: EventWriter<crate::agent::events::EventMemoryEvent>,
+    mut social_mem_events: EventWriter<crate::agent::events::SocialMemoryEvent>,
     mut seq_counter: ResMut<crate::agent::resources::EventSequenceCounter>,
     mut agents: Query<(
         Entity,
@@ -705,6 +706,20 @@ pub fn process_agent_reproduction(
                     LineageMetadata::new(Some(parent_id), parent_lineage.generation + 1),
                     LocationMemory::new(),
                     crate::agent::components::EventMemory::new(),
+                    crate::agent::components::SocialMemory::new(),
+                ));
+
+                social_mem_events.send(crate::agent::events::SocialMemoryEvent::new(
+                    parent_id,
+                    offspring_id,
+                    crate::agent::components::SocialRelationCategory::Child,
+                    clock.total_ticks,
+                ));
+                social_mem_events.send(crate::agent::events::SocialMemoryEvent::new(
+                    offspring_id,
+                    parent_id,
+                    crate::agent::components::SocialRelationCategory::Parent,
+                    clock.total_ticks,
                 ));
 
                 mem_events.send(crate::agent::events::EventMemoryEvent::new(
@@ -841,6 +856,73 @@ pub fn process_event_memory_consolidation(
                 let overflow =
                     memory.nodes.len() - crate::agent::components::MAX_EVENT_MEMORY_CAPACITY;
                 memory.nodes.drain(0..overflow);
+            }
+        }
+    }
+}
+
+/// Consolidates SocialMemoryEvents into agents' subjective social memory.
+///
+/// Ensures memory updates are deterministic and cap at `MAX_SOCIAL_MEMORY_CAPACITY`.
+pub fn process_social_memory_consolidation(
+    mut events: ResMut<Events<crate::agent::events::SocialMemoryEvent>>,
+    mut agents: Query<(&AgentMetadata, &mut crate::agent::components::SocialMemory)>,
+) {
+    let mut pending_events: Vec<_> = events.drain().collect();
+    if pending_events.is_empty() {
+        return;
+    }
+
+    // Sort to ensure deterministic processing order.
+    // Order by agent_id, then target_agent_id (tie breaker).
+    pending_events.sort_by(|a, b| {
+        a.agent_id
+            .cmp(&b.agent_id)
+            .then(a.target_agent_id.cmp(&b.target_agent_id))
+    });
+
+    let mut grouped_events: std::collections::HashMap<
+        u64,
+        Vec<crate::agent::events::SocialMemoryEvent>,
+    > = std::collections::HashMap::new();
+    for ev in pending_events {
+        grouped_events.entry(ev.agent_id).or_default().push(ev);
+    }
+
+    for (metadata, mut memory) in &mut agents {
+        if let Some(agent_events) = grouped_events.get(&metadata.id) {
+            for event in agent_events {
+                // Prevent duplicates
+                let mut exists = false;
+                for node in &memory.nodes {
+                    if node.agent_id == event.target_agent_id {
+                        exists = true;
+                        break;
+                    }
+                }
+
+                if !exists {
+                    memory
+                        .nodes
+                        .push(crate::agent::components::SocialMemoryNode::new(
+                            event.target_agent_id,
+                            event.relation,
+                            event.created_tick,
+                        ));
+                }
+            }
+
+            // Enforce capacity via deterministic oldest-first eviction
+            // Keeping newest first: sort by created_tick descending, tie-breaker: agent_id ascending
+            if memory.nodes.len() > crate::agent::components::MAX_SOCIAL_MEMORY_CAPACITY {
+                memory.nodes.sort_by(|a, b| {
+                    b.created_tick
+                        .cmp(&a.created_tick)
+                        .then(a.agent_id.cmp(&b.agent_id))
+                });
+                memory
+                    .nodes
+                    .truncate(crate::agent::components::MAX_SOCIAL_MEMORY_CAPACITY);
             }
         }
     }

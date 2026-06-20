@@ -73,6 +73,8 @@ impl App {
                     .after(crate::agent::process_agent_deaths),
                 crate::agent::process_event_memory_consolidation
                     .after(crate::agent::process_agent_deaths),
+                crate::agent::process_social_memory_consolidation
+                    .after(crate::agent::process_agent_deaths),
             ));
         }
 

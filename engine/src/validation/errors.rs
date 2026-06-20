@@ -147,4 +147,66 @@ pub enum ValidationError {
         /// Current simulation clock.
         current_tick: u32,
     },
+
+    /// Agent's event memory contains more events than configured capacity allows.
+    AgentEventMemoryCapacityExceeded {
+        /// Stable identifier of the violating agent.
+        agent_id: u64,
+        /// Maximum allowed capacity.
+        capacity: usize,
+        /// Actual number of stored events.
+        actual: usize,
+    },
+
+    /// Agent's event memory contains an event from the future.
+    AgentEventMemoryFutureTick {
+        /// Stable identifier of the violating agent.
+        agent_id: u64,
+        /// Timestamp in memory.
+        tick: u32,
+        /// Current simulation clock.
+        current_tick: u32,
+    },
+
+    /// Agent's event memory is not sorted in strictly chronological order.
+    AgentEventMemoryChronologyInvalid {
+        /// Stable identifier of the violating agent.
+        agent_id: u64,
+        /// Description of the violation.
+        detail: &'static str,
+    },
+
+    /// Agent's social memory contains more relationships than configured capacity allows.
+    AgentSocialMemoryCapacityExceeded {
+        /// Stable identifier of the violating agent.
+        agent_id: u64,
+        /// Maximum allowed capacity.
+        capacity: usize,
+        /// Actual number of stored relationships.
+        actual: usize,
+    },
+
+    /// Agent's social memory contains a duplicate target_id.
+    AgentSocialMemoryDuplicateTarget {
+        /// Stable identifier of the violating agent.
+        agent_id: u64,
+        /// The duplicated target identifier.
+        target_id: u64,
+    },
+
+    /// Agent's social memory contains a timestamp from the future.
+    AgentSocialMemoryFutureTick {
+        /// Stable identifier of the violating agent.
+        agent_id: u64,
+        /// Timestamp in memory.
+        tick: u32,
+        /// Current simulation clock.
+        current_tick: u32,
+    },
+
+    /// Agent's social memory contains a reference to the owning agent.
+    AgentSocialMemorySelfReferenceInvalid {
+        /// Stable identifier of the violating agent.
+        agent_id: u64,
+    },
 }

@@ -214,3 +214,103 @@ impl LocationMemory {
         Self { nodes: Vec::new() }
     }
 }
+
+/// Category of an episodic experiential event.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+pub enum EventCategory {
+    /// Agent successfully consumed resources.
+    ResourceConsumed,
+    /// Agent attempted to move but failed due to terrain constraints.
+    FailedMovement,
+    /// Agent successfully reproduced.
+    Reproduced,
+    /// Agent encountered a hazard.
+    HazardEncountered,
+}
+
+/// A single recorded episodic memory.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct EventMemoryNode {
+    /// The category of the event.
+    pub category: EventCategory,
+    /// The simulation tick when the event occurred.
+    pub tick: u32,
+    /// The deterministic sequence order of the event within the tick.
+    pub sequence_in_tick: u32,
+}
+
+impl EventMemoryNode {
+    /// Creates a new `EventMemoryNode`.
+    pub fn new(category: EventCategory, tick: u32, sequence_in_tick: u32) -> Self {
+        Self {
+            category,
+            tick,
+            sequence_in_tick,
+        }
+    }
+}
+
+/// The maximum number of episodic events an agent can remember.
+pub const MAX_EVENT_MEMORY_CAPACITY: usize = 10;
+
+/// Component representing an agent's subjective episodic memory.
+#[derive(Component, Debug, Clone, PartialEq, Eq, Serialize, Deserialize, Default)]
+pub struct EventMemory {
+    /// Fixed-capacity chronological list of remembered events.
+    pub nodes: Vec<EventMemoryNode>,
+}
+
+impl EventMemory {
+    /// Creates a new empty `EventMemory`.
+    pub fn new() -> Self {
+        Self { nodes: Vec::new() }
+    }
+}
+
+/// Category of a social relationship.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+pub enum SocialRelationCategory {
+    /// Agent is the parent of the remembered agent.
+    Parent,
+    /// Agent is the child of the remembered agent.
+    Child,
+}
+
+/// A single recorded subjective social relationship memory.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct SocialMemoryNode {
+    /// The stable identifier of the remembered agent.
+    pub agent_id: u64,
+    /// The category of the social relationship.
+    pub relation: SocialRelationCategory,
+    /// The simulation tick when the relationship was created/remembered.
+    pub created_tick: u32,
+}
+
+impl SocialMemoryNode {
+    /// Creates a new `SocialMemoryNode`.
+    pub fn new(agent_id: u64, relation: SocialRelationCategory, created_tick: u32) -> Self {
+        Self {
+            agent_id,
+            relation,
+            created_tick,
+        }
+    }
+}
+
+/// The maximum number of social relationships an agent can remember.
+pub const MAX_SOCIAL_MEMORY_CAPACITY: usize = 10;
+
+/// Component representing an agent's subjective social memory graph.
+#[derive(Component, Debug, Clone, PartialEq, Eq, Serialize, Deserialize, Default)]
+pub struct SocialMemory {
+    /// Fixed-capacity chronological list of remembered relationships.
+    pub nodes: Vec<SocialMemoryNode>,
+}
+
+impl SocialMemory {
+    /// Creates a new empty `SocialMemory`.
+    pub fn new() -> Self {
+        Self { nodes: Vec::new() }
+    }
+}

@@ -66,7 +66,7 @@ Populations evolve.
 
 ---
 
-## Phase 4 — Memory (Active)
+## Phase 4 — Memory (Completed)
 
 Features:
 
@@ -77,6 +77,8 @@ Features:
 Milestones:
 
 - [x] M22 Location Memory Foundation
+- [x] M23 Event Memory
+- [x] M24 Social Memory (Kinship Memory Foundation)
 
 Success:
 

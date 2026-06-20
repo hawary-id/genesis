@@ -281,11 +281,15 @@ pub fn process_agent_deaths(
 
 /// Processes resource consumption for biological agents, depleting nutrients and water
 /// from environment chunks and replenishing agent energy stocks.
+#[allow(clippy::too_many_arguments)]
 pub fn process_agent_consumption(
     config: Res<WorldConfig>,
     bounds: Res<WorldBounds>,
+    clock: Res<crate::time::SimulationClock>,
     mut chunks: Query<(&ChunkCoord, &mut crate::world::resource::ResourceChunk)>,
     mut events: EventWriter<ObservationEvent>,
+    mut mem_events: EventWriter<crate::agent::events::EventMemoryEvent>,
+    mut seq_counter: ResMut<crate::agent::resources::EventSequenceCounter>,
     mut agents: Query<(
         Entity,
         &AgentPosition,
@@ -347,18 +351,30 @@ pub fn process_agent_consumption(
                         intake_nutrient * (1.0 - diet_preference) * config.consumption_efficiency
                             + intake_water * diet_preference * config.consumption_efficiency;
 
+                    let mut consumed = false;
                     if intake_nutrient > 0.0 {
                         events.send(ObservationEvent::new(
                             _id,
                             coord,
                             LocationCategory::Nutrient,
                         ));
+                        consumed = true;
                     }
                     if intake_water > 0.0 {
                         events.send(ObservationEvent::new(
                             _id,
                             coord,
                             LocationCategory::FreshWater,
+                        ));
+                        consumed = true;
+                    }
+
+                    if consumed {
+                        mem_events.send(crate::agent::events::EventMemoryEvent::new(
+                            _id,
+                            crate::agent::components::EventCategory::ResourceConsumed,
+                            clock.total_ticks,
+                            seq_counter.next_sequence(),
                         ));
                     }
 
@@ -376,8 +392,11 @@ pub fn process_agent_consumption(
 /// Processes agent movement requests, validating destinations against boundaries and terrain barriers.
 pub fn process_agent_movement(
     bounds: Res<WorldBounds>,
+    clock: Res<crate::time::SimulationClock>,
     terrain_chunks: Query<(&ChunkCoord, &TerrainChunk)>,
     mut events: EventWriter<ObservationEvent>,
+    mut mem_events: EventWriter<crate::agent::events::EventMemoryEvent>,
+    mut seq_counter: ResMut<crate::agent::resources::EventSequenceCounter>,
     mut agents: Query<(
         Entity,
         &AgentMetadata,
@@ -447,6 +466,12 @@ pub fn process_agent_movement(
         }
 
         if !valid_move || !bounds.contains_world_coord(target_coord) {
+            mem_events.send(crate::agent::events::EventMemoryEvent::new(
+                metadata_id,
+                crate::agent::components::EventCategory::FailedMovement,
+                clock.total_ticks,
+                seq_counter.next_sequence(),
+            ));
             if let Ok((_, _, _, _, mut original_req, _)) = agents.get_mut(entity) {
                 original_req.intent = ActionIntent::None;
             }
@@ -479,6 +504,18 @@ pub fn process_agent_movement(
                 metadata_id,
                 target_coord,
                 LocationCategory::Hazard,
+            ));
+            mem_events.send(crate::agent::events::EventMemoryEvent::new(
+                metadata_id,
+                crate::agent::components::EventCategory::HazardEncountered,
+                clock.total_ticks,
+                seq_counter.next_sequence(),
+            ));
+            mem_events.send(crate::agent::events::EventMemoryEvent::new(
+                metadata_id,
+                crate::agent::components::EventCategory::FailedMovement,
+                clock.total_ticks,
+                seq_counter.next_sequence(),
             ));
             if let Ok((_, _, _, _, mut original_req, _)) = agents.get_mut(entity) {
                 original_req.intent = ActionIntent::None;
@@ -552,6 +589,9 @@ pub fn process_agent_reproduction(
     clock: Res<SimulationClock>,
     mut id_gen: ResMut<StableIdGenerator>,
     terrain_chunks: Query<(&ChunkCoord, &TerrainChunk)>,
+    mut mem_events: EventWriter<crate::agent::events::EventMemoryEvent>,
+    mut social_mem_events: EventWriter<crate::agent::events::SocialMemoryEvent>,
+    mut seq_counter: ResMut<crate::agent::resources::EventSequenceCounter>,
     mut agents: Query<(
         Entity,
         &AgentMetadata,
@@ -665,6 +705,28 @@ pub fn process_agent_reproduction(
                     mutated_genome,
                     LineageMetadata::new(Some(parent_id), parent_lineage.generation + 1),
                     LocationMemory::new(),
+                    crate::agent::components::EventMemory::new(),
+                    crate::agent::components::SocialMemory::new(),
+                ));
+
+                social_mem_events.send(crate::agent::events::SocialMemoryEvent::new(
+                    parent_id,
+                    offspring_id,
+                    crate::agent::components::SocialRelationCategory::Child,
+                    clock.total_ticks,
+                ));
+                social_mem_events.send(crate::agent::events::SocialMemoryEvent::new(
+                    offspring_id,
+                    parent_id,
+                    crate::agent::components::SocialRelationCategory::Parent,
+                    clock.total_ticks,
+                ));
+
+                mem_events.send(crate::agent::events::EventMemoryEvent::new(
+                    parent_id,
+                    crate::agent::components::EventCategory::Reproduced,
+                    clock.total_ticks,
+                    seq_counter.next_sequence(),
                 ));
 
                 current_population += 1;
@@ -738,6 +800,129 @@ pub fn process_memory_consolidation(
                         .then(b.coord.x.cmp(&a.coord.x))
                 });
                 memory.nodes.truncate(config.max_location_memory_capacity);
+            }
+        }
+    }
+}
+
+/// Resets the event sequence counter at the beginning of each tick.
+pub fn reset_event_sequence(mut counter: ResMut<crate::agent::resources::EventSequenceCounter>) {
+    counter.reset();
+}
+
+/// Consolidates EventMemoryEvents into agents' subjective episodic memory.
+///
+/// Ensures memory updates are deterministic and cap at `MAX_EVENT_MEMORY_CAPACITY`.
+pub fn process_event_memory_consolidation(
+    mut events: ResMut<Events<crate::agent::events::EventMemoryEvent>>,
+    mut agents: Query<(&AgentMetadata, &mut crate::agent::components::EventMemory)>,
+) {
+    let mut pending_events: Vec<_> = events.drain().collect();
+    if pending_events.is_empty() {
+        return;
+    }
+
+    // Sort to ensure deterministic processing order.
+    // The spec requires sorting by (tick, sequence_in_tick)
+    pending_events.sort_by(|a, b| {
+        a.agent_id
+            .cmp(&b.agent_id)
+            .then(a.tick.cmp(&b.tick))
+            .then(a.sequence_in_tick.cmp(&b.sequence_in_tick))
+    });
+
+    let mut grouped_events: std::collections::HashMap<
+        u64,
+        Vec<crate::agent::events::EventMemoryEvent>,
+    > = std::collections::HashMap::new();
+    for ev in pending_events {
+        grouped_events.entry(ev.agent_id).or_default().push(ev);
+    }
+
+    for (metadata, mut memory) in &mut agents {
+        if let Some(agent_events) = grouped_events.get(&metadata.id) {
+            for event in agent_events {
+                memory
+                    .nodes
+                    .push(crate::agent::components::EventMemoryNode::new(
+                        event.category,
+                        event.tick,
+                        event.sequence_in_tick,
+                    ));
+            }
+
+            // Enforce capacity via deterministic LRU eviction (oldest first)
+            if memory.nodes.len() > crate::agent::components::MAX_EVENT_MEMORY_CAPACITY {
+                let overflow =
+                    memory.nodes.len() - crate::agent::components::MAX_EVENT_MEMORY_CAPACITY;
+                memory.nodes.drain(0..overflow);
+            }
+        }
+    }
+}
+
+/// Consolidates SocialMemoryEvents into agents' subjective social memory.
+///
+/// Ensures memory updates are deterministic and cap at `MAX_SOCIAL_MEMORY_CAPACITY`.
+pub fn process_social_memory_consolidation(
+    mut events: ResMut<Events<crate::agent::events::SocialMemoryEvent>>,
+    mut agents: Query<(&AgentMetadata, &mut crate::agent::components::SocialMemory)>,
+) {
+    let mut pending_events: Vec<_> = events.drain().collect();
+    if pending_events.is_empty() {
+        return;
+    }
+
+    // Sort to ensure deterministic processing order.
+    // Order by agent_id, then target_agent_id (tie breaker).
+    pending_events.sort_by(|a, b| {
+        a.agent_id
+            .cmp(&b.agent_id)
+            .then(a.target_agent_id.cmp(&b.target_agent_id))
+    });
+
+    let mut grouped_events: std::collections::HashMap<
+        u64,
+        Vec<crate::agent::events::SocialMemoryEvent>,
+    > = std::collections::HashMap::new();
+    for ev in pending_events {
+        grouped_events.entry(ev.agent_id).or_default().push(ev);
+    }
+
+    for (metadata, mut memory) in &mut agents {
+        if let Some(agent_events) = grouped_events.get(&metadata.id) {
+            for event in agent_events {
+                // Prevent duplicates
+                let mut exists = false;
+                for node in &memory.nodes {
+                    if node.agent_id == event.target_agent_id {
+                        exists = true;
+                        break;
+                    }
+                }
+
+                if !exists {
+                    memory
+                        .nodes
+                        .push(crate::agent::components::SocialMemoryNode::new(
+                            event.target_agent_id,
+                            event.relation,
+                            event.created_tick,
+                        ));
+                }
+            }
+
+            // Enforce capacity via deterministic oldest-first eviction
+            // Keeping newest first: sort by created_tick descending, tie-breaker: agent_id ascending
+            if memory.nodes.len() > crate::agent::components::MAX_SOCIAL_MEMORY_CAPACITY {
+                memory.nodes.sort_by(|a, b| {
+                    b.created_tick
+                        .cmp(&a.created_tick)
+                        .then(a.agent_id.cmp(&b.agent_id))
+                });
+                memory
+                    .nodes
+                    .truncate(crate::agent::components::MAX_SOCIAL_MEMORY_CAPACITY);
             }
         }
     }
@@ -1340,6 +1525,9 @@ mod tests {
         world.insert_resource(config);
         world.insert_resource(bounds.clone());
         world.init_resource::<bevy_ecs::event::Events<ObservationEvent>>();
+        world.insert_resource(crate::time::SimulationClock::default());
+        world.init_resource::<bevy_ecs::event::Events<crate::agent::events::EventMemoryEvent>>();
+        world.insert_resource(crate::agent::resources::EventSequenceCounter::default());
 
         // Steep terrain in cell (0, 1) (South of origin)
         let mut slope = vec![0.0f32; 1024];

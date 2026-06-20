@@ -77,3 +77,37 @@ mod tests {
         assert_eq!(gen.next_id(), 3);
     }
 }
+
+/// Counter for generating deterministic intra-tick sequence numbers for events.
+#[derive(Resource, Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+pub struct EventSequenceCounter {
+    /// The current sequence number for the active tick.
+    pub current_sequence: u32,
+}
+
+impl EventSequenceCounter {
+    /// Creates a new sequence counter.
+    pub fn new() -> Self {
+        Self {
+            current_sequence: 0,
+        }
+    }
+
+    /// Allocates and returns the next sequence number.
+    pub fn next_sequence(&mut self) -> u32 {
+        let seq = self.current_sequence;
+        self.current_sequence = self.current_sequence.wrapping_add(1);
+        seq
+    }
+
+    /// Resets the counter to 0.
+    pub fn reset(&mut self) {
+        self.current_sequence = 0;
+    }
+}
+
+impl Default for EventSequenceCounter {
+    fn default() -> Self {
+        Self::new()
+    }
+}

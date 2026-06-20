@@ -5,27 +5,27 @@
 * Phase 1: COMPLETE
 * Phase 2: COMPLETE
 * Phase 3: COMPLETE
-* Phase 4: ACTIVE
+* Phase 4: COMPLETE
 
 ### Last Completed Milestone
 
-Milestone 22 — Location Memory Foundation
+Milestone 24 — Social Memory (Kinship Memory Foundation)
 
 Key Outcomes:
-* `LocationCategory` enum (`Nutrient`, `FreshWater`, `Hazard`)
-* `LocationMemoryNode` and `LocationMemory` ECS components
-* `ObservationEvent` tracking locations
-* `process_memory_consolidation` system with deterministic LRU eviction and tie-breaking
-* LocationMemory persistence added using serde default migration compatibility
-* Added validation checks for capacity bounds and chronological properties
+* `SocialRelationCategory` enum (`Parent`, `Child`)
+* `SocialMemoryNode` and `SocialMemory` ECS components
+* Reciprocal `SocialMemoryEvent` generation during reproduction
+* Deterministic consolidation with capacity limit 10 and oldest-first eviction
+* SocialMemory persistence added (snapshot schema v5 upgrade)
+* Validation checks for capacity bounds, duplicate targets, chronologies, and self-reference prevention
 
 ### Current Focus
 
-* Phase 4 (Memory) has started. First milestone (Location Memory) implemented. Next focus is M23 planning.
+* Phase 4 (Memory) is COMPLETE. Next focus is Phase 5 (Agency) planning.
 
 ### Next Planned Milestone
 
-* Milestone 23 — Event Memory
+* Milestone 25 — Goal Formation Foundation
 
 ### Newly Added Systems
 
@@ -53,18 +53,19 @@ Key Outcomes:
 
 ### Verification & Testing Status
 
-* **Branch:** main
-* **Status:** Milestone 22 COMPLETE.
-  - Subjective location memory with ObservationEvent architecture.
-  - Memory consolidation system with deterministic LRU retention.
-  - Snapshot persistence with backward compatibility.
-  - Validation support and determinism verification verified.
+* **Branch:** phase4-m24
+* **Snapshot Schema Version:** v5
+* **Status:** Milestone 24 COMPLETE. Phase 4 COMPLETE.
+  - Kinship memory tracking (`Parent`/`Child`) during reproduction.
+  - Strict deterministic consolidation and oldest-first eviction.
+  - Snapshot persistence v5 upgrade with backward compatibility.
+  - Comprehensive invariant validation support.
 * **Test Counts:**
   - `cargo test`: PASS
   - `cargo test -- --ignored`: PASS (test_long_run_stability_512 checks A+B=N save/load equivalence over 8,640 ticks / 1 simulation year with full stack active)
   - `cargo clippy -- -D warnings`: PASS
   - `cargo fmt`: PASS
-* **Last Updated:** 2026-06-20T12:00:00+00:00
+* **Last Updated:** 2026-06-20T14:20:00+00:00
 
 ---
 

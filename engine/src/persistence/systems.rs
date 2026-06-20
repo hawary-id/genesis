@@ -84,6 +84,8 @@ pub fn handle_snapshot_requests(
         &Genome,
         &LineageMetadata,
         Option<&crate::agent::LocationMemory>,
+        Option<&crate::agent::components::EventMemory>,
+        Option<&crate::agent::components::SocialMemory>,
     )>,
     mut completed: EventWriter<SnapshotCompleted>,
 ) {
@@ -104,13 +106,24 @@ pub fn handle_snapshot_requests(
         let agents: Vec<AgentSnapshot> = agent_query
             .iter()
             .map(
-                |(metadata, position, stock, genome, lineage, location_memory)| AgentSnapshot {
+                |(
+                    metadata,
+                    position,
+                    stock,
+                    genome,
+                    lineage,
+                    location_memory,
+                    event_memory_opt,
+                    social_memory_opt,
+                )| AgentSnapshot {
                     metadata: *metadata,
                     position: *position,
                     stock: *stock,
                     genome: genome.clone(),
                     lineage: *lineage,
                     location_memory: location_memory.cloned(),
+                    event_memory: event_memory_opt.cloned(),
+                    social_memory: social_memory_opt.cloned(),
                 },
             )
             .collect();

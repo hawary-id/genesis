@@ -31,6 +31,8 @@ pub fn validate_world_on_startup(
         &Genome,
         &LineageMetadata,
         Option<&crate::agent::LocationMemory>,
+        Option<&crate::agent::components::EventMemory>,
+        Option<&crate::agent::components::SocialMemory>,
     )>,
 ) {
     let expected_chunks = (bounds.chunks_x * bounds.chunks_y) as usize;
@@ -95,11 +97,13 @@ pub fn validate_world_on_startup(
 
     // Sort agents by stable ID to guarantee order-independent verification
     let mut agents: Vec<_> = agents_query.iter().collect();
-    agents.sort_by_key(|(meta, _, _, _, _, _)| meta.id);
+    agents.sort_by_key(|(meta, _, _, _, _, _, _, _)| meta.id);
 
     let mut seen_ids = std::collections::HashSet::new();
 
-    for (meta, pos, stock, genome, lineage, location_memory) in agents {
+    for (meta, pos, stock, genome, lineage, location_memory, event_memory_opt, social_memory_opt) in
+        agents
+    {
         // Unique non-zero IDs
         if meta.id == 0 || !seen_ids.insert(meta.id) {
             handle_validation_error(ValidationError::AgentDuplicateId { agent_id: meta.id });
@@ -229,6 +233,94 @@ pub fn validate_world_on_startup(
                 }
             }
         }
+
+        // Event memory validation
+        if let Some(event_memory) = event_memory_opt {
+            if event_memory.nodes.len() > crate::agent::components::MAX_EVENT_MEMORY_CAPACITY {
+                handle_validation_error(ValidationError::AgentEventMemoryCapacityExceeded {
+                    agent_id: meta.id,
+                    capacity: crate::agent::components::MAX_EVENT_MEMORY_CAPACITY,
+                    actual: event_memory.nodes.len(),
+                });
+                return;
+            }
+
+            let mut prev_tick = 0;
+            let mut prev_seq = 0;
+            for (i, node) in event_memory.nodes.iter().enumerate() {
+                if node.tick > clock.total_ticks {
+                    handle_validation_error(ValidationError::AgentEventMemoryFutureTick {
+                        agent_id: meta.id,
+                        tick: node.tick,
+                        current_tick: clock.total_ticks,
+                    });
+                    return;
+                }
+
+                if i > 0 {
+                    if node.tick < prev_tick {
+                        handle_validation_error(
+                            ValidationError::AgentEventMemoryChronologyInvalid {
+                                agent_id: meta.id,
+                                detail: "Event ticks are not monotonically increasing",
+                            },
+                        );
+                        return;
+                    }
+                    if node.tick == prev_tick && node.sequence_in_tick <= prev_seq {
+                        handle_validation_error(
+                            ValidationError::AgentEventMemoryChronologyInvalid {
+                                agent_id: meta.id,
+                                detail:
+                                    "Event sequence within same tick is not strictly increasing",
+                            },
+                        );
+                        return;
+                    }
+                }
+                prev_tick = node.tick;
+                prev_seq = node.sequence_in_tick;
+            }
+        }
+
+        // Social memory validation
+        if let Some(social_memory) = social_memory_opt {
+            if social_memory.nodes.len() > crate::agent::components::MAX_SOCIAL_MEMORY_CAPACITY {
+                handle_validation_error(ValidationError::AgentSocialMemoryCapacityExceeded {
+                    agent_id: meta.id,
+                    capacity: crate::agent::components::MAX_SOCIAL_MEMORY_CAPACITY,
+                    actual: social_memory.nodes.len(),
+                });
+                return;
+            }
+
+            let mut seen_targets = std::collections::HashSet::new();
+            for node in &social_memory.nodes {
+                if node.agent_id == meta.id {
+                    handle_validation_error(
+                        ValidationError::AgentSocialMemorySelfReferenceInvalid {
+                            agent_id: meta.id,
+                        },
+                    );
+                    return;
+                }
+                if !seen_targets.insert(node.agent_id) {
+                    handle_validation_error(ValidationError::AgentSocialMemoryDuplicateTarget {
+                        agent_id: meta.id,
+                        target_id: node.agent_id,
+                    });
+                    return;
+                }
+                if node.created_tick > clock.total_ticks {
+                    handle_validation_error(ValidationError::AgentSocialMemoryFutureTick {
+                        agent_id: meta.id,
+                        tick: node.created_tick,
+                        current_tick: clock.total_ticks,
+                    });
+                    return;
+                }
+            }
+        }
     }
 }
 
@@ -253,6 +345,8 @@ pub fn validate_world_on_tick(
         &Genome,
         &LineageMetadata,
         Option<&crate::agent::LocationMemory>,
+        Option<&crate::agent::components::EventMemory>,
+        Option<&crate::agent::components::SocialMemory>,
     )>,
     mut previous_tick: Local<Option<u32>>,
 ) {
@@ -306,11 +400,13 @@ pub fn validate_world_on_tick(
 
     // Sort agents by stable ID to guarantee order-independent checks
     let mut agents: Vec<_> = agents_query.iter().collect();
-    agents.sort_by_key(|(meta, _, _, _, _, _)| meta.id);
+    agents.sort_by_key(|(meta, _, _, _, _, _, _, _)| meta.id);
 
     let mut seen_ids = std::collections::HashSet::new();
 
-    for (meta, pos, stock, genome, lineage, location_memory) in agents {
+    for (meta, pos, stock, genome, lineage, location_memory, event_memory_opt, social_memory_opt) in
+        agents
+    {
         // Unique non-zero IDs
         if meta.id == 0 || !seen_ids.insert(meta.id) {
             handle_validation_error(ValidationError::AgentDuplicateId { agent_id: meta.id });
@@ -414,6 +510,94 @@ pub fn validate_world_on_tick(
                     handle_validation_error(ValidationError::AgentMemoryFutureTick {
                         agent_id: meta.id,
                         tick: node.last_observed_tick,
+                        current_tick: clock.total_ticks,
+                    });
+                    return;
+                }
+            }
+        }
+
+        // Event memory validation
+        if let Some(event_memory) = event_memory_opt {
+            if event_memory.nodes.len() > crate::agent::components::MAX_EVENT_MEMORY_CAPACITY {
+                handle_validation_error(ValidationError::AgentEventMemoryCapacityExceeded {
+                    agent_id: meta.id,
+                    capacity: crate::agent::components::MAX_EVENT_MEMORY_CAPACITY,
+                    actual: event_memory.nodes.len(),
+                });
+                return;
+            }
+
+            let mut prev_tick = 0;
+            let mut prev_seq = 0;
+            for (i, node) in event_memory.nodes.iter().enumerate() {
+                if node.tick > clock.total_ticks {
+                    handle_validation_error(ValidationError::AgentEventMemoryFutureTick {
+                        agent_id: meta.id,
+                        tick: node.tick,
+                        current_tick: clock.total_ticks,
+                    });
+                    return;
+                }
+
+                if i > 0 {
+                    if node.tick < prev_tick {
+                        handle_validation_error(
+                            ValidationError::AgentEventMemoryChronologyInvalid {
+                                agent_id: meta.id,
+                                detail: "Event ticks are not monotonically increasing",
+                            },
+                        );
+                        return;
+                    }
+                    if node.tick == prev_tick && node.sequence_in_tick <= prev_seq {
+                        handle_validation_error(
+                            ValidationError::AgentEventMemoryChronologyInvalid {
+                                agent_id: meta.id,
+                                detail:
+                                    "Event sequence within same tick is not strictly increasing",
+                            },
+                        );
+                        return;
+                    }
+                }
+                prev_tick = node.tick;
+                prev_seq = node.sequence_in_tick;
+            }
+        }
+
+        // Social memory validation
+        if let Some(social_memory) = social_memory_opt {
+            if social_memory.nodes.len() > crate::agent::components::MAX_SOCIAL_MEMORY_CAPACITY {
+                handle_validation_error(ValidationError::AgentSocialMemoryCapacityExceeded {
+                    agent_id: meta.id,
+                    capacity: crate::agent::components::MAX_SOCIAL_MEMORY_CAPACITY,
+                    actual: social_memory.nodes.len(),
+                });
+                return;
+            }
+
+            let mut seen_targets = std::collections::HashSet::new();
+            for node in &social_memory.nodes {
+                if node.agent_id == meta.id {
+                    handle_validation_error(
+                        ValidationError::AgentSocialMemorySelfReferenceInvalid {
+                            agent_id: meta.id,
+                        },
+                    );
+                    return;
+                }
+                if !seen_targets.insert(node.agent_id) {
+                    handle_validation_error(ValidationError::AgentSocialMemoryDuplicateTarget {
+                        agent_id: meta.id,
+                        target_id: node.agent_id,
+                    });
+                    return;
+                }
+                if node.created_tick > clock.total_ticks {
+                    handle_validation_error(ValidationError::AgentSocialMemoryFutureTick {
+                        agent_id: meta.id,
+                        tick: node.created_tick,
                         current_tick: clock.total_ticks,
                     });
                     return;
@@ -853,6 +1037,85 @@ mod tests {
             MetabolicStock::new(100.0, 0),
             Genome::new(vec![0.5; crate::agent::GENOME_SIZE]),
             LineageMetadata::new(None, 1),
+        ));
+
+        world.run_schedule(crate::app::PostTickValidation);
+    }
+
+    #[test]
+    #[should_panic(expected = "AgentSocialMemorySelfReferenceInvalid")]
+    fn test_validation_catches_social_memory_self_reference() {
+        let mut world = test_world();
+        world.run_schedule(crate::app::StartupGeneration);
+
+        let mut social_memory = crate::agent::components::SocialMemory::default();
+        social_memory
+            .nodes
+            .push(crate::agent::components::SocialMemoryNode {
+                agent_id: 1, // Self-reference
+                relation: crate::agent::components::SocialRelationCategory::Parent,
+                created_tick: 0,
+            });
+
+        world.spawn((
+            AgentMetadata::new(1),
+            AgentPosition::new(crate::world::coord::WorldCoord::new(0, 0)),
+            MetabolicStock::new(100.0, 0),
+            Genome::new(vec![0.5; crate::agent::GENOME_SIZE]),
+            LineageMetadata::new(None, 0),
+            social_memory,
+        ));
+
+        world.run_schedule(crate::app::PostTickValidation);
+    }
+
+    #[test]
+    fn test_validation_allows_valid_parent_relation() {
+        let mut world = test_world();
+        world.run_schedule(crate::app::StartupGeneration);
+
+        let mut social_memory = crate::agent::components::SocialMemory::default();
+        social_memory
+            .nodes
+            .push(crate::agent::components::SocialMemoryNode {
+                agent_id: 2, // Valid external reference
+                relation: crate::agent::components::SocialRelationCategory::Parent,
+                created_tick: 0,
+            });
+
+        world.spawn((
+            AgentMetadata::new(1),
+            AgentPosition::new(crate::world::coord::WorldCoord::new(0, 0)),
+            MetabolicStock::new(100.0, 0),
+            Genome::new(vec![0.5; crate::agent::GENOME_SIZE]),
+            LineageMetadata::new(None, 0),
+            social_memory,
+        ));
+
+        world.run_schedule(crate::app::PostTickValidation);
+    }
+
+    #[test]
+    fn test_validation_allows_valid_child_relation() {
+        let mut world = test_world();
+        world.run_schedule(crate::app::StartupGeneration);
+
+        let mut social_memory = crate::agent::components::SocialMemory::default();
+        social_memory
+            .nodes
+            .push(crate::agent::components::SocialMemoryNode {
+                agent_id: 2, // Valid external reference
+                relation: crate::agent::components::SocialRelationCategory::Child,
+                created_tick: 0,
+            });
+
+        world.spawn((
+            AgentMetadata::new(1),
+            AgentPosition::new(crate::world::coord::WorldCoord::new(0, 0)),
+            MetabolicStock::new(100.0, 0),
+            Genome::new(vec![0.5; crate::agent::GENOME_SIZE]),
+            LineageMetadata::new(None, 0),
+            social_memory,
         ));
 
         world.run_schedule(crate::app::PostTickValidation);

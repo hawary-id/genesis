@@ -225,17 +225,23 @@ fn test_long_run_stability_512() {
         &crate::agent::Genome,
         &crate::agent::LineageMetadata,
         Option<&crate::agent::LocationMemory>,
+        Option<&crate::agent::components::EventMemory>,
+        Option<&crate::agent::components::SocialMemory>,
     )>();
     let agents: Vec<_> = agent_query
         .iter(world_split)
-        .map(|(m, p, s, g, l, lm)| crate::persistence::AgentSnapshot {
-            metadata: *m,
-            position: *p,
-            stock: *s,
-            genome: g.clone(),
-            lineage: *l,
-            location_memory: lm.cloned(),
-        })
+        .map(
+            |(m, p, s, g, l, lm, em, sm)| crate::persistence::AgentSnapshot {
+                metadata: *m,
+                position: *p,
+                stock: *s,
+                genome: g.clone(),
+                lineage: *l,
+                location_memory: lm.cloned(),
+                event_memory: em.cloned(),
+                social_memory: sm.cloned(),
+            },
+        )
         .collect();
 
     let snapshot = build_world_snapshot(
@@ -410,17 +416,23 @@ fn test_save_load_equivalence_with_mutation_integration() {
         &crate::agent::Genome,
         &crate::agent::LineageMetadata,
         Option<&crate::agent::LocationMemory>,
+        Option<&crate::agent::components::EventMemory>,
+        Option<&crate::agent::components::SocialMemory>,
     )>();
     let agents: Vec<_> = agent_query
         .iter(world_split)
-        .map(|(m, p, s, g, l, lm)| crate::persistence::AgentSnapshot {
-            metadata: *m,
-            position: *p,
-            stock: *s,
-            genome: g.clone(),
-            lineage: *l,
-            location_memory: lm.cloned(),
-        })
+        .map(
+            |(m, p, s, g, l, lm, em, sm)| crate::persistence::AgentSnapshot {
+                metadata: *m,
+                position: *p,
+                stock: *s,
+                genome: g.clone(),
+                lineage: *l,
+                location_memory: lm.cloned(),
+                event_memory: em.cloned(),
+                social_memory: sm.cloned(),
+            },
+        )
         .collect();
 
     let snapshot = build_world_snapshot(

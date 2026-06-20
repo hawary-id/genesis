@@ -342,3 +342,21 @@ This registry tracks the status and deliverables of all milestones in the Genesi
   - `cargo test -- --ignored` PASS (stability test equivalence check)
   - determinism & snapshot validation PASS
 
+### Milestone 23: Event Memory
+* **Status:** Completed
+* **Summary:** Introduced chronological event memory for agents, enabling tracking of distinct subjective life events (`ResourceConsumed`, `FailedMovement`, `Reproduced`, `HazardEncountered`) with strict deterministic ordering using sequence counters.
+* **Dependencies:** Milestone 22.
+* **Major Deliverables:**
+  - `EventCategory` enum for event differentiation
+  - `EventMemory` and `EventMemoryNode` ECS components
+  - `EventMemoryEvent` channel and `EventSequenceCounter` resource
+  - `process_event_memory_consolidation` system with fixed-capacity chronological eviction (oldest entries removed first, cap 10)
+  - `reset_event_sequence` system running at start of tick
+  - Snapshot schema incremented to v4 with `AgentSnapshot` backwards compatibility
+  - Validation checks for strict chronological properties (`AgentEventMemoryChronologyInvalid`)
+* **Verification Summary:**
+  - `cargo fmt` PASS
+  - `cargo clippy -- -D warnings` PASS
+  - `cargo test` PASS
+  - `cargo test -- --ignored` PASS (stability test equivalence check)
+  - determinism & snapshot validation PASS

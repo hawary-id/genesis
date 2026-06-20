@@ -147,4 +147,32 @@ pub enum ValidationError {
         /// Current simulation clock.
         current_tick: u32,
     },
+
+    /// Agent's event memory contains more events than configured capacity allows.
+    AgentEventMemoryCapacityExceeded {
+        /// Stable identifier of the violating agent.
+        agent_id: u64,
+        /// Maximum allowed capacity.
+        capacity: usize,
+        /// Actual number of stored events.
+        actual: usize,
+    },
+
+    /// Agent's event memory contains an event from the future.
+    AgentEventMemoryFutureTick {
+        /// Stable identifier of the violating agent.
+        agent_id: u64,
+        /// Timestamp in memory.
+        tick: u32,
+        /// Current simulation clock.
+        current_tick: u32,
+    },
+
+    /// Agent's event memory is not sorted in strictly chronological order.
+    AgentEventMemoryChronologyInvalid {
+        /// Stable identifier of the violating agent.
+        agent_id: u64,
+        /// Description of the violation.
+        detail: &'static str,
+    },
 }

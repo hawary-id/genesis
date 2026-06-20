@@ -31,6 +31,7 @@ pub fn validate_world_on_startup(
         &Genome,
         &LineageMetadata,
         Option<&crate::agent::LocationMemory>,
+        Option<&crate::agent::components::EventMemory>,
     )>,
 ) {
     let expected_chunks = (bounds.chunks_x * bounds.chunks_y) as usize;
@@ -95,11 +96,11 @@ pub fn validate_world_on_startup(
 
     // Sort agents by stable ID to guarantee order-independent verification
     let mut agents: Vec<_> = agents_query.iter().collect();
-    agents.sort_by_key(|(meta, _, _, _, _, _)| meta.id);
+    agents.sort_by_key(|(meta, _, _, _, _, _, _)| meta.id);
 
     let mut seen_ids = std::collections::HashSet::new();
 
-    for (meta, pos, stock, genome, lineage, location_memory) in agents {
+    for (meta, pos, stock, genome, lineage, location_memory, event_memory_opt) in agents {
         // Unique non-zero IDs
         if meta.id == 0 || !seen_ids.insert(meta.id) {
             handle_validation_error(ValidationError::AgentDuplicateId { agent_id: meta.id });
@@ -229,6 +230,55 @@ pub fn validate_world_on_startup(
                 }
             }
         }
+
+        // Event memory validation
+        if let Some(event_memory) = event_memory_opt {
+            if event_memory.nodes.len() > crate::agent::components::MAX_EVENT_MEMORY_CAPACITY {
+                handle_validation_error(ValidationError::AgentEventMemoryCapacityExceeded {
+                    agent_id: meta.id,
+                    capacity: crate::agent::components::MAX_EVENT_MEMORY_CAPACITY,
+                    actual: event_memory.nodes.len(),
+                });
+                return;
+            }
+
+            let mut prev_tick = 0;
+            let mut prev_seq = 0;
+            for (i, node) in event_memory.nodes.iter().enumerate() {
+                if node.tick > clock.total_ticks {
+                    handle_validation_error(ValidationError::AgentEventMemoryFutureTick {
+                        agent_id: meta.id,
+                        tick: node.tick,
+                        current_tick: clock.total_ticks,
+                    });
+                    return;
+                }
+
+                if i > 0 {
+                    if node.tick < prev_tick {
+                        handle_validation_error(
+                            ValidationError::AgentEventMemoryChronologyInvalid {
+                                agent_id: meta.id,
+                                detail: "Event ticks are not monotonically increasing",
+                            },
+                        );
+                        return;
+                    }
+                    if node.tick == prev_tick && node.sequence_in_tick <= prev_seq {
+                        handle_validation_error(
+                            ValidationError::AgentEventMemoryChronologyInvalid {
+                                agent_id: meta.id,
+                                detail:
+                                    "Event sequence within same tick is not strictly increasing",
+                            },
+                        );
+                        return;
+                    }
+                }
+                prev_tick = node.tick;
+                prev_seq = node.sequence_in_tick;
+            }
+        }
     }
 }
 
@@ -253,6 +303,7 @@ pub fn validate_world_on_tick(
         &Genome,
         &LineageMetadata,
         Option<&crate::agent::LocationMemory>,
+        Option<&crate::agent::components::EventMemory>,
     )>,
     mut previous_tick: Local<Option<u32>>,
 ) {
@@ -306,11 +357,11 @@ pub fn validate_world_on_tick(
 
     // Sort agents by stable ID to guarantee order-independent checks
     let mut agents: Vec<_> = agents_query.iter().collect();
-    agents.sort_by_key(|(meta, _, _, _, _, _)| meta.id);
+    agents.sort_by_key(|(meta, _, _, _, _, _, _)| meta.id);
 
     let mut seen_ids = std::collections::HashSet::new();
 
-    for (meta, pos, stock, genome, lineage, location_memory) in agents {
+    for (meta, pos, stock, genome, lineage, location_memory, event_memory_opt) in agents {
         // Unique non-zero IDs
         if meta.id == 0 || !seen_ids.insert(meta.id) {
             handle_validation_error(ValidationError::AgentDuplicateId { agent_id: meta.id });
@@ -418,6 +469,55 @@ pub fn validate_world_on_tick(
                     });
                     return;
                 }
+            }
+        }
+
+        // Event memory validation
+        if let Some(event_memory) = event_memory_opt {
+            if event_memory.nodes.len() > crate::agent::components::MAX_EVENT_MEMORY_CAPACITY {
+                handle_validation_error(ValidationError::AgentEventMemoryCapacityExceeded {
+                    agent_id: meta.id,
+                    capacity: crate::agent::components::MAX_EVENT_MEMORY_CAPACITY,
+                    actual: event_memory.nodes.len(),
+                });
+                return;
+            }
+
+            let mut prev_tick = 0;
+            let mut prev_seq = 0;
+            for (i, node) in event_memory.nodes.iter().enumerate() {
+                if node.tick > clock.total_ticks {
+                    handle_validation_error(ValidationError::AgentEventMemoryFutureTick {
+                        agent_id: meta.id,
+                        tick: node.tick,
+                        current_tick: clock.total_ticks,
+                    });
+                    return;
+                }
+
+                if i > 0 {
+                    if node.tick < prev_tick {
+                        handle_validation_error(
+                            ValidationError::AgentEventMemoryChronologyInvalid {
+                                agent_id: meta.id,
+                                detail: "Event ticks are not monotonically increasing",
+                            },
+                        );
+                        return;
+                    }
+                    if node.tick == prev_tick && node.sequence_in_tick <= prev_seq {
+                        handle_validation_error(
+                            ValidationError::AgentEventMemoryChronologyInvalid {
+                                agent_id: meta.id,
+                                detail:
+                                    "Event sequence within same tick is not strictly increasing",
+                            },
+                        );
+                        return;
+                    }
+                }
+                prev_tick = node.tick;
+                prev_seq = node.sequence_in_tick;
             }
         }
     }

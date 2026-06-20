@@ -25,3 +25,33 @@ impl ObservationEvent {
         }
     }
 }
+
+/// Emitted by agent interaction systems when a notable subjective episodic event occurs.
+#[derive(Event, Debug, Clone, PartialEq)]
+pub struct EventMemoryEvent {
+    /// The agent that experienced the event.
+    pub agent_id: u64,
+    /// The category of the event.
+    pub category: crate::agent::components::EventCategory,
+    /// The simulation tick when the event occurred.
+    pub tick: u32,
+    /// The deterministic sequence order of the event within the tick.
+    pub sequence_in_tick: u32,
+}
+
+impl EventMemoryEvent {
+    /// Creates a new `EventMemoryEvent`.
+    pub fn new(
+        agent_id: u64,
+        category: crate::agent::components::EventCategory,
+        tick: u32,
+        sequence_in_tick: u32,
+    ) -> Self {
+        Self {
+            agent_id,
+            category,
+            tick,
+            sequence_in_tick,
+        }
+    }
+}

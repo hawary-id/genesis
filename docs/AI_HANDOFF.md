@@ -4,45 +4,35 @@ This document serves as the immediate tactical handoff instructions for any AI m
 
 ## Current Status
 
-**Milestone 22 — Location Memory Foundation: COMPLETE**
+**Milestone 23 — Event Memory: COMPLETE**
 
-All Phase 3 (Evolution) milestones are complete. Phase 4 (Memory) has officially started and M22 is complete. Genesis now supports subjective location memory.
+Phase 4 (Memory) is active. M23 is complete. Genesis now supports chronological event memory recording alongside location memory.
 
-## What Was Completed in M22
+## What Exists
 
-### Location Memory Architecture
-* Agents now track locations via `LocationMemory` ECS components holding fixed-capacity `LocationMemoryNode` entries.
-* Senses and interactions trigger `ObservationEvent` emissions (`Nutrient`, `FreshWater`, `Hazard`) inside `agent/systems.rs`.
-* Observations are collected by `process_memory_consolidation` running in `FixedSimulationTick` after standard agent action execution.
+* **Location Memory**: Agents track locations (`Nutrient`, `FreshWater`, `Hazard`) with deterministic LRU eviction.
+* **Event Memory**: Agents track distinct life events (`ResourceConsumed`, `FailedMovement`, `Reproduced`, `HazardEncountered`) with chronological ordering.
+* **Persistence Integration**: Seamless save/load functionality using snapshot schema v4, maintaining backwards compatibility with v3 via `#[serde(default)]`.
+* **Validation Integration**: Startup and post-tick bounds checking enforces monotonic sequences and capacity constraints.
+* **Determinism Guarantees**: Strict sequence-in-tick counters prevent race conditions during sub-tick event generation, ensuring A+B=N save/load equivalence over long simulation runs.
 
-### Deterministic LRU Eviction
-* Memory uses deterministic chronological eviction sorting. Observations tie-break LRU chronologically via `coord.y` and `coord.x` to preserve save/load and branching identical equivalence.
-* Validation checks bounds and capacity inside `validation/systems.rs`.
+## Important Constraints
 
-### Persistence
-* Snapshot schema updated to persist `LocationMemory` under the `AgentSnapshot` model seamlessly. Includes `#[serde(default)]` compatibility for loading previous v3 architecture saves seamlessly without panicking.
+* **ADR-001**: Strict adherence to ECS boundaries. No god objects or manager classes.
+* **ADR-002**: Strict adherence to determinism contracts. All systems must produce identical outcomes across platforms and runs given the same seed.
+* **ECS Boundaries**: Prefer systems over objects. Keep systems deterministic. Avoid global mutable state.
+* **Save/Load Equivalence**: Any execution run interrupted by a save and load must produce exactly the same results as an uninterrupted run.
 
-## Key Architectural Decisions Made in M22
+## Next Milestone
 
-1. **Deterministic Eviction**: Ensuring spatial coordinates dictate deterministic tie-breaking. 
-2. **Backward Compatibility**: Utilizing `serde(default)` protects v3 save branches from panics upon loading newer memory traits.
-3. **Decoupled Perception**: `ObservationEvent` allows sensors to trigger abstract alerts asynchronously without knowing how they are stored or processed.
-
-## Verified Test Status (M22 Completion)
-
-* `cargo fmt`: PASS
-* `cargo clippy -- -D warnings`: PASS
-* `cargo test`: PASS
-* `cargo test -- --ignored`: PASS (test_long_run_stability_512, 8,640 ticks / 1 year)
-* Long-run determinism test: PASS
-* Snapshot validation tests: PASS
+* **Milestone 24 — Social Memory**: According to the roadmap for Phase 4, the final remaining feature for the Memory phase is social memory. 
 
 ## Next Actions for AI Model
 
-1. **M22 is officially closed**: No M22 implementation work remains. Any remaining observations (like isolated unit tests) are optional improvements only. The next architectural focus is M23 planning.
+1. **M23 is officially closed**: No M23 implementation work remains. The next architectural focus is M24 planning.
 2. Read `MILESTONE_STATUS.md` to determine the next planned milestone.
 3. Read `docs/ROADMAP.md` for Phase 4 context.
-4. Perform documentation audit, codebase audit, and gap analysis for Milestone 23.
+4. Perform documentation audit, codebase audit, and gap analysis for Milestone 24.
 5. Produce an implementation plan and await user approval before writing any code.
 
 ## Known Blockers & Technical Debt

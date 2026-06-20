@@ -84,6 +84,10 @@ pub struct AgentSnapshot {
     /// Subjective spatial memory of notable locations.
     #[serde(default)]
     pub location_memory: Option<crate::agent::LocationMemory>,
+
+    /// Subjective episodic memory of key experiential events.
+    #[serde(default)]
+    pub event_memory: Option<crate::agent::components::EventMemory>,
 }
 
 /// Complete state of one chunk entity at snapshot time.
@@ -126,7 +130,7 @@ mod tests {
             chunks: vec![],
             agents: vec![],
         };
-        assert_eq!(snapshot.schema_version, 3);
+        assert_eq!(snapshot.schema_version, 4);
     }
 
     #[test]

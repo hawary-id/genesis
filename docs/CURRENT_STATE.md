@@ -9,23 +9,23 @@
 
 ### Last Completed Milestone
 
-Milestone 22 — Location Memory Foundation
+Milestone 23 — Event Memory
 
 Key Outcomes:
-* `LocationCategory` enum (`Nutrient`, `FreshWater`, `Hazard`)
-* `LocationMemoryNode` and `LocationMemory` ECS components
-* `ObservationEvent` tracking locations
-* `process_memory_consolidation` system with deterministic LRU eviction and tie-breaking
-* LocationMemory persistence added using serde default migration compatibility
-* Added validation checks for capacity bounds and chronological properties
+* `EventCategory` enum (`ResourceConsumed`, `FailedMovement`, `Reproduced`, `HazardEncountered`)
+* `EventMemoryNode` and `EventMemory` ECS components
+* `EventMemoryEvent` and `EventSequenceCounter` resource for strict deterministic chronological ordering
+* `process_event_memory_consolidation` system with fixed-capacity chronological eviction (oldest entries removed first, MAX_EVENT_MEMORY_CAPACITY = 10)
+* EventMemory persistence added (snapshot schema v4 upgrade) with backwards compatibility
+* Validation checks for capacity bounds and strict chronological properties
 
 ### Current Focus
 
-* Phase 4 (Memory) has started. First milestone (Location Memory) implemented. Next focus is M23 planning.
+* Phase 4 (Memory) continues. Milestone 23 (Event Memory) implemented. Next focus is M24 planning.
 
 ### Next Planned Milestone
 
-* Milestone 23 — Event Memory
+* Milestone 24 — Social Memory
 
 ### Newly Added Systems
 
@@ -53,12 +53,13 @@ Key Outcomes:
 
 ### Verification & Testing Status
 
-* **Branch:** main
-* **Status:** Milestone 22 COMPLETE.
-  - Subjective location memory with ObservationEvent architecture.
-  - Memory consolidation system with deterministic LRU retention.
-  - Snapshot persistence with backward compatibility.
-  - Validation support and determinism verification verified.
+* **Branch:** phase4-m23
+* **Snapshot Schema Version:** v4
+* **Status:** Milestone 23 COMPLETE.
+  - Event memory tracking system with distinct event categories.
+  - Strict deterministic chronologial ordering within ticks via sequence counters.
+  - Snapshot persistence v4 upgrade with backward compatibility.
+  - Validation support and determinism verified.
 * **Test Counts:**
   - `cargo test`: PASS
   - `cargo test -- --ignored`: PASS (test_long_run_stability_512 checks A+B=N save/load equivalence over 8,640 ticks / 1 simulation year with full stack active)

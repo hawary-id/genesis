@@ -214,3 +214,55 @@ impl LocationMemory {
         Self { nodes: Vec::new() }
     }
 }
+
+/// Category of an episodic experiential event.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+pub enum EventCategory {
+    /// Agent successfully consumed resources.
+    ResourceConsumed,
+    /// Agent attempted to move but failed due to terrain constraints.
+    FailedMovement,
+    /// Agent successfully reproduced.
+    Reproduced,
+    /// Agent encountered a hazard.
+    HazardEncountered,
+}
+
+/// A single recorded episodic memory.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct EventMemoryNode {
+    /// The category of the event.
+    pub category: EventCategory,
+    /// The simulation tick when the event occurred.
+    pub tick: u32,
+    /// The deterministic sequence order of the event within the tick.
+    pub sequence_in_tick: u32,
+}
+
+impl EventMemoryNode {
+    /// Creates a new `EventMemoryNode`.
+    pub fn new(category: EventCategory, tick: u32, sequence_in_tick: u32) -> Self {
+        Self {
+            category,
+            tick,
+            sequence_in_tick,
+        }
+    }
+}
+
+/// The maximum number of episodic events an agent can remember.
+pub const MAX_EVENT_MEMORY_CAPACITY: usize = 10;
+
+/// Component representing an agent's subjective episodic memory.
+#[derive(Component, Debug, Clone, PartialEq, Eq, Serialize, Deserialize, Default)]
+pub struct EventMemory {
+    /// Fixed-capacity chronological list of remembered events.
+    pub nodes: Vec<EventMemoryNode>,
+}
+
+impl EventMemory {
+    /// Creates a new empty `EventMemory`.
+    pub fn new() -> Self {
+        Self { nodes: Vec::new() }
+    }
+}

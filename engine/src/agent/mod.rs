@@ -8,14 +8,16 @@ pub mod sensing;
 pub mod systems;
 
 pub use components::{
-    ActionIntent, ActionRequest, AgentMetadata, AgentPosition, Genome, LineageMetadata,
-    LocationCategory, LocationMemory, LocationMemoryNode, MetabolicStock, Phenotype, GENOME_SIZE,
+    ActionIntent, ActionRequest, AgentMetadata, AgentPosition, EventCategory, EventMemory,
+    EventMemoryNode, Genome, LineageMetadata, LocationCategory, LocationMemory, LocationMemoryNode,
+    MetabolicStock, Phenotype, GENOME_SIZE, MAX_EVENT_MEMORY_CAPACITY,
 };
-pub use events::ObservationEvent;
-pub use resources::{GenomeConfig, StableIdGenerator};
+pub use events::{EventMemoryEvent, ObservationEvent};
+pub use resources::{EventSequenceCounter, GenomeConfig, StableIdGenerator};
 pub use sensing::{query_cell, query_neighborhood, SensedResource};
 pub use systems::{
     derive_phenotype_on_spawn, process_agent_consumption, process_agent_deaths,
     process_agent_movement, process_agent_reproduction, process_agent_sensing,
-    process_memory_consolidation, spawn_initial_agents, update_agent_metabolism,
+    process_event_memory_consolidation, process_memory_consolidation, reset_event_sequence,
+    spawn_initial_agents, update_agent_metabolism,
 };

@@ -73,6 +73,8 @@ pub fn register_initial_resources(world: &mut World, config: WorldConfig, seed: 
     world.init_resource::<bevy_ecs::event::Events<SnapshotRequested>>();
     world.init_resource::<bevy_ecs::event::Events<SnapshotCompleted>>();
     world.init_resource::<bevy_ecs::event::Events<crate::agent::ObservationEvent>>();
+    world.init_resource::<bevy_ecs::event::Events<crate::agent::EventMemoryEvent>>();
+    world.insert_resource(crate::agent::EventSequenceCounter::default());
 
     register_schedules(world);
 }
